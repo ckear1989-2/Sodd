@@ -18,7 +18,13 @@ a.dt <- rbind(
   a.dt[, list(div, date, time, hometeam, awayteam, ftr, ip=b365a, act=as.numeric(ftr=='A'))]
 )
 a.dt[, gain := act - ip]
-# head(a.dt)
+set.seed(123)
+a.dt[, rn := runif(a.dt[, .N])]
+head(a.dt)
+class(a.dt[, hometeam])
+a.dt[, hometeam := as.factor(hometeam)]
+a.dt[, awayteam := as.factor(awayteam)]
+a.dt[, ftr := as.factor(ftr)]
 # a.dt[, list(count=.N, ip=sum(ip), act=sum(act), gain=sum(gain)), ftr]
 # a.dt[, list(count=.N, ip=sum(ip), act=sum(act), gain=sum(gain)), date]
 
