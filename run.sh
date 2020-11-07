@@ -10,7 +10,7 @@
 # curl https://cran.r-project.org/src/contrib/gbm_2.1.8.tar.gz > $LIB/gbm.2.1.8.tar.gz
 # R CMD INSTALL $LIB/gbm.2.1.8.tar.gz -l $LIB
 
-Rscript data_prep/download.R
+# Rscript data_prep/download.R
 Rscript data_prep/standardise.R
 Rscript analysis/model.R
 

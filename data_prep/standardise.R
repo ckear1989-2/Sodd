@@ -4,28 +4,9 @@ library("data.table")
 
 alist <- lapply(
   c(
-    '~/data/2021/E0.csv',
-    '~/data/1920/E0.csv',
-    '~/data/1819/E0.csv',
-    '~/data/1718/E0.csv',
-    '~/data/1617/E0.csv',
-    '~/data/1516/E0.csv',
-    '~/data/1415/E0.csv',
-    '~/data/1314/E0.csv',
-    '~/data/1213/E0.csv',
-    '~/data/1112/E0.csv',
-    '~/data/1011/E0.csv',
-    '~/data/2021/E1.csv',
-    '~/data/1920/E1.csv',
-    '~/data/1819/E1.csv',
-    '~/data/1718/E1.csv',
-    '~/data/1617/E1.csv',
-    '~/data/1516/E1.csv',
-    '~/data/1415/E1.csv',
-    '~/data/1314/E1.csv',
-    '~/data/1213/E1.csv',
-    '~/data/1112/E1.csv',
-    '~/data/1011/E1.csv'
+    paste0("~/data/", c("2021", "1920", "1819", "1718", "1617", "1516", "1415", "1314", "1213", "1112", "1011"), "/E0.csv"),
+    paste0("~/data/", c("2021", "1920", "1819", "1718", "1617", "1516", "1415", "1314", "1213", "1112", "1011"), "/E1.csv"),
+    paste0("~/data/", c("2021", "1920", "1819", "1718", "1617", "1516", "1415", "1314", "1213", "1112", "1011"), "/E2.csv")
   ),
   fread
 )
@@ -63,69 +44,86 @@ print(a.dt[, .N])
 setkey(a.dt, date)
 a.dt[, rn := seq(a.dt[, .N])]
 a.dt[, gain := act - ip]
-for(ateam in unique(a.dt[, hometeam])) {
-
-  team.dt <- a.dt[(act == 1) & ((hometeam == ateam) | (awayteam == ateam)), ]
-  team.dt[(hometeam == ateam) & (ftr == 'H'), r := 'W']
-  team.dt[(hometeam == ateam) & (ftr == 'A'), r := 'L']
-  team.dt[(awayteam == ateam) & (ftr == 'H'), r := 'L']
-  team.dt[(awayteam == ateam) & (ftr == 'A'), r := 'W']
-  team.dt[ftr == 'D', r := 'D']
-
-  h.team.dt <- team.dt[hometeam == ateam, list(hometeam, awayteam, date, r)]
-  setkey(h.team.dt, date)
-  h.team.dt[, trn := seq(h.team.dt[, .N])]
-  hl.team.dt <- h.team.dt[, list(hpr=r, trn=trn+1)]
-  setkey(h.team.dt, trn)
-  setkey(hl.team.dt, trn)
-  h.team.dt <- merge(h.team.dt, hl.team.dt, all.x=TRUE, all.y=FALSE)[, list(hometeam, awayteam, date, hpr)]
-
-  a.team.dt <- team.dt[awayteam == ateam, list(hometeam, awayteam, date, r)]
-  setkey(a.team.dt, date)
-  a.team.dt[, trn := seq(a.team.dt[, .N])]
-  al.team.dt <- a.team.dt[, list(apr=r, trn=trn+1)]
-  setkey(a.team.dt, trn)
-  setkey(al.team.dt, trn)
-  a.team.dt <- merge(a.team.dt, al.team.dt, all.x=TRUE, all.y=FALSE)[, list(hometeam, awayteam, date, apr)]
-
-  if(exists("h.teams.dt")) {
-    h.teams.dt <- rbind(h.teams.dt, h.team.dt)
-  } else {
-    h.teams.dt <- h.team.dt
+result_lag <- function(i) {
+  for(ateam in unique(a.dt[, hometeam])) {
+  
+    team.dt <- a.dt[(act == 1) & ((hometeam == ateam) | (awayteam == ateam)), ]
+    team.dt[(hometeam == ateam) & (ftr == 'H'), r := 'W']
+    team.dt[(hometeam == ateam) & (ftr == 'A'), r := 'L']
+    team.dt[(awayteam == ateam) & (ftr == 'H'), r := 'L']
+    team.dt[(awayteam == ateam) & (ftr == 'A'), r := 'W']
+    team.dt[ftr == 'D', r := 'D']
+  
+    h.team.dt <- team.dt[hometeam == ateam, list(hometeam, awayteam, date, r)]
+    setkey(h.team.dt, date)
+    h.team.dt[, trn := seq(h.team.dt[, .N])]
+    hl.team.dt <- h.team.dt[, list(hpr=r, trn=trn+i)]
+    setkey(h.team.dt, trn)
+    setkey(hl.team.dt, trn)
+    h.team.dt <- merge(h.team.dt, hl.team.dt, all.x=TRUE, all.y=FALSE)[, list(hometeam, awayteam, date, hpr)]
+  
+    a.team.dt <- team.dt[awayteam == ateam, list(hometeam, awayteam, date, r)]
+    setkey(a.team.dt, date)
+    a.team.dt[, trn := seq(a.team.dt[, .N])]
+    al.team.dt <- a.team.dt[, list(apr=r, trn=trn+i)]
+    setkey(a.team.dt, trn)
+    setkey(al.team.dt, trn)
+    a.team.dt <- merge(a.team.dt, al.team.dt, all.x=TRUE, all.y=FALSE)[, list(hometeam, awayteam, date, apr)]
+  
+    if(exists("h.teams.dt")) {
+      h.teams.dt <- rbind(h.teams.dt, h.team.dt)
+    } else {
+      h.teams.dt <- h.team.dt
+    }
+    if(exists("a.teams.dt")) {
+      a.teams.dt <- rbind(a.teams.dt, a.team.dt)
+    } else {
+      a.teams.dt <- a.team.dt
+    }
   }
-  if(exists("a.teams.dt")) {
-    a.teams.dt <- rbind(a.teams.dt, a.team.dt)
-  } else {
-    a.teams.dt <- a.team.dt
-  }
+  print(colnames(a.dt,))
+  setkey(a.dt, date, hometeam, awayteam)
+  print(a.dt[, .N])
+  a.dt <- unique(a.dt)
+  print(a.dt[, .N])
+  print(colnames(h.teams.dt,))
+  setkey(h.teams.dt, date, hometeam, awayteam)
+  print(h.teams.dt[, .N])
+  h.teams.dt <- unique(h.teams.dt)
+  print(h.teams.dt[, .N])
+  print(colnames(a.teams.dt,))
+  setkey(a.teams.dt, date, hometeam, awayteam)
+  print(a.teams.dt[, .N])
+  a.teams.dt <- unique(a.teams.dt)
+  print(a.teams.dt[, .N])
+  a.dt <- merge(a.dt, h.teams.dt)
+  a.dt <- merge(a.dt, a.teams.dt)
+  a.dt[, hpp := 0]
+  a.dt[hpr == "D", hpp := 1]
+  a.dt[hpr == "W", hpp := 3]
+  a.dt[, app := 0]
+  a.dt[apr == "D", app := 1]
+  a.dt[apr == "W", app := 3]
+  a.dt[, hpr := as.factor(hpr)]
+  a.dt[, apr := as.factor(apr)]
+  setnames(a.dt, c("hpr", "apr", "hpp", "app"), paste0(c("hpr", "apr", "hpp", "app"), i))
+  # print(head(a.dt))
+  rm(h.teams.dt)
+  rm(a.teams.dt)
+  a.dt
 }
-print(colnames(a.dt,))
-setkey(a.dt, date, hometeam, awayteam)
-print(a.dt[, .N])
-a.dt <- unique(a.dt)
-print(a.dt[, .N])
-print(colnames(h.teams.dt,))
-setkey(h.teams.dt, date, hometeam, awayteam)
-print(h.teams.dt[, .N])
-h.teams.dt <- unique(h.teams.dt)
-print(h.teams.dt[, .N])
-print(colnames(a.teams.dt,))
-setkey(a.teams.dt, date, hometeam, awayteam)
-print(a.teams.dt[, .N])
-a.teams.dt <- unique(a.teams.dt)
-print(a.teams.dt[, .N])
-a.dt <- merge(a.dt, h.teams.dt)
-a.dt <- merge(a.dt, a.teams.dt)
-print(head(a.dt))
-a.dt[, .N, hpr]
-a.dt[, .N, apr]
+a.dt <- result_lag(1)
+a.dt <- result_lag(2)
+# print(head(a.dt))
+a.dt[, .N, hpr1]
+a.dt[, .N, apr1]
+a.dt[, .N, hpr2]
+a.dt[, .N, apr2]
 # set character variables to factor for modeling
 a.dt[, hometeam := as.factor(hometeam)]
 a.dt[, awayteam := as.factor(awayteam)]
 a.dt[, div := as.factor(ftr)]
 a.dt[, ftr := as.factor(ftr)]
-a.dt[, hpr := as.factor(hpr)]
-a.dt[, apr := as.factor(apr)]
 print(a.dt[, .N])
 a.dt <- na.omit(a.dt)
 print(a.dt[, .N])

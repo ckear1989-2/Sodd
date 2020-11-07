@@ -12,8 +12,14 @@ xvar <- c(
   'div',
   'ftr',
   'ip',
-  'hpr',
-  'apr'
+  'hpr1',
+  'apr1',
+  'hpr2',
+  'apr2',
+  'hpp1',
+  'app1',
+  'hpp1',
+  'app2'
 )
 yvar <- 'gain'
 formula <- as.formula(paste(yvar, paste(xvar, collapse="+"), sep="~"))
@@ -23,8 +29,8 @@ model <- gbm(
   distribution="gaussian",
   train.fraction=0.7,
   n.trees=500,
-  shrinkage=0.01,
-  interaction.depth=3,
+  shrinkage=0.001,
+  interaction.depth=4,
   keep.data=FALSE,
   verbose=TRUE
 )
