@@ -11,6 +11,6 @@
 # R CMD INSTALL $LIB/gbm.2.1.8.tar.gz -l $LIB
 
 # Rscript data_prep/download.R
-Rscript data_prep/standardise.R
+# Rscript data_prep/standardise.R
 Rscript analysis/model.R
 

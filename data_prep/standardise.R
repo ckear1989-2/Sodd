@@ -2,19 +2,25 @@
 .libPaths()
 library("data.table")
 
+print(getwd())
+source("data_prep/constants.R")
+all.leagues <- expand.grid(years, leagues)
+all.csv <- paste0("~/data/", all.leagues[[1]], "/", all.leagues[[2]], ".csv")
+all.csv
 alist <- lapply(
-  c(
-    paste0("~/data/", c("2021", "1920", "1819", "1718", "1617", "1516", "1415", "1314", "1213", "1112", "1011"), "/E0.csv"),
-    paste0("~/data/", c("2021", "1920", "1819", "1718", "1617", "1516", "1415", "1314", "1213", "1112", "1011"), "/E1.csv"),
-    paste0("~/data/", c("2021", "1920", "1819", "1718", "1617", "1516", "1415", "1314", "1213", "1112", "1011"), "/E2.csv")
-  ),
+  all.csv
+  ,
   fread
 )
 a.dt <- rbindlist(alist, fill=TRUE)
-a.dt[HomeTeam=="Brentford" & AwayTeam=="Blackburn", ]
+
+# error in odds
+# a.dt[HomeTeam=="Brentford" & AwayTeam=="Blackburn", ]
+
 # colnames(a.dt)
-a.dt[Div=='E0', ]
-a.dt[Div=='E1', ]
+
+# check teams in leagues
+# for (l in leagues) print(a.dt[Div== l, list(count=.N), HomeTeam][order(-count)])
 setnames(a.dt, colnames(a.dt), tolower(colnames(a.dt)))
 a.dt[nchar(date)==8, ddate := as.Date(date, '%d/%m/%y')]
 a.dt[nchar(date)==10, ddate := as.Date(date, '%d/%m/%Y')]
@@ -122,12 +128,13 @@ a.dt[, .N, apr2]
 # set character variables to factor for modeling
 a.dt[, hometeam := as.factor(hometeam)]
 a.dt[, awayteam := as.factor(awayteam)]
-a.dt[, div := as.factor(ftr)]
+a.dt[, div := as.factor(div)]
 a.dt[, ftr := as.factor(ftr)]
 print(a.dt[, .N])
 a.dt <- na.omit(a.dt)
 print(a.dt[, .N])
 summary(a.dt)
+# error with odds
 a.dt[gain == -Inf, ]
 a.dt <- a.dt[gain != -Inf, ]
 
