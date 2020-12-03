@@ -24,11 +24,7 @@ dload_current_year <- function(leagues) {
 }
 
 dload_current_year(leagues)
-# dload_10_years('E0')
-# dload_10_years('E1')
-# dload_10_years('E2')
-# dload_10_years('SP1')
-# dload_10_years('SP2')
-dload_10_years('D1')
-dload_10_years('D2')
+# lapply(leagues, dload_10_years)
+dload_10_years('I1')
+dload_10_years('I2')
 
