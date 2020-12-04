@@ -59,4 +59,5 @@ function install_package {
 # install_package viridisLite_0.3.0
 # install_package scales_1.1.1
 # install_package ggplot2_3.3.2
-install_package gridExtra_2.3
+# install_package gridExtra_2.3
+install_package resample_0.4

@@ -123,10 +123,25 @@ partial.plot <- function(model, x, a.dt) {
 plot.model.run <- function() {
   f <- "logs/model.log"
   label <- readChar(f, file.info(f)$size)
-  plot.obj <- ggplot() +
-    annotate("text", x=1, y=25, size=2, label=label) + theme_void()
-  plot.obj
+  label <- strsplit(label, paste0(rep("#", 30), collapse=""), fixed=TRUE)[[1]]
+  a_text_grob <- function(ii) {
+    # print(ii)
+    # print(label[[ii]])
+    ilabel <- label[[ii]]
+    xi <- unit(2.5, "lines")
+    yi <- unit((20-length(strsplit(ilabel, "\n"))), "lines")
+    grid::grobTree(
+      grid::rectGrob(gp=grid::gpar(fill=ii, alpha=0.5)),
+      grid::textGrob(
+        label=ilabel,
+        x=xi, y=unit(10, "lines"),
+        gp=grid::gpar(fontsize=8), just="left")
+    )
+  }
+  gs <- lapply(2:3, a_text_grob) 
+  arrangeGrob(grobs=gs, ncol=2)
 }
+
 rebase.y <- function(y1, y2, verbose=FALSE) {
   max_y1 <- max(y1)
   max_y2 <- max(y2)
@@ -149,6 +164,7 @@ rebase.y <- function(y1, y2, verbose=FALSE) {
   }
   new_y2
 }
+
 plot.model.perf <- function(model) {
   p.data <- data.table(train.a=model$train.error, train.b=model$valid.error)
   p.data[, trees := seq(p.data[, .N])]
@@ -166,25 +182,74 @@ plot.model.perf <- function(model) {
   plot.obj <- plot.obj + geom_segment(aes(x=x1, y=y1, xend=x2, yend=y2), data=df, linetype="dashed")
   plot.obj <- plot.obj + theme(axis.text.x=element_text(angle=90, vjust=0.5, hjust=0.5), plot.title=element_text(hjust=0.5))
   plot.obj <- plot.obj + ggtitle("mean deviance on train.a and train.b")
-  plot.obj <- plot.obj + ylab("mean deviance")
   plot.obj <- plot.obj + scale_y_continuous(
     limits=c((min_y1 - (sf * range_y1)), (max_y1 + (sf * range_y1))),
     name="train.a.mean.deviance",
     sec.axis=sec_axis(~ rebase.y(p.data[, train.b], .), name="train.b mean deviance")
   )
-  plot.obj 
   plot.obj
 }
-plot.var.importance <- function() {
-  plot.model.run()
+
+plot.var.importance <- function(model) {
+  p.dt <- data.table(summary(model, plotit=FALSE))
+  p.dt[, sv := -rel.inf]
+  setkey(p.dt, sv)
+  p.dt[, x := seq(p.dt[, .N])]
+  plot.obj <- ggplot(p.dt)
+  plot.obj <- plot.obj + geom_bar(aes(x=x, y=rel.inf), stat="identity", color="yellow", fill="yellow", alpha=0.3)
+  plot.obj <- plot.obj + theme(axis.text.x=element_text(angle=90, vjust=0.5, hjust=0.5), plot.title=element_text(hjust=0.5))
+  plot.obj <- plot.obj + ggtitle("modeled variables relative influence")
+  plot.obj <- plot.obj + ylab("relative influence")
+  breaks <- p.dt[, x]
+  labels <- p.dt[, var]
+  plot.obj <- plot.obj + scale_x_continuous(breaks=breaks, labels=labels)
+  plot.obj
 }
-plot.decile.perf <- function() {
-  plot.model.run()
+
+plot.decile.perf <- function(train.a.dt, train.b.dt, test.dt) {
+  # sort predictions into deciles
+  setkey(train.a.dt, gbmp)
+  setkey(train.b.dt, gbmp)
+  setkey(test.dt, gbmp)
+  train.a.dt[, rn := seq(train.a.dt[, .N])]
+  train.b.dt[, rn := seq(train.b.dt[, .N])]
+  test.dt[, rn := seq(test.dt[, .N])]
+  train.a.dt[, decile := cut(train.a.dt[, rn], breaks=quantile(train.a.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
+  train.b.dt[, decile := cut(train.b.dt[, rn], breaks=quantile(train.b.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
+  test.dt[, decile := cut(test.dt[, rn], breaks=quantile(test.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
+  summary.dt <- rbind(
+    train.a.dt[, list(dt="train.a", dtc="red", gain=sum(gain), gbmp=sum(gbmp), count=.N), decile],
+    train.b.dt[, list(dt="train.b", dtc="blue", gain=sum(gain), gbmp=sum(gbmp), count=.N), decile],
+    test.dt[, list(dt="test", dtc="green", gain=sum(gain), gbmp=sum(gbmp), count=.N), decile]
+  )
+  summary.dt[, gain := gain / count]
+  summary.dt[, gbmp := gbmp / count]
+  summary.dt[, gain_rs := rebase.y(summary.dt[, count], summary.dt[, gain])]
+  summary.dt[, gbmp_rs := rebase.y(summary.dt[, count], summary.dt[, gbmp])]
+  print(summary.dt)
+  plot.obj <- ggplot(summary.dt)
+  plot.obj <- plot.obj + geom_bar(aes(x=decile, y=count, color=dt, fill=dt), stat="identity", position="dodge", alpha=0.3)
+  plot.obj <- plot.obj + geom_line(aes(x=decile, y=gain_rs, group=dt, color=dt), stat="identity")
+  plot.obj <- plot.obj + geom_line(aes(x=decile, y=gbmp_rs, group=dt, color=dt), stat="identity", linetype="dashed")
+  # plot.obj <- plot.obj + geom_point(aes(x=decile, y=gain_rs, group=dt, color=dt), stat="identity")
+  plot.obj <- plot.obj + geom_point(aes(x=decile, y=gbmp_rs, group=dt, color=dt), stat="identity")
+  plot.obj <- plot.obj + theme(axis.text.x=element_text(angle=90, vjust=0.5, hjust=0.5), plot.title=element_text(hjust=0.5))
+  plot.obj <- plot.obj + ggtitle("actual and predicted gain by predicted deciles")
+  plot.obj <- plot.obj + scale_y_continuous(
+    name="count",
+    sec.axis=sec_axis(~ rebase.y(c(summary.dt[, gain], summary.dt[, gbmp]), .), name="act, pred")
+  )
+  plot.obj
 }
 
 plot.model <- function(model, train.a.dt, train.b.dt, train.dt, uvar) {
   pdf("model_output.pdf", h=7, w=14)
-    grid.arrange(plot.model.run(), plot.model.perf(model), plot.var.importance(), plot.decile.perf())
+    grid.arrange(
+      plot.model.run(),
+      plot.model.perf(model),
+      plot.var.importance(model),
+      plot.decile.perf(train.a.dt, train.b.dt, test.dt)
+    )
     for (x in uvar) {
       grid.arrange(
         univariate(train.a.dt, x),

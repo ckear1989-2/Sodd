@@ -4,6 +4,7 @@ suppressPackageStartupMessages({
   library("gbm")
   library("ggplot2")
   library("gridExtra")
+  library("resample")
 })
 source("analysis/plot.R")
 
@@ -23,14 +24,20 @@ xvar <- c(
   "apr1",
   "hpp1",
   "app1",
+  "hpd1",
+  "apd1",
   "hpr2",
   "apr2",
   "hpp2",
   "app2",
+  "hpd2",
+  "apd2",
   "hpr3",
   "apr3",
   "hpp3",
-  "app3"
+  "app3",
+  "hpd3",
+  "apd3"
 )
 yvar <- "gain"
 uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
@@ -38,7 +45,7 @@ formula <- as.formula(paste(yvar, paste(xvar, collapse="+"), sep="~"))
 
 # model params
 train.fraction <- 0.7
-n.trees <- 25
+n.trees <- 500
 shrinkage <- 0.01
 interaction.depth <- 4
 
@@ -47,15 +54,17 @@ if(!file.exists("logs")) dir.create("logs")
 sink("logs/model.log")
 
 # model params
-cat(
+cat0n(rep("#", 30))
+cat0n(
   "model params\n",
   "train.fraction:", train.fraction, "\n",
   "n.trees:", n.trees, "\n",
   "shrinkage:", shrinkage, "\n",
-  "interaction.depth:", interaction.depth, "\n", sep=""
+  "interaction.depth:", interaction.depth
 )
 
 # build model
+cat0n(rep("#", 30))
 model <- gbm(
   formula=formula,
   data=train.dt,
@@ -69,30 +78,32 @@ model <- gbm(
 )
 
 # model summary
+cat0n(rep("#", 30))
 best.trees <- gbm.perf(model, plot.it=FALSE, method="test")
-cat(paste("gbm perf best.trees=", best.trees, "\n"))
-cat("gbm summary\n")
+cat0n("gbm perf best.trees=", best.trees)
+cat0n("gbm summary")
 summary(model, plotit=FALSE)
 
 # score
-# help(gbm.perf)
 train.dt[, gbmp := predict(model, train.dt, best.trees)]
 test.dt[, gbmp := predict(model, test.dt, best.trees)]
 
 # rebalance
-cat("train pre-balance act=gain, pred=gbmp\n")
+cat0n(rep("#", 30))
+cat0n("train pre-balance act=gain, pred=gbmp")
 train.dt[, list(gain=sum(gain), gbmp=sum(gbmp))]
-cat("test pre-balance act=gain, pred=gbmp\n")
+cat0n("test pre-balance act=gain, pred=gbmp")
 test.dt[, list(gain=sum(gain), gbmp=sum(gbmp))]
 balance_factor <- sum(train.dt[, gain]) / sum(train.dt[, gbmp])
 train.dt[, gbmp := gbmp * balance_factor]
 test.dt[, gbmp := gbmp * balance_factor]
-cat("train post-balance act=gain, pred=gbmp\n")
+cat0n("train post-balance act=gain, pred=gbmp")
 train.dt[, list(gain=sum(gain), gbmp=sum(gbmp))]
-cat("test post-balance act=gain, pred=gbmp\n")
+cat0n("test post-balance act=gain, pred=gbmp")
 test.dt[, list(gain=sum(gain), gbmp=sum(gbmp))]
 
 # deviances
+cat0n(rep("#", 30))
 train.a.rows <- floor(train.dt[, .N] *train.fraction)
 train.mean <- mean(train.dt[, gain])
 train.dt[, mean_pred := train.mean]
@@ -103,35 +114,37 @@ test.dt[, null_dev:= ((gain - mean_pred) ** 2)]
 test.dt[, model_dev:= ((gain - gbmp) ** 2)]
 train.a.dt <- train.dt[1:train.a.rows, ]
 train.b.dt <- train.dt[train.a.rows:train.dt[, .N], ]
-cat("train.a mean null dev", mean(train.a.dt[, null_dev]), "\n")
-cat("train.b mean null dev", mean(train.b.dt[, null_dev]), "\n")
-cat("train.a mean model dev", mean(train.a.dt[, model_dev]), "\n")
-cat("train.b mean model dev", mean(train.b.dt[, model_dev]), "\n")
-cat("test mean null dev", mean(test.dt[, null_dev]), "\n")
-cat("test mean model dev", mean(test.dt[, model_dev]), "\n")
+cat0n("train.a mean null dev", mean(train.a.dt[, null_dev]))
+cat0n("train.b mean null dev", mean(train.b.dt[, null_dev]))
+cat0n("train.a mean model dev", mean(train.a.dt[, model_dev]))
+cat0n("train.b mean model dev", mean(train.b.dt[, model_dev]))
+cat0n("test mean null dev", mean(test.dt[, null_dev]))
+cat0n("test mean model dev", mean(test.dt[, model_dev]))
 
 # act pred summary
-cat("summary train act=gain, pred=gbmp\n")
+cat0n(rep("#", 30))
+cat0n("summary train act=gain, pred=gbmp")
 summary(train.dt[, list(gain, gbmp)])
-cat("summary test act=gain, pred=gbmp\n")
+cat0n("summary test act=gain, pred=gbmp")
 summary(test.dt[, list(gain, gbmp)])
 
 # positive model prediciton
+cat0n(rep("#", 30))
 train.ppc <- train.dt[gbmp > 0, .N]
-cat("train positive prediction count ", train.ppc, "\n")
+cat0n("train positive prediction count ", train.ppc)
 if(train.ppc > 0) {
-  cat("train positive prediction\n")
+  cat0n("train positive prediction")
   train.dt[gbmp>0, list(date, hometeam, awayteam, ftr, actr, ip, gbmp, gain)][order(-gbmp)]
-  cat("train gain", sum(train.dt[gbmp>0, gain]), "\n")
-  cat("train mean gain", mean(train.dt[gbmp>0, gain]), "\n")
+  cat0n("train gain", sum(train.dt[gbmp>0, gain]))
+  cat0n("train mean gain", mean(train.dt[gbmp>0, gain]))
 }
 test.ppc <- test.dt[gbmp > 0, .N]
-cat("test positive prediction count ", test.ppc, "\n")
+cat0n("test positive prediction count ", test.ppc)
 if(test.ppc > 0) {
-  cat("test positive prediction\n")
+  cat0n("test positive prediction")
   test.dt[gbmp>0, list(date, hometeam, awayteam, ftr, actr, ip, gbmp, gain)][order(-gbmp)]
-  cat("test gain", sum(test.dt[gbmp>0, gain]), "\n")
-  cat("test mean gain", mean(test.dt[gbmp>0, gain]), "\n")
+  cat0n("test gain", sum(test.dt[gbmp>0, gain]))
+  cat0n("test mean gain", mean(test.dt[gbmp>0, gain]))
 }
 
 # plots
