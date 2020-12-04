@@ -13,16 +13,13 @@ univariate <- function(a.dt, x) {
     message <- paste("plotting top 100 of", summary.dt[, .N], "levels")
     summary.dt <- summary.dt[xn <= 100, ]
   }
+  new_row_count <- summary.dt[, .N]
   max_count <- max(summary.dt[!is.na(count), count])
   max_y <- max(c(summary.dt[!is.na(act), act], summary.dt[!is.na(pred), pred]))
   min_y <- min(c(summary.dt[!is.na(act), act], summary.dt[!is.na(pred), pred]))
   range_y <- max_y - min_y
-  summary.dt[, act_rs := rebase.y(c(summary.dt[, count], 0), summary.dt[, act])]
-  summary.dt[, pred_rs := rebase.y(c(summary.dt[, count], 0), summary.dt[, pred])]
-  if(row_count == 1) {
-    summary.dt[, act_rs := max_count / 2]
-    summary.dt[, pred_rs := max_count / 2]
-  }
+  summary.dt[, act_rs := rebase.y(c(summary.dt[, count], 0), c(summary.dt[, act], summary.dt[, pred]), nreturn=new_row_count)]
+  summary.dt[, pred_rs := rebase.y(c(summary.dt[, count], 0), c(summary.dt[, pred], summary.dt[, act]), nreturn=new_row_count)]
   plot.obj <- ggplot(summary.dt)
   plot.obj <- plot.obj + geom_bar(aes(x=xn, y=count), stat="identity", fill="yellow", color="yellow", alpha=0.3)
   if(row_count > 1) {
@@ -31,17 +28,10 @@ univariate <- function(a.dt, x) {
   }
   plot.obj <- plot.obj + geom_point(aes(x=xn, y=act_rs), stat="identity", color="red")
   plot.obj <- plot.obj + geom_point(aes(x=xn, y=pred_rs), stat="identity", color="blue")
-  if(range_y > 0) {
-    plot.obj <- plot.obj + scale_y_continuous(
-      name="count",
-      sec.axis=sec_axis(~ rebase.y(c(summary.dt[, act], summary.dt[, pred]), .), name="act, pred")
-    )
-  } else {
-    plot.obj <- plot.obj + scale_y_continuous(
-      name="count",
-      sec.axis=sec_axis(~ . / max_count * max_y, name="act, pred")
-    )
-  }
+  plot.obj <- plot.obj + scale_y_continuous(
+    name="count",
+    sec.axis=sec_axis(~ rebase.y(c(summary.dt[, act], summary.dt[, pred]), .), name="act, pred")
+  )
   breaks <- summary.dt[, xn]
   labels <- summary.dt[, x]
   if(row_count > 50) {
@@ -125,31 +115,34 @@ plot.model.run <- function() {
   label <- readChar(f, file.info(f)$size)
   label <- strsplit(label, paste0(rep("#", 30), collapse=""), fixed=TRUE)[[1]]
   a_text_grob <- function(ii) {
-    # print(ii)
-    # print(label[[ii]])
     ilabel <- label[[ii]]
-    xi <- unit(2.5, "lines")
-    yi <- unit((20-length(strsplit(ilabel, "\n"))), "lines")
+    ilines <- strsplit(ilabel, "\n")[[1]]
+    lines <- length(ilines)
+    if(lines > 11) {
+      ilabel <- paste(paste0(ilines[1:10], collapse="\n"), "...", sep="\n")
+      print(ilabel)
+    }
+    xi <- unit(1.0, "lines")
+    yi <- unit((12.0-(lines/2)), "lines")
     grid::grobTree(
       grid::rectGrob(gp=grid::gpar(fill=ii, alpha=0.5)),
       grid::textGrob(
         label=ilabel,
-        x=xi, y=unit(10, "lines"),
+        x=xi, y=yi,
         gp=grid::gpar(fontsize=8), just="left")
     )
   }
-  gs <- lapply(2:3, a_text_grob) 
+  gs <- lapply(c(2, 3, 6, 8) , a_text_grob)
   arrangeGrob(grobs=gs, ncol=2)
 }
 
-rebase.y <- function(y1, y2, verbose=FALSE) {
+rebase.y <- function(y1, y2, nreturn=length(y2), verbose=FALSE) {
   max_y1 <- max(y1)
   max_y2 <- max(y2)
   min_y1 <- min(y1)
   min_y2 <- min(y2)
   range_y2 <- max_y2 - min_y2
   range_y1 <- max_y1 - min_y1
-
   new_y2a <- y2 - min_y2 # max sure all are >= 0
   max_new_y2a <- max(new_y2a)
   new_y2b <- new_y2a / max_new_y2a # rescale to (0 1)
@@ -162,7 +155,7 @@ rebase.y <- function(y1, y2, verbose=FALSE) {
     print(all(c(min(new_y2c) ==0, max(new_y2c) == range_y1)))
     print(all(c(min(new_y2) == min_y1, max(new_y2) == max_y1)))
   }
-  new_y2
+  new_y2[1:nreturn]
 }
 
 plot.model.perf <- function(model) {
@@ -224,9 +217,9 @@ plot.decile.perf <- function(train.a.dt, train.b.dt, test.dt) {
   )
   summary.dt[, gain := gain / count]
   summary.dt[, gbmp := gbmp / count]
-  summary.dt[, gain_rs := rebase.y(summary.dt[, count], summary.dt[, gain])]
-  summary.dt[, gbmp_rs := rebase.y(summary.dt[, count], summary.dt[, gbmp])]
-  print(summary.dt)
+  row_count <- summary.dt[, .N]
+  summary.dt[, gain_rs := rebase.y(summary.dt[, count], c(summary.dt[, gain], summary.dt[, gbmp]), nreturn=row_count)]
+  summary.dt[, gbmp_rs := rebase.y(summary.dt[, count], c(summary.dt[, gbmp], summary.dt[, gain]), nreturn=row_count)]
   plot.obj <- ggplot(summary.dt)
   plot.obj <- plot.obj + geom_bar(aes(x=decile, y=count, color=dt, fill=dt), stat="identity", position="dodge", alpha=0.3)
   plot.obj <- plot.obj + geom_line(aes(x=decile, y=gain_rs, group=dt, color=dt), stat="identity")

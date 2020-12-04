@@ -45,7 +45,7 @@ formula <- as.formula(paste(yvar, paste(xvar, collapse="+"), sep="~"))
 
 # model params
 train.fraction <- 0.7
-n.trees <- 500
+n.trees <- 15
 shrinkage <- 0.01
 interaction.depth <- 4
 
@@ -90,17 +90,17 @@ test.dt[, gbmp := predict(model, test.dt, best.trees)]
 
 # rebalance
 cat0n(rep("#", 30))
-cat0n("train pre-balance act=gain, pred=gbmp")
-train.dt[, list(gain=sum(gain), gbmp=sum(gbmp))]
-cat0n("test pre-balance act=gain, pred=gbmp")
-test.dt[, list(gain=sum(gain), gbmp=sum(gbmp))]
+cat0n("train pre-balance act, pred")
+train.dt[, list(act=sum(gain), pred=sum(gbmp))]
+cat0n("test pre-balance act, pred")
+test.dt[, list(act=sum(gain), pred=sum(gbmp))]
 balance_factor <- sum(train.dt[, gain]) / sum(train.dt[, gbmp])
 train.dt[, gbmp := gbmp * balance_factor]
 test.dt[, gbmp := gbmp * balance_factor]
-cat0n("train post-balance act=gain, pred=gbmp")
-train.dt[, list(gain=sum(gain), gbmp=sum(gbmp))]
-cat0n("test post-balance act=gain, pred=gbmp")
-test.dt[, list(gain=sum(gain), gbmp=sum(gbmp))]
+cat0n("train post-balance act, pred")
+train.dt[, list(act=sum(gain), pred=sum(gbmp))]
+cat0n("test post-balance act, pred")
+test.dt[, list(act=sum(gain), pred=sum(gbmp))]
 
 # deviances
 cat0n(rep("#", 30))
@@ -114,19 +114,19 @@ test.dt[, null_dev:= ((gain - mean_pred) ** 2)]
 test.dt[, model_dev:= ((gain - gbmp) ** 2)]
 train.a.dt <- train.dt[1:train.a.rows, ]
 train.b.dt <- train.dt[train.a.rows:train.dt[, .N], ]
-cat0n("train.a mean null dev", mean(train.a.dt[, null_dev]))
-cat0n("train.b mean null dev", mean(train.b.dt[, null_dev]))
-cat0n("train.a mean model dev", mean(train.a.dt[, model_dev]))
-cat0n("train.b mean model dev", mean(train.b.dt[, model_dev]))
-cat0n("test mean null dev", mean(test.dt[, null_dev]))
-cat0n("test mean model dev", mean(test.dt[, model_dev]))
+cat0n("train.a mean null dev=", mean(train.a.dt[, null_dev]))
+cat0n("train.a mean model dev=", mean(train.a.dt[, model_dev]))
+cat0n("train.b mean null dev=", mean(train.b.dt[, null_dev]))
+cat0n("train.b mean model dev=", mean(train.b.dt[, model_dev]))
+cat0n("test mean null dev=", mean(test.dt[, null_dev]))
+cat0n("test mean model dev=", mean(test.dt[, model_dev]))
 
 # act pred summary
 cat0n(rep("#", 30))
-cat0n("summary train act=gain, pred=gbmp")
-summary(train.dt[, list(gain, gbmp)])
-cat0n("summary test act=gain, pred=gbmp")
-summary(test.dt[, list(gain, gbmp)])
+cat0n("summary train act, pred")
+summary(train.dt[, list(act=gain, pred=gbmp)])
+cat0n("summary test act, pred")
+summary(test.dt[, list(act=gain, pred=gbmp)])
 
 # positive model prediciton
 cat0n(rep("#", 30))
