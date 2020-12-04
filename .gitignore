@@ -40,3 +40,6 @@ vignettes/*.pdf
 
 # plots
 *.pdf
+
+# logs
+logs/
