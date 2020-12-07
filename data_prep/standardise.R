@@ -75,12 +75,9 @@ result_lag <- function(i) {
     hl.team.dt <- h.team.dt[, list(hpr=r, hp_date=date, trn=trn+i)]
     setkey(h.team.dt, trn)
     setkey(hl.team.dt, trn)
-    # print(h.team.dt)
-    # print(hl.team.dt)
     h.team.dt <- merge(h.team.dt, hl.team.dt, all.x=TRUE, all.y=FALSE)[, list(hometeam, awayteam, date, hpr, hp_date)]
     h.team.dt[, hpd := as.numeric(date - hp_date)]
-    # print(h.team.dt)
-    # q()
+    h.team.dt[, hp_date := NULL]
 
     a.team.dt <- team.dt[awayteam == ateam, list(hometeam, awayteam, date, r)]
     setkey(a.team.dt, date)
@@ -90,7 +87,7 @@ result_lag <- function(i) {
     setkey(al.team.dt, trn)
     a.team.dt <- merge(a.team.dt, al.team.dt, all.x=TRUE, all.y=FALSE)[, list(hometeam, awayteam, date, apr, ap_date)]
     a.team.dt[, apd := as.numeric(date - ap_date)]
-    # print(a.team.dt)
+    a.team.dt[, ap_date := NULL]
  
     if(exists("h.teams.dt")) {
       h.teams.dt <- rbind(h.teams.dt, h.team.dt)
@@ -135,18 +132,35 @@ result_lag <- function(i) {
   a.dt[apr == "W", app := 3]
   a.dt[, hpr := as.factor(hpr)]
   a.dt[, apr := as.factor(apr)]
-  setnames(a.dt, c("hpr", "apr", "hpp", "app", "hpd", "apd"), paste0(c("hpr", "apr", "hpp", "app", "hpd", "apd"), i))
+  ivars <-c("hpr", "apr", "hpp", "app", "hpd", "apd")
+  setnames(a.dt, ivars, paste0(ivars, i))
   rm(h.teams.dt)
   rm(a.teams.dt)
   a.dt
 }
-lag_result_i <- 1:3
+lag_result_i <- 1:5
 for (i in lag_result_i) a.dt <- result_lag(i)
 # print(head(a.dt))
 a.dt[, .N, hpr1]
 a.dt[, .N, apr1]
 a.dt[, .N, hpr2]
 a.dt[, .N, apr2]
+a.dt[, .N, hpr3]
+a.dt[, .N, apr3]
+a.dt[, .N, hpr4]
+a.dt[, .N, apr4]
+a.dt[, .N, hpr5]
+a.dt[, .N, apr5]
+a.dt[, hpp_cum2 := pmax(hpp1, 0) + pmax(hpp2, 0)]
+a.dt[, hpp_cum3 := hpp_cum2 + pmax(hpp3, 0)]
+a.dt[, hpp_cum4 := hpp_cum3 + pmax(hpp4, 0)]
+a.dt[, hpp_cum5 := hpp_cum4 + pmax(hpp5, 0)]
+a.dt[, app_cum2 := pmax(app1, 0) + pmax(app2, 0)]
+a.dt[, app_cum3 := app_cum2 + pmax(app3, 0)]
+a.dt[, app_cum4 := app_cum3 + pmax(app4, 0)]
+a.dt[, app_cum5 := app_cum4 + pmax(app5, 0)]
+# a.dt[(is.na(hpr4)) & (!is.na(apr4)), ]
+# a.dt[(is.na(apr4)) & (!is.na(hpr4)), ]
 # set character variables to factor for modeling
 a.dt[, hometeam := as.factor(hometeam)]
 a.dt[, awayteam := as.factor(awayteam)]
@@ -155,6 +169,7 @@ a.dt[, div := as.factor(div)]
 a.dt[, ftr := as.factor(ftr)]
 a.dt[, ip := round(ip, 3)]
 a.dt[, gain := round(gain, 3)]
+summary(a.dt)
 cat('data count with missings', a.dt[, .N], '\n')
 a.dt[is.na(apr1), apr1 := "M"]
 a.dt[is.na(hpr1), hpr1 := "M"]
@@ -162,6 +177,23 @@ a.dt[is.na(apr2), apr2 := "M"]
 a.dt[is.na(hpr2), hpr2 := "M"]
 a.dt[is.na(apr3), apr3 := "M"]
 a.dt[is.na(hpr3), hpr3 := "M"]
+a.dt[is.na(apr4), apr4 := "M"]
+a.dt[is.na(hpr4), hpr4 := "M"]
+a.dt[is.na(apr5), apr5 := "M"]
+a.dt[is.na(hpr5), hpr5 := "M"]
+a.dt[is.na(apd1), apd1 := -1]
+a.dt[is.na(hpd1), hpd1 := -1]
+a.dt[is.na(apd2), apd2 := -1]
+a.dt[is.na(hpd2), hpd2 := -1]
+a.dt[is.na(apd3), apd3 := -1]
+a.dt[is.na(hpd3), hpd3 := -1]
+a.dt[is.na(apd4), apd4 := -1]
+a.dt[is.na(hpd4), hpd4 := -1]
+a.dt[is.na(apd5), apd5 := -1]
+a.dt[is.na(hpd5), hpd5 := -1]
+for (x in colnames(a.dt)) {
+  if(any(is.na(a.dt[[x]]))) print(x)
+}
 a.dt <- na.omit(a.dt)
 cat('data count no missings', a.dt[, .N], '\n')
 cat('data summary', '\n')
