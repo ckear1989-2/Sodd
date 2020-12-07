@@ -120,7 +120,6 @@ plot.model.run <- function() {
     lines <- length(ilines)
     if(lines > 11) {
       ilabel <- paste(paste0(ilines[1:10], collapse="\n"), "...", sep="\n")
-      print(ilabel)
     }
     xi <- unit(1.0, "lines")
     yi <- unit((12.0-(lines/2)), "lines")
@@ -132,7 +131,7 @@ plot.model.run <- function() {
         gp=grid::gpar(fontsize=8), just="left")
     )
   }
-  gs <- lapply(c(2, 3, 6, 8) , a_text_grob)
+  gs <- lapply(c(2, 3, 6, 9) , a_text_grob)
   arrangeGrob(grobs=gs, ncol=2)
 }
 

@@ -45,7 +45,7 @@ formula <- as.formula(paste(yvar, paste(xvar, collapse="+"), sep="~"))
 
 # model params
 train.fraction <- 0.7
-n.trees <- 15
+n.trees <- 150
 shrinkage <- 0.01
 interaction.depth <- 4
 
@@ -146,6 +146,58 @@ if(test.ppc > 0) {
   cat0n("test gain", sum(test.dt[gbmp>0, gain]))
   cat0n("test mean gain", mean(test.dt[gbmp>0, gain]))
 }
+
+# strategies
+cat0n(rep("#", 30))
+# bet on every result sum(gain)
+# bet on all favourites
+test.dt[, max_ip := max(ip), list(date, hometeam, awayteam)]
+test.dt[, strat_fav := 0]
+test.dt[ip == max_ip, strat_fav := 1]
+test.dt[, gain_fav := strat_fav * gain]
+# bet on all outsiders
+test.dt[, min_ip := min(ip), list(date, hometeam, awayteam)]
+test.dt[, strat_out := 0]
+test.dt[ip == min_ip, strat_out := 1]
+test.dt[, gain_out := strat_out * gain]
+test.dt[, min_ip := min(ip), list(date, hometeam, awayteam)]
+# bet on all home
+test.dt[, strat_home := 0]
+test.dt[ftr == "H", strat_home := 1]
+test.dt[, gain_home := strat_home * gain]
+# bet on all draw
+test.dt[, strat_draw := 0]
+test.dt[ftr == "D", strat_draw := 1]
+test.dt[, gain_draw := strat_draw * gain]
+# bet on all home
+test.dt[, strat_away := 0]
+test.dt[ftr == "A", strat_away := 1]
+test.dt[, gain_away := strat_away * gain]
+# top n % predictions
+setkey(test.dt, gbmp)
+test.dt[, rn := seq(test.dt[, .N])]
+test.dt[, pct_grp_10 := cut(test.dt[, rn], breaks=quantile(test.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
+test.dt[, pct_grp_5 := cut(test.dt[, rn], breaks=quantile(test.dt[, rn], probs=seq(0, 1, by=0.05)), include.lowest=TRUE, labels=1:20)]
+test.dt[, pct_grp_1 := cut(test.dt[, rn], breaks=quantile(test.dt[, rn], probs=seq(0, 1, by=0.01)), include.lowest=TRUE, labels=1:100)]
+test.dt[, strat_top_pct_10 := 0]
+test.dt[pct_grp_10 == 10, strat_top_pct_10 := 1]
+test.dt[, gain_top_pct_10 := strat_top_pct_10 * gain]
+test.dt[, strat_top_pct_5 := 0]
+test.dt[pct_grp_5 == 20, strat_top_pct_5 := 1]
+test.dt[, gain_top_pct_5 := strat_top_pct_5 * gain]
+test.dt[, strat_top_pct_1 := 0]
+test.dt[pct_grp_1 == 100, strat_top_pct_1 := 1]
+test.dt[, gain_top_pct_1 := strat_top_pct_1 * gain]
+cat0n("strategy,stake,gain")
+cat0n("all_results,", test.dt[, .N], ",", sum(test.dt[, gain]))
+cat0n("all_fav,", sum(test.dt[, strat_fav]), ",", sum(test.dt[, gain_fav]))
+cat0n("all_out,", sum(test.dt[, strat_out]), ",", sum(test.dt[, gain_out]))
+cat0n("all_home,", sum(test.dt[, strat_home]), ",", sum(test.dt[, gain_home]))
+cat0n("all_draw,", sum(test.dt[, strat_draw]), ",", sum(test.dt[, gain_draw]))
+cat0n("all_away,", sum(test.dt[, strat_away]), ",", sum(test.dt[, gain_away]))
+cat0n("top_pct_10,", sum(test.dt[, strat_top_pct_10]), ",", sum(test.dt[, gain_top_pct_10]))
+cat0n("top_pct_5,", sum(test.dt[, strat_top_pct_5]), ",", sum(test.dt[, gain_top_pct_5]))
+cat0n("top_pct_1,", sum(test.dt[, strat_top_pct_1]), ",", sum(test.dt[, gain_top_pct_1]))
 
 # plots
 plot.model(model, train.a.dt, train.b.dt, train.dt, uvar)
