@@ -30,7 +30,7 @@ build.a.model <- function(adate) {
   
   # model params
   train.fraction <- 0.7
-  n.trees <- 25
+  n.trees <- 500
   shrinkage <- 0.01
   interaction.depth <- 3
   
@@ -198,8 +198,8 @@ build.a.model <- function(adate) {
   sink()
 }
 build.a.model("2020-08-01")
-# build.a.model("2020-09-01")
-# build.a.model("2020-10-01")
-# build.a.model("2020-11-01")
-# build.a.model("2020-12-01")
+build.a.model("2020-09-01")
+build.a.model("2020-10-01")
+build.a.model("2020-11-01")
+build.a.model("2020-12-01")
 

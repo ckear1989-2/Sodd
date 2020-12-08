@@ -116,82 +116,175 @@ partial.plot <- function(model, x, a.dt) {
   plot.obj
 }
 
-plot.model.run <- function(adate, test.dt) {
-  f <- paste0("logs/model_", adate, ".log")
-  label <- trimws(readChar(f, file.info(f)$size))
-  label <- strsplit(label, paste0(rep("#", 30), collapse=""), fixed=TRUE)[[1]]
-  a_text_grob <- function(ii) {
-    ilabel <- label[[ii]]
-    ilines <- strsplit(ilabel, "\n")[[1]]
-    lines <- length(ilines)
-    ititle <- ilines[2]
-    ilabel <- paste0(ilines[3:lines], collapse="\n")
-    if(lines > 12) {
-      ilabel <- paste(paste0(ilines[3:10], collapse="\n"), "...", sep="\n")
-      lines <- 10
-    }
-    xi <- 0.5
-    yt <- 0.9
-    yl <- 0.5
-    grid::grobTree(
-      grid::rectGrob(gp=grid::gpar(fill=ii, lwd=2, col="black", alpha=0.5)),
-      grid::textGrob(
-        label=ititle,
-        x=xi, y=yt,
-        gp=grid::gpar(fontsize=12, fontface="bold", col="black")),
-      grid::textGrob(
-        label=ilabel,
-        x=xi, y=yl,
-        gp=grid::gpar(fontsize=8))
-    )
-  }
-  gs <- lapply(c(2, 6) , a_text_grob)
+plot.model.run <- function(model, train.a.dt, train.b.dt, test.dt) {
+  model.param.p.obj <- plot.model.param(model)
+  deviances.p.obj <- plot.deviances(train.a.dt, train.b.dt, test.dt)
   strat.p.obj <- plot.strategies(test.dt)
-  gs[[3]] <- strat.p.obj
-  lay <- rbind(c(1,2),
-               c(3,3)
-         )
+  gs <- list(model.param.p.obj, deviances.p.obj, strat.p.obj)
+  lay <- rbind(
+    c(1,2),
+    c(3,3)
+  )
   arrangeGrob(grobs=gs, layout_matrix=lay)
 }
+find_cell <- function(table, row, col, name="core-fg") {
+  l <- table$layout
+  which(l$t==row & l$l==col & l$name==name)
+}
+padding <- grid::unit.c(grid::unit(2, "mm"), grid::unit(2, "mm"))
+table.theme <- function(fs) {
+  ttheme_default(
+    core=list(
+      fg_params=list(fontsize=fs, hjust=0, x=0.1),
+      padding=padding
+    ),
+    rowhead=list(
+      fg_params=list(fontsize=fs, fontface="bold", hjust=0, x=0.1),
+      bg_params=list(fill=blues9[1:3], col=NA),
+      padding=padding
+    )
+  )
+}
+colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
+  # set all font sizes
+  for(x in 1:(ncol(dt)+1)) {
+    for (y in 1:(nrow(dt)+1)) {
+      ind <- find_cell(obj, y, x)
+      if(!length(ind) > 0) {
+        next
+      } else {
+        obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs)
+      }
+    }
+  }
+  # bold first row
+  for(x in 1:(ncol(dt)+1)) {
+    # x+1 because colnames is missing?
+    ind <- find_cell(obj, 1, x)
+    if(!length(ind) > 0) {
+      next
+    } else {
+      obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs, fontface="bold")
+    }
+  }
+  # alternate colors
+  for(x in 1:(ncol(dt)+1)) {
+    for (y in 1:(nrow(dt)+1)) {
+      for(bg in c("rowhead-bg", "core-bg")) {
+        ind <- find_cell(obj, y, x, bg)
+        if(!length(ind) > 0) {
+          next
+        } else {
+            if((y %% 2)==0) {
+              fill <- col1
+            } else {
+              fill <- col2
+            }
+            obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fill=fill, col="white")
+        }
+      }
+    }
+  }
+  obj
+}
+plot.model.param <- function(model) {
+  params <- c("n.trees", "shrinkage", "interaction.depth", "train.fraction", "train.error", "valid.error")
+  params <- gsub(".", "\n", params, fixed=TRUE)
+  vals <- c(
+    round(model$n.trees),
+    round(model$shrinkage, 3),
+    round(model$interaction.depth),
+    round(model$train.fraction, 2),
+    round(model$train.error[[model$n.trees]], 4),
+    round(model$valid.error[[model$n.trees]], 4)
+  )
+  params.dt <- t(data.frame(params, value=vals))
+  p.obj <- tableGrob(params.dt, theme=table.theme(7), cols=NULL)
+  p.obj <- colorise.tableGrob(p.obj, params.dt, "red1", "red3", 7)
+  p.obj <- grid::grobTree(
+      grid::textGrob(
+        label="Parameters",
+        gp=grid::gpar(fontsize=16, fontface="bold", fill="black", col="black"),
+        x=0.5,
+        y=0.9
+      ),
+      grid::rectGrob(gp=grid::gpar(fill="red1", lwd=2, col="black", alpha=0.5)),
+      p.obj
+  )
+  p.obj
+}
+plot.deviances <- function(train.a.dt, train.b.dt, test.dt) {
+  devs <- c(
+    "train.a_mean_null",
+    "train.a_mean_model",
+    "train.b_mean_null", 
+    "train.b_mean_model",
+    "test_mean_null",
+    "test_mean_model"
+  )
+  devs <- gsub("_", "\n", devs, fixed=TRUE)
+  vals <- c(
+    round(mean(train.a.dt[, null_dev]), 4),
+    round(mean(train.a.dt[, model_dev]), 4),
+    round(mean(train.b.dt[, null_dev]), 4),
+    round(mean(train.b.dt[, model_dev]), 4),
+    round(mean(test.dt[, null_dev]), 4),
+    round(mean(test.dt[, model_dev]), 4)
+  )
+  devs.dt <- t(data.frame(devs, value=vals))
+  p.obj <- tableGrob(devs.dt, theme=table.theme(8), cols=NULL)
+  p.obj <- colorise.tableGrob(p.obj, devs.dt, "blue1", "blue4", 8)
+  p.obj <- grid::grobTree(
+      grid::textGrob(
+        label="Deviances",
+        gp=grid::gpar(fontsize=16, fontface="bold", fill="black", col="black"),
+        x=0.5,
+        y=0.9
+      ),
+      grid::rectGrob(gp=grid::gpar(fill="blue1", lwd=2, col="black", alpha=0.5)),
+      p.obj
+  )
+  p.obj
+}
 plot.strategies <- function(a.dt) {
-  # bet on all favourites
-  a.dt[, max_ip := max(ip), list(date, hometeam, awayteam)]
-  a.dt[, strat_fav := 0]
-  a.dt[ip == max_ip, strat_fav := 1]
-  a.dt[, gain_fav := strat_fav * gain]
-  # bet on all outsiders
-  a.dt[, min_ip := min(ip), list(date, hometeam, awayteam)]
-  a.dt[, strat_out := 0]
-  a.dt[ip == min_ip, strat_out := 1]
-  a.dt[, gain_out := strat_out * gain]
-  a.dt[, min_ip := min(ip), list(date, hometeam, awayteam)]
-  # bet on all home
-  a.dt[, strat_home := 0]
-  a.dt[ftr == "H", strat_home := 1]
-  a.dt[, gain_home := strat_home * gain]
-  # bet on all draw
-  a.dt[, strat_draw := 0]
-  a.dt[ftr == "D", strat_draw := 1]
-  a.dt[, gain_draw := strat_draw * gain]
-  # bet on all home
-  a.dt[, strat_away := 0]
-  a.dt[ftr == "A", strat_away := 1]
-  a.dt[, gain_away := strat_away * gain]
-  # top n % predictions
-  setkey(a.dt, gbmp)
-  a.dt[, rn := seq(a.dt[, .N])]
-  a.dt[, pct_grp_10 := cut(a.dt[, rn], breaks=quantile(a.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
-  a.dt[, pct_grp_5 := cut(a.dt[, rn], breaks=quantile(a.dt[, rn], probs=seq(0, 1, by=0.05)), include.lowest=TRUE, labels=1:20)]
-  a.dt[, pct_grp_1 := cut(a.dt[, rn], breaks=quantile(a.dt[, rn], probs=seq(0, 1, by=0.01)), include.lowest=TRUE, labels=1:100)]
-  a.dt[, strat_top_pct_10 := 0]
-  a.dt[pct_grp_10 == 10, strat_top_pct_10 := 1]
-  a.dt[, gain_top_pct_10 := strat_top_pct_10 * gain]
-  a.dt[, strat_top_pct_5 := 0]
-  a.dt[pct_grp_5 == 20, strat_top_pct_5 := 1]
-  a.dt[, gain_top_pct_5 := strat_top_pct_5 * gain]
-  a.dt[, strat_top_pct_1 := 0]
-  a.dt[pct_grp_1 == 100, strat_top_pct_1 := 1]
-  a.dt[, gain_top_pct_1 := strat_top_pct_1 * gain]
+  # # bet on all favourites
+  # a.dt[, max_ip := max(ip), list(date, hometeam, awayteam)]
+  # a.dt[, strat_fav := 0]
+  # a.dt[ip == max_ip, strat_fav := 1]
+  # a.dt[, gain_fav := strat_fav * gain]
+  # # bet on all outsiders
+  # a.dt[, min_ip := min(ip), list(date, hometeam, awayteam)]
+  # a.dt[, strat_out := 0]
+  # a.dt[ip == min_ip, strat_out := 1]
+  # a.dt[, gain_out := strat_out * gain]
+  # a.dt[, min_ip := min(ip), list(date, hometeam, awayteam)]
+  # # bet on all home
+  # a.dt[, strat_home := 0]
+  # a.dt[ftr == "H", strat_home := 1]
+  # a.dt[, gain_home := strat_home * gain]
+  # # bet on all draw
+  # a.dt[, strat_draw := 0]
+  # a.dt[ftr == "D", strat_draw := 1]
+  # a.dt[, gain_draw := strat_draw * gain]
+  # # bet on all home
+  # a.dt[, strat_away := 0]
+  # a.dt[ftr == "A", strat_away := 1]
+  # a.dt[, gain_away := strat_away * gain]
+  # # top n % predictions
+  # setkey(a.dt, gbmp)
+  # a.dt[, rn := seq(a.dt[, .N])]
+  # a.dt[, pct_grp_10 := cut(a.dt[, rn], breaks=quantile(a.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
+  # a.dt[, pct_grp_5 := cut(a.dt[, rn], breaks=quantile(a.dt[, rn], probs=seq(0, 1, by=0.05)), include.lowest=TRUE, labels=1:20)]
+  # a.dt[, pct_grp_1 := cut(a.dt[, rn], breaks=quantile(a.dt[, rn], probs=seq(0, 1, by=0.01)), include.lowest=TRUE, labels=1:100)]
+  # a.dt[, strat_top_pct_10 := 0]
+  # a.dt[pct_grp_10 == 10, strat_top_pct_10 := 1]
+  # a.dt[, gain_top_pct_10 := strat_top_pct_10 * gain]
+  # a.dt[, strat_top_pct_5 := 0]
+  # a.dt[pct_grp_5 == 20, strat_top_pct_5 := 1]
+  # a.dt[, gain_top_pct_5 := strat_top_pct_5 * gain]
+  # a.dt[, strat_top_pct_1 := 0]
+  # a.dt[pct_grp_1 == 100, strat_top_pct_1 := 1]
+  # a.dt[, gain_top_pct_1 := strat_top_pct_1 * gain]
   strategy <- c("all_results", "all_fav", "all_out", "all_home", "all_draw", "all_away", "top_pct10", "top_pct5", "top_pct1")
   strategy <- gsub("_", "\n", strategy)
   stake <- c(
@@ -216,45 +309,14 @@ plot.strategies <- function(a.dt) {
     round(sum(a.dt[, gain_top_pct_5]), 2),
     round(sum(a.dt[, gain_top_pct_1]), 2)
   )
-  find_cell <- function(table, row, col, name="core-fg") {
-    l <- table$layout
-    which(l$t==row & l$l==col & l$name==name)
-  }
-  strat.dt <- data.frame(strategy=strategy, stake=stake, gain=gain)
-  padding <- grid::unit.c(unit(2, "mm"), unit(2, "mm"))
-  table.theme <- ttheme_default(
-    core=list(
-      fg_params=list(fontsize=12, hjust=0, x=0.1),
-      padding=padding
-    ),
-    rowhead=list(
-      fg_params=list(fontsize=12, fontface="bold", hjust=0, x=0.1),
-      bg_params=list(fill=blues9[1:3], col=NA),
-      padding=padding
-    )
-  )
-  strat.p.obj <- tableGrob(t(strat.dt), theme=table.theme, cols=NULL)
-  for(x in 1:nrow(strat.dt)) {
-    ind <- find_cell(strat.p.obj, 1, (x+1))
-    strat.p.obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=12, fontface="bold")
-  }
-  for(x in 1:ncol(strat.dt)) {
-    ind <- find_cell(strat.p.obj, x, 1, "rowhead-bg")
-    if(is.null(ind)) {
-      print(paste("couldn't find cell for", x, 1, "rowhead-bg"))
-    } else {
-      if((x %% 2)==0) {
-        fill <- "grey90"
-      } else {
-        fill <- "grey95"
-      }
-      strat.p.obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fill=fill, col="white")
-   }
-  }
+  strat.dt <- t(data.frame(strategy=strategy, stake=stake, gain=gain))
+  strat.p.obj <- tableGrob(strat.dt, theme=table.theme(12), cols=NULL)
+  strat.p.obj <- colorise.tableGrob(strat.p.obj, strat.dt, "grey90", "grey95")
   strat.p.obj <- grid::grobTree(
       grid::textGrob(
         label="Strategy",
-        gp=grid::gpar(fontsize=16, fontface="bold", col="black"),
+        # note font color goes to most recently used fill and not black???
+        gp=grid::gpar(fontsize=16, fontface="bold", fill="black", col="black"),
         x=0.5,
         y=0.9
       ),
@@ -386,7 +448,7 @@ grid.square <- quote({
 plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, uvar) {
   pdf(paste0("model_output_", adate, ".pdf"), h=7, w=14)
     grid.arrange(
-      plot.model.run(adate, test.dt),
+      plot.model.run(model, train.a.dt, train.b.dt, test.dt),
       plot.model.perf(model),
       plot.var.importance(model),
       plot.decile.perf(train.a.dt, train.b.dt, test.dt)
