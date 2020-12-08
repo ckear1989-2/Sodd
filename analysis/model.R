@@ -32,7 +32,7 @@ build.a.model <- function(adate) {
   train.fraction <- 0.7
   n.trees <- 25
   shrinkage <- 0.01
-  interaction.depth <- 4
+  interaction.depth <- 3
   
   # print to log file
   if(!file.exists("logs")) dir.create("logs")
