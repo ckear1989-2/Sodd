@@ -247,44 +247,6 @@ plot.deviances <- function(train.a.dt, train.b.dt, test.dt) {
   p.obj
 }
 plot.strategies <- function(a.dt) {
-  # # bet on all favourites
-  # a.dt[, max_ip := max(ip), list(date, hometeam, awayteam)]
-  # a.dt[, strat_fav := 0]
-  # a.dt[ip == max_ip, strat_fav := 1]
-  # a.dt[, gain_fav := strat_fav * gain]
-  # # bet on all outsiders
-  # a.dt[, min_ip := min(ip), list(date, hometeam, awayteam)]
-  # a.dt[, strat_out := 0]
-  # a.dt[ip == min_ip, strat_out := 1]
-  # a.dt[, gain_out := strat_out * gain]
-  # a.dt[, min_ip := min(ip), list(date, hometeam, awayteam)]
-  # # bet on all home
-  # a.dt[, strat_home := 0]
-  # a.dt[ftr == "H", strat_home := 1]
-  # a.dt[, gain_home := strat_home * gain]
-  # # bet on all draw
-  # a.dt[, strat_draw := 0]
-  # a.dt[ftr == "D", strat_draw := 1]
-  # a.dt[, gain_draw := strat_draw * gain]
-  # # bet on all home
-  # a.dt[, strat_away := 0]
-  # a.dt[ftr == "A", strat_away := 1]
-  # a.dt[, gain_away := strat_away * gain]
-  # # top n % predictions
-  # setkey(a.dt, gbmp)
-  # a.dt[, rn := seq(a.dt[, .N])]
-  # a.dt[, pct_grp_10 := cut(a.dt[, rn], breaks=quantile(a.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
-  # a.dt[, pct_grp_5 := cut(a.dt[, rn], breaks=quantile(a.dt[, rn], probs=seq(0, 1, by=0.05)), include.lowest=TRUE, labels=1:20)]
-  # a.dt[, pct_grp_1 := cut(a.dt[, rn], breaks=quantile(a.dt[, rn], probs=seq(0, 1, by=0.01)), include.lowest=TRUE, labels=1:100)]
-  # a.dt[, strat_top_pct_10 := 0]
-  # a.dt[pct_grp_10 == 10, strat_top_pct_10 := 1]
-  # a.dt[, gain_top_pct_10 := strat_top_pct_10 * gain]
-  # a.dt[, strat_top_pct_5 := 0]
-  # a.dt[pct_grp_5 == 20, strat_top_pct_5 := 1]
-  # a.dt[, gain_top_pct_5 := strat_top_pct_5 * gain]
-  # a.dt[, strat_top_pct_1 := 0]
-  # a.dt[pct_grp_1 == 100, strat_top_pct_1 := 1]
-  # a.dt[, gain_top_pct_1 := strat_top_pct_1 * gain]
   strategy <- c("all_results", "all_fav", "all_out", "all_home", "all_draw", "all_away", "top_pct10", "top_pct5", "top_pct1")
   strategy <- gsub("_", "\n", strategy)
   stake <- c(
@@ -309,7 +271,29 @@ plot.strategies <- function(a.dt) {
     round(sum(a.dt[, gain_top_pct_5]), 2),
     round(sum(a.dt[, gain_top_pct_1]), 2)
   )
-  strat.dt <- t(data.frame(strategy=strategy, stake=stake, gain=gain))
+  stake_wtd <- c(
+    a.dt[, .N],
+    sum(a.dt[, strat_fav_wtd]),
+    sum(a.dt[, strat_out_wtd]),
+    sum(a.dt[, strat_home_wtd]),
+    sum(a.dt[, strat_draw_wtd]),
+    sum(a.dt[, strat_away_wtd]),
+    sum(a.dt[, strat_top_pct_10_wtd]),
+    sum(a.dt[, strat_top_pct_5_wtd]),
+    sum(a.dt[, strat_top_pct_1_wtd])
+  )
+  gain_wtd <- c(
+    round(sum(a.dt[, gain_all_wtd]), 2),
+    round(sum(a.dt[, gain_fav_wtd]), 2),
+    round(sum(a.dt[, gain_out_wtd]), 2),
+    round(sum(a.dt[, gain_home_wtd]), 2),
+    round(sum(a.dt[, gain_draw_wtd]), 2),
+    round(sum(a.dt[, gain_away_wtd]), 2),
+    round(sum(a.dt[, gain_top_pct_10_wtd]), 2),
+    round(sum(a.dt[, gain_top_pct_5_wtd]), 2),
+    round(sum(a.dt[, gain_top_pct_1_wtd]), 2)
+  )
+  strat.dt <- t(data.frame(strategy=strategy, stake=stake, gain=gain, stake_wtd=stake_wtd, gain_wtd=gain_wtd))
   strat.p.obj <- tableGrob(strat.dt, theme=table.theme(12), cols=NULL)
   strat.p.obj <- colorise.tableGrob(strat.p.obj, strat.dt, "grey90", "grey95")
   strat.p.obj <- grid::grobTree(

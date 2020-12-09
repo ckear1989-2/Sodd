@@ -143,6 +143,7 @@ build.a.model <- function(adate) {
   # strategies
   cat0n(rep("#", 30), "\nStrategies")
   # bet on every result sum(gain)
+  test.dt[, strat_all := 1]
   # bet on all favourites
   test.dt[, max_ip := max(ip), list(date, hometeam, awayteam)]
   test.dt[, strat_fav := 0]
@@ -181,6 +182,70 @@ build.a.model <- function(adate) {
   test.dt[, strat_top_pct_1 := 0]
   test.dt[pct_grp_1 == 100, strat_top_pct_1 := 1]
   test.dt[, gain_top_pct_1 := strat_top_pct_1 * gain]
+  # weighted stake
+  test.dt[, strat_all_wtd := 0]
+  test.dt[strat_all > 0, strat_all_wtd :=
+    gbmp *
+    sum(test.dt[strat_all > 0, strat_all]) /
+    sum(test.dt[strat_all > 0, gbmp])
+  ]
+  test.dt[, gain_all_wtd  := gbmp * strat_all_wtd * gain]
+  test.dt[, strat_fav_wtd := 0]
+  test.dt[strat_fav > 0, strat_fav_wtd :=
+    gbmp *
+    sum(test.dt[strat_fav > 0, strat_fav]) /
+    sum(test.dt[strat_fav > 0, gbmp])
+  ]
+  test.dt[, gain_fav_wtd  := gbmp * strat_fav_wtd * gain]
+  test.dt[, strat_out_wtd := 0]
+  test.dt[strat_out > 0, strat_out_wtd :=
+    gbmp *
+    sum(test.dt[strat_out > 0, strat_out]) /
+    sum(test.dt[strat_out > 0, gbmp])
+  ]
+  test.dt[, gain_out_wtd  := gbmp * strat_out_wtd * gain]
+  test.dt[, strat_home_wtd := 0]
+  test.dt[strat_home > 0, strat_home_wtd :=
+    gbmp *
+    sum(test.dt[strat_home > 0, strat_home]) /
+    sum(test.dt[strat_home > 0, gbmp])
+  ]
+  test.dt[, gain_home_wtd  := gbmp * strat_home_wtd * gain]
+  test.dt[, strat_draw_wtd := 0]
+  test.dt[strat_draw > 0, strat_draw_wtd :=
+    gbmp *
+    sum(test.dt[strat_draw > 0, strat_draw]) /
+    sum(test.dt[strat_draw > 0, gbmp])
+  ]
+  test.dt[, gain_draw_wtd  := gbmp * strat_draw_wtd * gain]
+  test.dt[, strat_away_wtd := 0]
+  test.dt[strat_away > 0, strat_away_wtd :=
+    gbmp *
+    sum(test.dt[strat_away > 0, strat_away]) /
+    sum(test.dt[strat_away > 0, gbmp])
+  ]
+  test.dt[, gain_away_wtd  := gbmp * strat_away_wtd * gain]
+  test.dt[, strat_top_pct_10_wtd := 0]
+  test.dt[strat_top_pct_10 > 0, strat_top_pct_10_wtd :=
+    gbmp *
+    sum(test.dt[strat_top_pct_10 > 0, strat_top_pct_10]) /
+    sum(test.dt[strat_top_pct_10 > 0, gbmp])
+  ]
+  test.dt[, gain_top_pct_10_wtd  := gbmp * strat_top_pct_10_wtd * gain]
+  test.dt[, strat_top_pct_5_wtd := 0]
+  test.dt[strat_top_pct_5 > 0, strat_top_pct_5_wtd :=
+    gbmp *
+    sum(test.dt[strat_top_pct_5 > 0, strat_top_pct_5]) /
+    sum(test.dt[strat_top_pct_5 > 0, gbmp])
+  ]
+  test.dt[, gain_top_pct_5_wtd  := gbmp * strat_top_pct_5_wtd * gain]
+  test.dt[, strat_top_pct_1_wtd := 0]
+  test.dt[strat_top_pct_1 > 0, strat_top_pct_1_wtd :=
+    gbmp *
+    sum(test.dt[strat_top_pct_1 > 0, strat_top_pct_1]) /
+    sum(test.dt[strat_top_pct_1 > 0, gbmp])
+  ]
+  test.dt[, gain_top_pct_1_wtd  := gbmp * strat_top_pct_1_wtd * gain]
   cat0n("strategy,stake,gain")
   cat0n("all_results,", test.dt[, .N], ",", sum(test.dt[, gain]))
   cat0n("all_fav,", sum(test.dt[, strat_fav]), ",", sum(test.dt[, gain_fav]))
@@ -191,12 +256,22 @@ build.a.model <- function(adate) {
   cat0n("top_pct_10,", sum(test.dt[, strat_top_pct_10]), ",", sum(test.dt[, gain_top_pct_10]))
   cat0n("top_pct_5,", sum(test.dt[, strat_top_pct_5]), ",", sum(test.dt[, gain_top_pct_5]))
   cat0n("top_pct_1,", sum(test.dt[, strat_top_pct_1]), ",", sum(test.dt[, gain_top_pct_1]))
+  cat0n("all_results_wtd,", sum(test.dt[, strat_all_wtd]), ",", sum(test.dt[, gain_all_wtd]))
+  cat0n("all_fav_wtd,", sum(test.dt[, strat_fav_wtd]), ",", sum(test.dt[, gain_fav_wtd]))
+  cat0n("all_out_wtd,", sum(test.dt[, strat_out_wtd]), ",", sum(test.dt[, gain_out_wtd]))
+  cat0n("all_home_wtd,", sum(test.dt[, strat_home_wtd]), ",", sum(test.dt[, gain_home_wtd]))
+  cat0n("all_draw_wtd,", sum(test.dt[, strat_draw_wtd]), ",", sum(test.dt[, gain_draw_wtd]))
+  cat0n("all_away_wtd,", sum(test.dt[, strat_away_wtd]), ",", sum(test.dt[, gain_away_wtd]))
+  cat0n("top_pct_10_wtd,", sum(test.dt[, strat_top_pct_10_wtd]), ",", sum(test.dt[, gain_top_pct_10_wtd]))
+  cat0n("top_pct_5_wtd,", sum(test.dt[, strat_top_pct_5_wtd]), ",", sum(test.dt[, gain_top_pct_5_wtd]))
+  cat0n("top_pct_1_wtd,", sum(test.dt[, strat_top_pct_1_wtd]), ",", sum(test.dt[, gain_top_pct_1_wtd]))
   
   # plots
   plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, uvar)
   
   sink()
 }
+
 build.a.model("2020-08-01")
 build.a.model("2020-09-01")
 build.a.model("2020-10-01")
