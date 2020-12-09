@@ -23,8 +23,6 @@ dload_current_year <- function(leagues) {
   for (l in leagues) dload_league_season(l, "2021")
 }
 
+lapply(leagues, dload_10_years)
 dload_current_year(leagues)
-# lapply(leagues, dload_10_years)
-dload_10_years("F1")
-dload_10_years("F2")
 

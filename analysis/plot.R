@@ -2,10 +2,10 @@
 # univariate
 univariate <- function(a.dt, x) {
   setnames(a.dt, x, "x")
-  summary.dt <- a.dt[, list(act=sum(gain), pred=sum(gbmp), count=.N), x][order(-count)]
+  summary.dt <- a.dt[, list(act=sum(gain), pred=sum(gbmp), count=.N, weight=sum(weight)), x][order(-weight)]
   setnames(a.dt, "x", x)
-  summary.dt[, act := act / count]
-  summary.dt[, pred := pred / count]
+  summary.dt[, act := act / weight]
+  summary.dt[, pred := pred / weight]
   if(is.numeric(summary.dt[, x])) setkey(summary.dt, x)
   summary.dt[, xn := seq(summary.dt[, .N])]
   row_count <- summary.dt[, .N]
@@ -14,14 +14,14 @@ univariate <- function(a.dt, x) {
     summary.dt <- summary.dt[xn <= 100, ]
   }
   new_row_count <- summary.dt[, .N]
-  max_count <- max(summary.dt[!is.na(count), count])
+  max_weight <- max(summary.dt[!is.na(weight), weight])
   max_y <- max(c(summary.dt[!is.na(act), act], summary.dt[!is.na(pred), pred]))
   min_y <- min(c(summary.dt[!is.na(act), act], summary.dt[!is.na(pred), pred]))
   range_y <- max_y - min_y
-  summary.dt[, act_rs := rebase.y(c(summary.dt[, count], 0), c(summary.dt[, act], summary.dt[, pred]), nreturn=new_row_count)]
-  summary.dt[, pred_rs := rebase.y(c(summary.dt[, count], 0), c(summary.dt[, pred], summary.dt[, act]), nreturn=new_row_count)]
+  summary.dt[, act_rs := rebase.y(c(summary.dt[, weight], 0), c(summary.dt[, act], summary.dt[, pred]), nreturn=new_row_count)]
+  summary.dt[, pred_rs := rebase.y(c(summary.dt[, weight], 0), c(summary.dt[, pred], summary.dt[, act]), nreturn=new_row_count)]
   plot.obj <- ggplot(summary.dt)
-  plot.obj <- plot.obj + geom_bar(aes(x=xn, y=count), stat="identity", fill="yellow", color="yellow", alpha=0.3)
+  plot.obj <- plot.obj + geom_bar(aes(x=xn, y=weight), stat="identity", fill="yellow", color="yellow", alpha=0.3)
   if(row_count > 1) {
     plot.obj <- plot.obj + geom_line(aes(x=xn, y=act_rs), stat="identity", color="red")
     plot.obj <- plot.obj + geom_line(aes(x=xn, y=pred_rs), stat="identity", color="blue")
@@ -29,7 +29,7 @@ univariate <- function(a.dt, x) {
   plot.obj <- plot.obj + geom_point(aes(x=xn, y=act_rs), stat="identity", color="red")
   plot.obj <- plot.obj + geom_point(aes(x=xn, y=pred_rs), stat="identity", color="blue")
   plot.obj <- plot.obj + scale_y_continuous(
-    name="count",
+    name="weight",
     sec.axis=sec_axis(~ rebase.y(c(summary.dt[, act], summary.dt[, pred]), .), name="act, pred")
   )
   breaks <- summary.dt[, xn]
@@ -47,7 +47,7 @@ univariate <- function(a.dt, x) {
   )
   plot.obj <- plot.obj + ggtitle(paste(deparse(substitute(a.dt)), x))
   plot.obj <- plot.obj + xlab(x)
-  if(row_count > 100) plot.obj <- plot.obj + annotate("text", x=15, y=max(summary.dt[, count]), size=4, label=message)
+  if(row_count > 100) plot.obj <- plot.obj + annotate("text", x=15, y=max(summary.dt[, weight]), size=4, label=message)
   plot.obj
 }
 
@@ -58,40 +58,40 @@ partial.plot <- function(model, x, a.dt) {
     x.dt <- data.table(plot(model, x, return.grid=TRUE))
     setnames(x.dt, x, "x")
     setnames(a.dt, x, "x")
-    summary.dt <- a.dt[, list(count=.N), x]
+    summary.dt <- a.dt[, list(count=.N, weight=sum(weight)), x]
     setnames(a.dt, "x", x)
     setkey(summary.dt, x)
     setkey(x.dt, x)
     summary.dt <- merge(summary.dt, x.dt, all=TRUE)
-    summary.dt[is.na(count), count := 0]
+    summary.dt[is.na(weight), weight := 0]
     how_many_digits <- function(x) {
       max(length(strsplit(as.character(x), ".")[[2]]))
     }
     if(is.numeric(summary.dt[, x])) {
       for (i in seq(summary.dt[, .N])) if(is.na(summary.dt[i, y])) summary.dt[i, y := summary.dt[i-1, y]]
-      summary.dt <- summary.dt[count > 0, ]
+      summary.dt <- summary.dt[weight > 0, ]
     }
     row_count <- summary.dt[, .N]
     summary.dt[, xn := seq(row_count)]
-    max_count <- max(summary.dt[!is.na(count), count])
+    max_weight <- max(summary.dt[!is.na(weight), weight])
     max_y <- max(summary.dt[!is.na(y), y])
     min_y <- min(summary.dt[!is.na(y), y])
     range_y <- max_y - min_y
-    summary.dt[, y_rs := rebase.y(c(summary.dt[, count], 0), summary.dt[, y])]
-    if(range_y == 0) summary.dt[, y_rs := max_count / 2]
+    summary.dt[, y_rs := rebase.y(c(summary.dt[, weight], 0), summary.dt[, y])]
+    if(range_y == 0) summary.dt[, y_rs := max_weight / 2]
     plot.obj <- ggplot(summary.dt)
-    plot.obj <- plot.obj + geom_bar(aes(x=xn, y=count, group=1), stat="identity", fill="yellow", color="yellow", alpha=0.3)
+    plot.obj <- plot.obj + geom_bar(aes(x=xn, y=weight, group=1), stat="identity", fill="yellow", color="yellow", alpha=0.3)
     if(is.numeric(summary.dt[, x])) plot.obj <- plot.obj + geom_line(aes(x=xn, y=y_rs, group=1), stat="identity", color="green", size=2)
     if(is.factor(summary.dt[, x])) plot.obj <- plot.obj + geom_point(aes(x=xn, y=y_rs, group=1), stat="identity", color="green", size=8)
     if(range_y > 0) {
       plot.obj <- plot.obj + scale_y_continuous(
-        name="count",
+        name="weight",
         sec.axis=sec_axis(~ rebase.y(summary.dt[, y], .), name="partial")
       )
     } else {
       plot.obj <- plot.obj + scale_y_continuous(
-        name="count",
-        sec.axis=sec_axis(~ . / max_count * max_y, name="partial")
+        name="weight",
+        sec.axis=sec_axis(~ . / max_weight * max_y, name="partial")
       )
     }
     breaks <- summary.dt[, xn]
@@ -272,7 +272,7 @@ plot.strategies <- function(a.dt) {
     round(sum(a.dt[, gain_top_pct_1]), 2)
   )
   stake_wtd <- c(
-    a.dt[, .N],
+    sum(a.dt[, strat_all_wtd]),
     sum(a.dt[, strat_fav_wtd]),
     sum(a.dt[, strat_out_wtd]),
     sum(a.dt[, strat_home_wtd]),
@@ -394,18 +394,21 @@ plot.decile.perf <- function(train.a.dt, train.b.dt, test.dt) {
   train.b.dt[, decile := cut(train.b.dt[, rn], breaks=quantile(train.b.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
   test.dt[, decile := cut(test.dt[, rn], breaks=quantile(test.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
   summary.dt <- rbind(
-    train.a.dt[, list(dt="train.a", dtc="red", gain=sum(gain), gbmp=sum(gbmp), count=.N), decile],
-    train.b.dt[, list(dt="train.b", dtc="blue", gain=sum(gain), gbmp=sum(gbmp), count=.N), decile],
-    test.dt[, list(dt="test", dtc="green", gain=sum(gain), gbmp=sum(gbmp), count=.N), decile]
+    train.a.dt[, list(dt="train.a", dtc="red", gain=sum(gain), gain_wtd=sum(gain_all_wtd), gbmp=sum(gbmp), count=.N, weight=sum(weight)), decile],
+    train.b.dt[, list(dt="train.b", dtc="blue", gain=sum(gain), gain_wtd=sum(gain_all_wtd), gbmp=sum(gbmp), count=.N, weight=sum(weight)), decile],
+    test.dt[, list(dt="test", dtc="green", gain=sum(gain), gain_wtd=sum(gain_all_wtd), gbmp=sum(gbmp), count=.N, weight=sum(weight)), decile]
   )
-  summary.dt[, gain := gain / count]
-  summary.dt[, gbmp := gbmp / count]
+  summary.dt[, gain := gain / weight]
+  summary.dt[, gain_wtd := gain_wtd / weight]
+  summary.dt[, gbmp := gbmp / weight]
   row_count <- summary.dt[, .N]
-  summary.dt[, gain_rs := rebase.y(summary.dt[, count], c(summary.dt[, gain], summary.dt[, gbmp]), nreturn=row_count)]
-  summary.dt[, gbmp_rs := rebase.y(summary.dt[, count], c(summary.dt[, gbmp], summary.dt[, gain]), nreturn=row_count)]
+  summary.dt[, gain_rs := rebase.y(summary.dt[, weight], c(summary.dt[, gain], summary.dt[, gbmp], summary.dt[, gain_wtd]), nreturn=row_count)]
+  summary.dt[, gain_wtd_rs := rebase.y(summary.dt[, weight], c(summary.dt[, gbmp], summary.dt[, gain], summary.dt[, gain_wtd]), nreturn=row_count)]
+  summary.dt[, gbmp_rs := rebase.y(summary.dt[, weight], c(summary.dt[, gbmp], summary.dt[, gain], summary.dt[, gain_wtd]), nreturn=row_count)]
   plot.obj <- ggplot(summary.dt)
-  plot.obj <- plot.obj + geom_bar(aes(x=decile, y=count, color=dt, fill=dt), stat="identity", position="dodge", alpha=0.3)
+  plot.obj <- plot.obj + geom_bar(aes(x=decile, y=weight, color=dt, fill=dt), stat="identity", position="dodge", alpha=0.3)
   plot.obj <- plot.obj + geom_line(aes(x=decile, y=gain_rs, group=dt, color=dt), stat="identity")
+  plot.obj <- plot.obj + geom_line(aes(x=decile, y=gain_wtd_rs, group=dt, color=dt), stat="identity", linetype="dotted")
   plot.obj <- plot.obj + geom_line(aes(x=decile, y=gbmp_rs, group=dt, color=dt), stat="identity", linetype="dashed")
   # plot.obj <- plot.obj + geom_point(aes(x=decile, y=gain_rs, group=dt, color=dt), stat="identity")
   plot.obj <- plot.obj + geom_point(aes(x=decile, y=gbmp_rs, group=dt, color=dt), stat="identity")
@@ -416,8 +419,8 @@ plot.decile.perf <- function(train.a.dt, train.b.dt, test.dt) {
   )
   plot.obj <- plot.obj + ggtitle("actual and predicted gain by predicted deciles")
   plot.obj <- plot.obj + scale_y_continuous(
-    name="count",
-    sec.axis=sec_axis(~ rebase.y(c(summary.dt[, gain], summary.dt[, gbmp]), .), name="act, pred")
+    name="weight",
+    sec.axis=sec_axis(~ rebase.y(c(summary.dt[, gain], summary.dt[, gain_wtd], summary.dt[, gbmp]), .), name="act, pred")
   )
   plot.obj
 }
@@ -429,8 +432,9 @@ grid.square <- quote({
   grid::grid.rect(x=0.75, y=0.75, width=0.50, height=0.50, gp=grid::gpar(lwd=5, col="black", fill=NA))
 })
 
-plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, uvar) {
-  pdf(paste0("model_output_", adate, ".pdf"), h=7, w=14)
+plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, uvar, logfile) {
+  pdffile <- gsub(".log", ".pdf", logfile)
+  pdf(pdffile, h=7, w=14)
     grid.arrange(
       plot.model.run(model, train.a.dt, train.b.dt, test.dt),
       plot.model.perf(model),
