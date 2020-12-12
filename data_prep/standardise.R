@@ -68,36 +68,50 @@ result_lag <- function(i) {
     team.dt[(awayteam == ateam) & (ftr == 'H'), r := 'L']
     team.dt[(awayteam == ateam) & (ftr == 'A'), r := 'W']
     team.dt[ftr == 'D', r := 'D']
+    setkey(team.dt, date)
+    team.dt[, trn :=seq(team.dt[, .N])]
+    l.team.dt <- team.dt[, list(hometeam, awayteam, pr=r, p_date=date, trn=trn+i)]
+    l.team.dt[hometeam == ateam, pv := 'home']
+    l.team.dt[awayteam == ateam, pv := 'away']
+    l.team.dt[, hometeam := NULL]
+    l.team.dt[, awayteam := NULL]
+    setkey(team.dt, trn)
+    setkey(l.team.dt, trn)
+    team.dt <- merge(team.dt, l.team.dt, all.x=TRUE, all.y=FALSE)[, list(hometeam, awayteam, date, r, pr, pv, p_date)]
+    team.dt[, pd := as.numeric(date - p_date)]
+    team.dt[, p_date := NULL]
   
-    h.team.dt <- team.dt[hometeam == ateam, list(hometeam, awayteam, date, r)]
+    h.team.dt <- team.dt[hometeam == ateam, list(hometeam, awayteam, date, r, pr, pv, pd)]
     setkey(h.team.dt, date)
     h.team.dt[, trn := seq(h.team.dt[, .N])]
-    hl.team.dt <- h.team.dt[, list(hpr=r, hp_date=date, trn=trn+i)]
+    hl.team.dt <- h.team.dt[, list(hphr=r, hph_date=date, trn=trn+i)]
     setkey(h.team.dt, trn)
     setkey(hl.team.dt, trn)
-    h.team.dt <- merge(h.team.dt, hl.team.dt, all.x=TRUE, all.y=FALSE)[, list(hometeam, awayteam, date, hpr, hp_date)]
-    h.team.dt[, hpd := as.numeric(date - hp_date)]
-    h.team.dt[, hp_date := NULL]
+    h.team.dt <- merge(h.team.dt, hl.team.dt, all.x=TRUE, all.y=FALSE)[, list(hometeam, awayteam, date, hpr=pr, hpd=pd, hpv=pv, hphr, hph_date)]
+    h.team.dt[, hphd := as.numeric(date - hph_date)]
+    h.team.dt[, hph_date := NULL]
 
-    a.team.dt <- team.dt[awayteam == ateam, list(hometeam, awayteam, date, r)]
+    a.team.dt <- team.dt[awayteam == ateam, list(hometeam, awayteam, date, r, pr, pv, pd)]
     setkey(a.team.dt, date)
     a.team.dt[, trn := seq(a.team.dt[, .N])]
-    al.team.dt <- a.team.dt[, list(apr=r, ap_date=date, trn=trn+i)]
+    al.team.dt <- a.team.dt[, list(apar=r, apa_date=date, trn=trn+i)]
     setkey(a.team.dt, trn)
     setkey(al.team.dt, trn)
-    a.team.dt <- merge(a.team.dt, al.team.dt, all.x=TRUE, all.y=FALSE)[, list(hometeam, awayteam, date, apr, ap_date)]
-    a.team.dt[, apd := as.numeric(date - ap_date)]
-    a.team.dt[, ap_date := NULL]
+    a.team.dt <- merge(a.team.dt, al.team.dt, all.x=TRUE, all.y=FALSE)[, list(hometeam, awayteam, date, apr=pr, apd=pd, apv=pv, apar, apa_date)]
+    a.team.dt[, apad := as.numeric(date - apa_date)]
+    a.team.dt[, apa_date := NULL]
  
     if(exists("h.teams.dt")) {
       h.teams.dt <- rbind(h.teams.dt, h.team.dt)
     } else {
       h.teams.dt <- h.team.dt
+      print(h.teams.dt)
     }
     if(exists("a.teams.dt")) {
       a.teams.dt <- rbind(a.teams.dt, a.team.dt)
     } else {
       a.teams.dt <- a.team.dt
+      print(a.teams.dt)
     }
   }
   cat('data count pre unique', a.dt[, .N], '\n')
@@ -121,6 +135,8 @@ result_lag <- function(i) {
   cat('data count post merge', a.dt[, .N], '\n')
   cat('data count missing hpr', a.dt[is.na(hpr), .N], '\n')
   cat('data count missing apr', a.dt[is.na(apr), .N], '\n')
+  cat('data count missing hphr', a.dt[is.na(hphr), .N], '\n')
+  cat('data count missing apar', a.dt[is.na(apar), .N], '\n')
 
   a.dt[, hpp := -1]
   a.dt[hpr == "L", hpp := 0]
@@ -130,9 +146,19 @@ result_lag <- function(i) {
   a.dt[apr == "L", app := 0]
   a.dt[apr == "D", app := 1]
   a.dt[apr == "W", app := 3]
+  a.dt[, hphp := -1]
+  a.dt[hphr == "L", hphp := 0]
+  a.dt[hphr == "D", hphp := 1]
+  a.dt[hphr == "W", hphp := 3]
+  a.dt[, apap := -1]
+  a.dt[apar == "L", apap := 0]
+  a.dt[apar == "D", apap := 1]
+  a.dt[apar == "W", apap := 3]
   a.dt[, hpr := as.factor(hpr)]
   a.dt[, apr := as.factor(apr)]
-  ivars <-c("hpr", "apr", "hpp", "app", "hpd", "apd")
+  a.dt[, hphr := as.factor(hphr)]
+  a.dt[, apar := as.factor(apar)]
+  ivars <-c("hpr", "apr", "hpp", "app", "hpd", "apd", "hphr", "hphd", "hphp", "apar", "apad", "apap")
   setnames(a.dt, ivars, paste0(ivars, i))
   rm(h.teams.dt)
   rm(a.teams.dt)
