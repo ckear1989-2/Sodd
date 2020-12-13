@@ -1,8 +1,11 @@
 
+source("analysis/strategy.R")
+source("utils/utils.R")
+
 # univariate
 univariate <- function(a.dt, x) {
   setnames(a.dt, x, "x")
-  summary.dt <- a.dt[, list(act=sum(gain), pred=sum(gbmp), count=.N, weight=sum(weight)), x][order(-weight)]
+  summary.dt <- a.dt[, list(act=sum(y), pred=sum(gbmp), count=.N, weight=sum(weight)), x][order(-weight)]
   setnames(a.dt, "x", x)
   summary.dt[, act := act / weight]
   summary.dt[, pred := pred / weight]
@@ -149,18 +152,21 @@ colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
   # set all font sizes
   for(x in 1:(ncol(dt)+1)) {
     for (y in 1:(nrow(dt)+1)) {
-      ind <- find_cell(obj, y, x)
-      if(!length(ind) > 0) {
-        next
-      } else {
-        obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs)
+      for(fg in c("colhead-fg", "rowhead-fg", "core-fg")) {
+        ind <- find_cell(obj, y, x, fg)
+        if(!length(ind) > 0) {
+          next
+        } else {
+          obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs)
+        }
       }
     }
   }
   # bold first row
   for(x in 1:(ncol(dt)+1)) {
-    # x+1 because colnames is missing?
-    ind <- find_cell(obj, 1, x)
+    fg <- "core-fg"
+    if("colhead-fg" %in% obj$layout$name) fg <- "colhead-fg"
+    ind <- find_cell(obj, 1, x, fg)
     if(!length(ind) > 0) {
       next
     } else {
@@ -170,12 +176,12 @@ colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
   # alternate colors
   for(x in 1:(ncol(dt)+1)) {
     for (y in 1:(nrow(dt)+1)) {
-      for(bg in c("rowhead-bg", "core-bg")) {
+      for(bg in c("colhead-bg", "rowhead-bg", "core-bg")) {
         ind <- find_cell(obj, y, x, bg)
         if(!length(ind) > 0) {
           next
         } else {
-            if((y %% 2)==0) {
+            if((y %% 2) == 0) {
               fill <- col1
             } else {
               fill <- col2
@@ -310,28 +316,6 @@ plot.strategies <- function(a.dt) {
   strat.p.obj
 }
 
-rebase.y <- function(y1, y2, nreturn=length(y2), verbose=FALSE) {
-  max_y1 <- max(y1)
-  max_y2 <- max(y2)
-  min_y1 <- min(y1)
-  min_y2 <- min(y2)
-  range_y2 <- max_y2 - min_y2
-  range_y1 <- max_y1 - min_y1
-  new_y2a <- y2 - min_y2 # max sure all are >= 0
-  max_new_y2a <- max(new_y2a)
-  new_y2b <- new_y2a / max_new_y2a # rescale to (0 1)
-  new_y2c <- new_y2b * range_y1 # stretch to (0, range_y1)
-  new_y2 <- new_y2c + min_y1 # shift to (min_y1, max_y1)
-  # logic checks
-  if(isTRUE(verbose)) {
-    print(all(new_y2a >= 0))
-    print(all(c(min(new_y2b) ==0, max(new_y2b) == 1)))
-    print(all(c(min(new_y2c) ==0, max(new_y2c) == range_y1)))
-    print(all(c(min(new_y2) == min_y1, max(new_y2) == max_y1)))
-  }
-  new_y2[1:nreturn]
-}
-
 plot.model.perf <- function(model) {
   p.data <- data.table(train.a=model$train.error, train.b=model$valid.error)
   p.data[, trees := seq(p.data[, .N])]
@@ -394,24 +378,20 @@ plot.decile.perf <- function(train.a.dt, train.b.dt, test.dt) {
   train.b.dt[, decile := cut(train.b.dt[, rn], breaks=quantile(train.b.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
   test.dt[, decile := cut(test.dt[, rn], breaks=quantile(test.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
   summary.dt <- rbind(
-    train.a.dt[, list(dt="train.a", dtc="red", gain=sum(gain), gain_wtd=sum(gain_all_wtd), gbmp=sum(gbmp), count=.N, weight=sum(weight)), decile],
-    train.b.dt[, list(dt="train.b", dtc="blue", gain=sum(gain), gain_wtd=sum(gain_all_wtd), gbmp=sum(gbmp), count=.N, weight=sum(weight)), decile],
-    test.dt[, list(dt="test", dtc="green", gain=sum(gain), gain_wtd=sum(gain_all_wtd), gbmp=sum(gbmp), count=.N, weight=sum(weight)), decile]
+    train.a.dt[, list(dt="train.a", dtc="red", gain=sum(gain), gain_wtd=sum(gain_all_wtd), count=.N, weight=sum(weight)), decile],
+    train.b.dt[, list(dt="train.b", dtc="blue", gain=sum(gain), gain_wtd=sum(gain_all_wtd), count=.N, weight=sum(weight)), decile],
+    test.dt[, list(dt="test", dtc="green", gain=sum(gain), gain_wtd=sum(gain_all_wtd), count=.N, weight=sum(weight)), decile]
   )
   summary.dt[, gain := gain / weight]
   summary.dt[, gain_wtd := gain_wtd / weight]
-  summary.dt[, gbmp := gbmp / weight]
   row_count <- summary.dt[, .N]
-  summary.dt[, gain_rs := rebase.y(summary.dt[, weight], c(summary.dt[, gain], summary.dt[, gbmp], summary.dt[, gain_wtd]), nreturn=row_count)]
-  summary.dt[, gain_wtd_rs := rebase.y(summary.dt[, weight], c(summary.dt[, gbmp], summary.dt[, gain], summary.dt[, gain_wtd]), nreturn=row_count)]
-  summary.dt[, gbmp_rs := rebase.y(summary.dt[, weight], c(summary.dt[, gbmp], summary.dt[, gain], summary.dt[, gain_wtd]), nreturn=row_count)]
+  summary.dt[, gain_rs := rebase.y(summary.dt[, weight], summary.dt[, gain], nreturn=row_count)]
+  summary.dt[, gain_wtd_rs := rebase.y(summary.dt[, weight], summary.dt[, gain_wtd], nreturn=row_count)]
   plot.obj <- ggplot(summary.dt)
   plot.obj <- plot.obj + geom_bar(aes(x=decile, y=weight, color=dt, fill=dt), stat="identity", position="dodge", alpha=0.3)
   plot.obj <- plot.obj + geom_line(aes(x=decile, y=gain_rs, group=dt, color=dt), stat="identity")
   plot.obj <- plot.obj + geom_line(aes(x=decile, y=gain_wtd_rs, group=dt, color=dt), stat="identity", linetype="dotted")
-  plot.obj <- plot.obj + geom_line(aes(x=decile, y=gbmp_rs, group=dt, color=dt), stat="identity", linetype="dashed")
   # plot.obj <- plot.obj + geom_point(aes(x=decile, y=gain_rs, group=dt, color=dt), stat="identity")
-  plot.obj <- plot.obj + geom_point(aes(x=decile, y=gbmp_rs, group=dt, color=dt), stat="identity")
   plot.obj <- plot.obj + theme(
     axis.text.x=element_text(angle=90, vjust=0.5, hjust=0.5),
     plot.title=element_text(hjust=0.5),
@@ -420,7 +400,7 @@ plot.decile.perf <- function(train.a.dt, train.b.dt, test.dt) {
   plot.obj <- plot.obj + ggtitle("actual and predicted gain by predicted deciles")
   plot.obj <- plot.obj + scale_y_continuous(
     name="weight",
-    sec.axis=sec_axis(~ rebase.y(c(summary.dt[, gain], summary.dt[, gain_wtd], summary.dt[, gbmp]), .), name="act, pred")
+    sec.axis=sec_axis(~ rebase.y(c(summary.dt[, gain], summary.dt[, gain_wtd]), .), name="gain, gain_wtd")
   )
   plot.obj
 }
@@ -432,7 +412,37 @@ grid.square <- quote({
   grid::grid.rect(x=0.75, y=0.75, width=0.50, height=0.50, gp=grid::gpar(lwd=5, col="black", fill=NA))
 })
 
-plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, uvar, logfile) {
+plot.detailed.strategy <- function(test.dt, upcoming.dt) {
+  test.thin.dt <- test.dt[strat_top_pct_5_wtd > 0, list(
+    match_id, ftr, actr, ip, odds, gbmp, strat_top_pct_5, gain_top_pct_5, strat_top_pct_5_wtd, gain_top_pct_5_wtd
+    )][order(-gbmp)]
+  upcoming.thin.dt <- upcoming.dt[strat_top_pct_5_wtd > 0, list(
+    match_id, ftr, ip, odds, gbmp, strat_top_pct_5, strat_top_pct_5_wtd
+    )][order(-gbmp)]
+  p.obj.test <- tableGrob(test.thin.dt, rows=NULL)
+  p.obj.test <- colorise.tableGrob(p.obj.test, test.thin.dt, "grey90", "grey95", 8)
+  p.obj.upcoming <- tableGrob(upcoming.thin.dt, rows=NULL)
+  p.obj.upcoming <- colorise.tableGrob(p.obj.upcoming, upcoming.thin.dt, "grey90", "grey95", 8)
+  p <- list(grid::grobTree(p.obj.test), grid::grobTree(p.obj.upcoming))
+  title.test <- grid::grobTree( 
+      grid::textGrob(
+        label=paste("test strategy top pct 5 n=", test.thin.dt[, .N]),
+        gp=grid::gpar(fontsize=12, fontface="bold", fill="black", col="black"),
+        x=0.5,
+        y=0.9
+      ))
+  title.upcoming <- grid::grobTree( 
+      grid::textGrob(
+        label=paste("upcoming strategy top pct 5 n=", upcoming.thin.dt[, .N]),
+        gp=grid::gpar(fontsize=12, fontface="bold", fill="black", col="black"),
+        x=0.5,
+        y=0.9
+      ))
+  grid.arrange(title.test, p.obj.test, nrow=2, ncol=1)
+  grid.arrange(title.upcoming, p.obj.upcoming, nrow=2, ncol=1)
+}
+
+plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, logfile) {
   pdffile <- gsub(".log", ".pdf", logfile)
   pdf(pdffile, h=7, w=14)
     grid.arrange(
@@ -442,6 +452,7 @@ plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, 
       plot.decile.perf(train.a.dt, train.b.dt, test.dt)
     )
     eval(grid.square)
+    plot.detailed.strategy(test.dt, upcoming.dt)
     for (x in uvar) {
       grid.arrange(
         univariate(train.a.dt, x),

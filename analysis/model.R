@@ -7,23 +7,33 @@ suppressPackageStartupMessages({
   library("resample")
 })
 source("analysis/plot.R")
+source("analysis/strategy.R")
 source("utils/utils.R")
 
 build.a.model <- function(adate, weights=FALSE) {
+  # print to log file
   set.seed(123)
   a.dt <- readRDS("~/data/R/rds/a.dt.rds")
-  # print to log file
-  if(!file.exists("logs")) dir.create("logs")
   if(isTRUE(weights)) {
     logfile <- paste0("logs/model_", adate, "_wtd", ".log")
     a.dt[, weight := weight_from_season(season)]
   } else {
     logfile <- paste0("logs/model_", adate, ".log")
     a.dt[, weight := rep(1, a.dt[, .N])]
-  }
+  } 
+  if(!file.exists("logs")) dir.create("logs")
   sink(logfile)
-  train.dt <- a.dt[date < as.Date(adate, "%Y-%m-%d"), ]
-  test.dt <- a.dt[date >= as.Date(adate, "%Y-%m-%d"), ]
+  a.dt[, odds := 1/ip]
+  a.dt[, gain := (weight * odds * act) - weight]
+  a.dt[, spread := act-ip]
+  yvar <- "spread"
+  a.dt[["y"]] <- a.dt[[yvar]]
+  train.dt <- a.dt[actr != "NA" & date < as.Date(adate, "%Y-%m-%d"), ]
+  test.dt <- a.dt[actr != "NA" & date >= as.Date(adate, "%Y-%m-%d"), ]
+  upcoming.dt <- a.dt[actr == "NA", ]
+  if(any(train.dt[, match_id] %in% test.dt[, match_id])) stop("matches in train and test")
+  if(any(train.dt[, match_id] %in% upcoming.dt[, match_id])) stop("matches in train and upcoming")
+  if(any(test.dt[, match_id] %in% upcoming.dt[, match_id])) stop("matches in test and upcoming")
   test.matches.dt <- test.dt[, list(count=.N, distinct_matches=length(unique(hometeam)),
     teams=list(unique((c(as.character(hometeam), as.character(awayteam))))),
     contains_team_prev_played=0), date][order(date)]
@@ -54,13 +64,12 @@ build.a.model <- function(adate, weights=FALSE) {
     paste0("hpp_cum", 2:5),
     paste0("app_cum", 2:5)
   )
-  yvar <- "gain"
   uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
-  formula <- as.formula(paste(yvar, paste(xvar, collapse="+"), sep="~"))
+  formula <- as.formula(paste("y", paste(xvar, collapse="+"), sep="~"))
   
   # model params
   train.fraction <- 0.7
-  n.trees <- 250
+  n.trees <- 20
   shrinkage <- 0.01
   interaction.depth <- 3
   cat0n(rep("#", 30), "\nModel Parameters")
@@ -98,16 +107,17 @@ build.a.model <- function(adate, weights=FALSE) {
   # e.g. if weights or balancing technique changes?
   train.dt[, gbmp := predict(model, train.dt, best.trees) * weight]
   test.dt[, gbmp := predict(model, test.dt, best.trees) * weight]
+  upcoming.dt[, gbmp := predict(model, upcoming.dt, best.trees) * weight]
   
   # rebalance
   cat0n(rep("#", 30), "\nRebalance")
   cat0n("train pre-balance act, pred")
-  print(train.dt[, list(act=sum(gain), pred=sum(gbmp))])
+  print(train.dt[, list(act=sum(y), pred=sum(gbmp))])
   cat0n("test pre-balance act, pred")
-  print(test.dt[, list(act=sum(gain), pred=sum(gbmp))])
-  season.dt <- train.dt[, list(balance_factor=(sum(gain) / sum(gbmp))), season]
+  print(test.dt[, list(act=sum(y), pred=sum(gbmp))])
+  season.dt <- train.dt[, list(balance_factor=(sum(y) / sum(gbmp))), season]
   cat0n("balance factor by season")
-  test.dt[, list(act=sum(gain), pred=sum(gbmp))]
+  test.dt[, list(act=sum(y), pred=sum(gbmp))]
   print(season.dt)
   setkey(train.dt, season)
   setkey(test.dt, season)
@@ -118,20 +128,22 @@ build.a.model <- function(adate, weights=FALSE) {
   test.dt[is.na(balance_factor), balance_factor := season.dt[season.dt[!is.na(balance_factor), .N], balance_factor]]
   test.dt[, gbmp := gbmp * balance_factor]
   cat0n("train post-balance act, pred")
-  print(train.dt[, list(act=sum(gain), pred=sum(gbmp))])
+  print(train.dt[, list(act=sum(y), pred=sum(gbmp))])
   cat0n("test post-balance act, pred")
-  print(test.dt[, list(act=sum(gain), pred=sum(gbmp))])
+  print(test.dt[, list(act=sum(y), pred=sum(gbmp))])
+  cat0n("upcoming post-balance act, pred")
+  print(upcoming.dt[, list(act=sum(y), pred=sum(gbmp))])
   
   # deviances
   cat0n(rep("#", 30), "\nDeviances")
   train.a.rows <- floor(train.dt[, .N] *train.fraction)
-  train.mean <- mean(train.dt[, gain])
+  train.mean <- mean(train.dt[, y])
   train.dt[, mean_pred := train.mean]
-  train.dt[, null_dev:= ((gain - mean_pred) ** 2)]
-  train.dt[, model_dev:= ((gain - gbmp) ** 2)]
+  train.dt[, null_dev:= ((y - mean_pred) ** 2)]
+  train.dt[, model_dev:= ((y - gbmp) ** 2)]
   test.dt[, mean_pred := train.mean]
-  test.dt[, null_dev:= ((gain - mean_pred) ** 2)]
-  test.dt[, model_dev:= ((gain - gbmp) ** 2)]
+  test.dt[, null_dev:= ((y - mean_pred) ** 2)]
+  test.dt[, model_dev:= ((y - gbmp) ** 2)]
   train.a.dt <- train.dt[1:train.a.rows, ]
   train.b.dt <- train.dt[train.a.rows:train.dt[, .N], ]
   cat0n("train.a mean null dev=", mean(train.a.dt[, null_dev]))
@@ -144,9 +156,11 @@ build.a.model <- function(adate, weights=FALSE) {
   # act pred summary
   cat0n(rep("#", 30), "\nActual and Predicted Summary")
   cat0n("summary train act, pred")
-  summary(train.dt[, list(act=gain, pred=gbmp)])
+  summary(train.dt[, list(act=y, pred=gbmp)])
   cat0n("summary test act, pred")
-  summary(test.dt[, list(act=gain, pred=gbmp)])
+  summary(test.dt[, list(act=y, pred=gbmp)])
+  cat0n("summary test act, pred")
+  summary(upcoming.dt[, list(act=y, pred=gbmp)])
   
   # positive model prediciton
   cat0n(rep("#", 30), "\nPositive Model Predictions")
@@ -154,190 +168,44 @@ build.a.model <- function(adate, weights=FALSE) {
   cat0n("train positive prediction count ", train.ppc)
   if(train.ppc > 0) {
     cat0n("train positive prediction")
-    train.dt[gbmp>0, list(date, hometeam, awayteam, ftr, actr, ip, gbmp, gain)][order(-gbmp)]
-    cat0n("train gain", sum(train.dt[gbmp>0, gain]))
-    cat0n("train mean gain", mean(train.dt[gbmp>0, gain]))
+    print(train.dt[gbmp>0, list(date, hometeam, awayteam, ftr, actr, ip, gbmp, y)][order(-gbmp)])
+    cat0n("train y", sum(train.dt[gbmp>0, y]))
+    cat0n("train mean y", mean(train.dt[gbmp>0, y]))
   }
   test.ppc <- test.dt[gbmp > 0, .N]
   cat0n("test positive prediction count ", test.ppc)
   if(test.ppc > 0) {
     cat0n("test positive prediction")
-    test.dt[gbmp>0, list(date, hometeam, awayteam, ftr, actr, ip, gbmp, gain)][order(-gbmp)]
-    cat0n("test gain", sum(test.dt[gbmp>0, gain]))
-    cat0n("test mean gain", mean(test.dt[gbmp>0, gain]))
+    print(test.dt[gbmp>0, list(date, hometeam, awayteam, ftr, actr, ip, gbmp, y)][order(-gbmp)])
+    cat0n("test y", sum(test.dt[gbmp>0, y]))
+    cat0n("test mean y", mean(test.dt[gbmp>0, y]))
+  }
+  upcoming.ppc <- upcoming.dt[gbmp > 0, .N]
+  cat0n("upcoming positive prediction count ", upcoming.ppc)
+  if(upcoming.ppc > 0) {
+    cat0n("upcoming positive prediction")
+    print(upcoming.dt[gbmp>0, list(date, hometeam, awayteam, ftr, actr, ip, gbmp, y)][order(-gbmp)])
+    cat0n("upcoming y", sum(upcoming.dt[gbmp>0, y]))
+    cat0n("upcoming mean y", mean(upcoming.dt[gbmp>0, y]))
   }
   
   # strategies
-  cat0n(rep("#", 30), "\nStrategies")
-  train.a.dt[, strat_all := 1]
-  train.a.dt[, strat_all_wtd := 0]
-  train.a.dt[strat_all > 0, strat_all_wtd :=
-    gbmp *
-    sum(train.a.dt[strat_all > 0, strat_all]) /
-    sum(train.a.dt[strat_all > 0, gbmp])
-  ]
-  train.a.dt[, gain_all_wtd  := strat_all_wtd * gain]
-  train.b.dt[, strat_all := 1]
-  train.b.dt[, strat_all_wtd := 0]
-  train.b.dt[strat_all > 0, strat_all_wtd :=
-    gbmp *
-    sum(train.b.dt[strat_all > 0, strat_all]) /
-    sum(train.b.dt[strat_all > 0, gbmp])
-  ]
-  train.b.dt[, gain_all_wtd  := strat_all_wtd * gain]
-  # bet on every result sum(gain)
-  test.dt[, strat_all := 1]
-  # bet on all favourites
-  test.dt[, max_ip := max(ip), list(date, hometeam, awayteam)]
-  test.dt[, strat_fav := 0]
-  test.dt[ip == max_ip, strat_fav := 1]
-  test.dt[, gain_fav := strat_fav * gain]
-  # bet on all outsiders
-  test.dt[, min_ip := min(ip), list(date, hometeam, awayteam)]
-  test.dt[, strat_out := 0]
-  test.dt[ip == min_ip, strat_out := 1]
-  test.dt[, gain_out := strat_out * gain]
-  test.dt[, min_ip := min(ip), list(date, hometeam, awayteam)]
-  # bet on all home
-  test.dt[, strat_home := 0]
-  test.dt[ftr == "H", strat_home := 1]
-  test.dt[, gain_home := strat_home * gain]
-  # bet on all draw
-  test.dt[, strat_draw := 0]
-  test.dt[ftr == "D", strat_draw := 1]
-  test.dt[, gain_draw := strat_draw * gain]
-  # bet on all home
-  test.dt[, strat_away := 0]
-  test.dt[ftr == "A", strat_away := 1]
-  test.dt[, gain_away := strat_away * gain]
-  # top n % predictions
-  setkey(test.dt, gbmp)
-  test.dt[, rn := seq(test.dt[, .N])]
-  test.dt[, pct_grp_10 := cut(test.dt[, rn], breaks=quantile(test.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
-  test.dt[, pct_grp_5 := cut(test.dt[, rn], breaks=quantile(test.dt[, rn], probs=seq(0, 1, by=0.05)), include.lowest=TRUE, labels=1:20)]
-  test.dt[, pct_grp_1 := cut(test.dt[, rn], breaks=quantile(test.dt[, rn], probs=seq(0, 1, by=0.01)), include.lowest=TRUE, labels=1:100)]
-  test.dt[, strat_top_pct_10 := 0]
-  test.dt[pct_grp_10 == 10, strat_top_pct_10 := 1]
-  test.dt[, gain_top_pct_10 := strat_top_pct_10 * gain]
-  test.dt[, strat_top_pct_5 := 0]
-  test.dt[pct_grp_5 == 20, strat_top_pct_5 := 1]
-  test.dt[, gain_top_pct_5 := strat_top_pct_5 * gain]
-  test.dt[, strat_top_pct_1 := 0]
-  test.dt[pct_grp_1 == 100, strat_top_pct_1 := 1]
-  test.dt[, gain_top_pct_1 := strat_top_pct_1 * gain]
-  # weighted stake
-  test.dt[, strat_all_wtd := 0]
-  test.dt[strat_all > 0, strat_all_wtd :=
-    gbmp *
-    sum(test.dt[strat_all > 0, strat_all]) /
-    sum(test.dt[strat_all > 0, gbmp])
-  ]
-  test.dt[, gain_all_wtd  := strat_all_wtd * gain]
-  test.dt[, strat_fav_wtd := 0]
-  test.dt[strat_fav > 0, strat_fav_wtd :=
-    gbmp *
-    sum(test.dt[strat_fav > 0, strat_fav]) /
-    sum(test.dt[strat_fav > 0, gbmp])
-  ]
-  test.dt[, gain_fav_wtd  := strat_fav_wtd * gain]
-  test.dt[, strat_out_wtd := 0]
-  test.dt[strat_out > 0, strat_out_wtd :=
-    gbmp *
-    sum(test.dt[strat_out > 0, strat_out]) /
-    sum(test.dt[strat_out > 0, gbmp])
-  ]
-  test.dt[, gain_out_wtd  := strat_out_wtd * gain]
-  test.dt[, strat_home_wtd := 0]
-  test.dt[strat_home > 0, strat_home_wtd :=
-    gbmp *
-    sum(test.dt[strat_home > 0, strat_home]) /
-    sum(test.dt[strat_home > 0, gbmp])
-  ]
-  test.dt[, gain_home_wtd  := strat_home_wtd * gain]
-  test.dt[, strat_draw_wtd := 0]
-  test.dt[strat_draw > 0, strat_draw_wtd :=
-    gbmp *
-    sum(test.dt[strat_draw > 0, strat_draw]) /
-    sum(test.dt[strat_draw > 0, gbmp])
-  ]
-  test.dt[, gain_draw_wtd  := strat_draw_wtd * gain]
-  test.dt[, strat_away_wtd := 0]
-  test.dt[strat_away > 0, strat_away_wtd :=
-    gbmp *
-    sum(test.dt[strat_away > 0, strat_away]) /
-    sum(test.dt[strat_away > 0, gbmp])
-  ]
-  test.dt[, gain_away_wtd  := strat_away_wtd * gain]
-  test.dt[, strat_top_pct_10_wtd := 0]
-  test.dt[strat_top_pct_10 > 0, strat_top_pct_10_wtd :=
-    gbmp *
-    sum(test.dt[strat_top_pct_10 > 0, strat_top_pct_10]) /
-    sum(test.dt[strat_top_pct_10 > 0, gbmp])
-  ]
-  test.dt[, gain_top_pct_10_wtd  := strat_top_pct_10_wtd * gain]
-  test.dt[, strat_top_pct_5_wtd := 0]
-  test.dt[strat_top_pct_5 > 0, strat_top_pct_5_wtd :=
-    gbmp *
-    sum(test.dt[strat_top_pct_5 > 0, strat_top_pct_5]) /
-    sum(test.dt[strat_top_pct_5 > 0, gbmp])
-  ]
-  test.dt[, gain_top_pct_5_wtd  := strat_top_pct_5_wtd * gain]
-  test.dt[, strat_top_pct_1_wtd := 0]
-  test.dt[strat_top_pct_1 > 0, strat_top_pct_1_wtd :=
-    gbmp *
-    sum(test.dt[strat_top_pct_1 > 0, strat_top_pct_1]) /
-    sum(test.dt[strat_top_pct_1 > 0, gbmp])
-  ]
-  test.dt[, gain_top_pct_1_wtd  := strat_top_pct_1_wtd * gain]
-  cat0n("strategy,stake,gain")
-  cat0n("all_results,", test.dt[, .N], ",", sum(test.dt[, gain]))
-  cat0n("all_fav,", sum(test.dt[, strat_fav]), ",", sum(test.dt[, gain_fav]))
-  cat0n("all_out,", sum(test.dt[, strat_out]), ",", sum(test.dt[, gain_out]))
-  cat0n("all_home,", sum(test.dt[, strat_home]), ",", sum(test.dt[, gain_home]))
-  cat0n("all_draw,", sum(test.dt[, strat_draw]), ",", sum(test.dt[, gain_draw]))
-  cat0n("all_away,", sum(test.dt[, strat_away]), ",", sum(test.dt[, gain_away]))
-  cat0n("top_pct_10,", sum(test.dt[, strat_top_pct_10]), ",", sum(test.dt[, gain_top_pct_10]))
-  cat0n("top_pct_5,", sum(test.dt[, strat_top_pct_5]), ",", sum(test.dt[, gain_top_pct_5]))
-  cat0n("top_pct_1,", sum(test.dt[, strat_top_pct_1]), ",", sum(test.dt[, gain_top_pct_1]))
-  cat0n("all_results_wtd,", sum(test.dt[, strat_all_wtd]), ",", sum(test.dt[, gain_all_wtd]))
-  cat0n("all_fav_wtd,", sum(test.dt[, strat_fav_wtd]), ",", sum(test.dt[, gain_fav_wtd]))
-  cat0n("all_out_wtd,", sum(test.dt[, strat_out_wtd]), ",", sum(test.dt[, gain_out_wtd]))
-  cat0n("all_home_wtd,", sum(test.dt[, strat_home_wtd]), ",", sum(test.dt[, gain_home_wtd]))
-  cat0n("all_draw_wtd,", sum(test.dt[, strat_draw_wtd]), ",", sum(test.dt[, gain_draw_wtd]))
-  cat0n("all_away_wtd,", sum(test.dt[, strat_away_wtd]), ",", sum(test.dt[, gain_away_wtd]))
-  cat0n("top_pct_10_wtd,", sum(test.dt[, strat_top_pct_10_wtd]), ",", sum(test.dt[, gain_top_pct_10_wtd]))
-  cat0n("top_pct_5_wtd,", sum(test.dt[, strat_top_pct_5_wtd]), ",", sum(test.dt[, gain_top_pct_5_wtd]))
-  cat0n("top_pct_1_wtd,", sum(test.dt[, strat_top_pct_1_wtd]), ",", sum(test.dt[, gain_top_pct_1_wtd]))
-  # print(summary(test.dt[, list(
-  #   strat_all_wtd,
-  #   strat_fav_wtd,
-  #   strat_out_wtd,
-  #   strat_home_wtd,
-  #   strat_draw_wtd,
-  #   strat_away_wtd,
-  #   strat_top_pct_10_wtd,
-  #   strat_top_pct_5_wtd,
-  #   strat_top_pct_1_wtd
-  # )]))
-  # print(test.dt[, .N, strat_top_pct_10_wtd])
-  # print(test.dt[, .N, strat_top_pct_5_wtd])
-  # print(test.dt[, .N, strat_top_pct_1_wtd])
-  # print(test.dt[strat_top_pct_1 > 0, list(date, hometeam, awayteam, ftr, act, actr, strat_top_pct_1_wtd, gain, gain_top_pct_1_wtd)])
+  run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
   
   # plots
-  plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, uvar, logfile)
+  plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, logfile)
   
   sink()
 }
 
 build.a.model("2020-08-01")
-build.a.model("2020-08-01", weights=TRUE)
-build.a.model("2020-09-01")
-build.a.model("2020-09-01", weights=TRUE)
-build.a.model("2020-10-01")
-build.a.model("2020-10-01", weights=TRUE)
-build.a.model("2020-11-01")
-build.a.model("2020-11-01", weights=TRUE)
-build.a.model("2020-12-01")
-build.a.model("2020-12-01", weights=TRUE)
+# build.a.model("2020-08-01", weights=TRUE)
+# build.a.model("2020-09-01")
+# build.a.model("2020-09-01", weights=TRUE)
+# build.a.model("2020-10-01")
+# build.a.model("2020-10-01", weights=TRUE)
+# build.a.model("2020-11-01")
+# build.a.model("2020-11-01", weights=TRUE)
+# build.a.model("2020-12-01")
+# build.a.model("2020-12-01", weights=TRUE)
 

@@ -2,7 +2,6 @@
 .libPaths()
 library("data.table")
 
-print(getwd())
 source("data_prep/constants.R")
 all.leagues <- expand.grid(years, leagues)
 all.csv <- paste0("~/data/", all.leagues[[1]], "/", all.leagues[[2]], ".csv")
@@ -20,6 +19,21 @@ alist <- lapply(
   read.a.file
 )
 a.dt <- rbindlist(alist, fill=TRUE)
+upcoming.dt <- read.a.file(paste0("~/data/", upcoming_fixtures))
+upcoming.dt[, season := max(a.dt[, season])]
+upcoming.dt[, FTR := NULL]
+upcoming.dt[, FTR := "NA"]
+for(var in colnames(a.dt)) {
+  if(!var %in% colnames(upcoming.dt)) {
+    if(is.numeric(a.dt[[var]])) {
+      upcoming.dt[[var]] <- -1
+    } else {
+      upcoming.dt[[var]] <- "NA"
+    }
+  }
+}
+upcoming.dt <- upcoming.dt[Div %in% leagues, ]
+a.dt <- rbind(a.dt, upcoming.dt, fill=TRUE)
 
 # error in odds
 # a.dt[HomeTeam=="Brentford" & AwayTeam=="Blackburn", ]
@@ -29,6 +43,11 @@ a.dt <- rbindlist(alist, fill=TRUE)
 # check teams in leagues
 for (l in leagues) print(a.dt[Div== l, list(count=.N), HomeTeam][order(-count)][1:5, ])
 setnames(a.dt, colnames(a.dt), tolower(colnames(a.dt)))
+a.dt[, match_id := paste0(date, "|", hometeam, "|", awayteam, collapse="|"), list(date, hometeam, awayteam)]
+match.dt <- a.dt[, list(count=.N), match_id][order(-count)]
+match.dt
+match.dt[count > 0, ]
+a.dt <- a.dt[match_id != "||", ]
 a.dt[nchar(date)==8, ddate := as.Date(date, '%d/%m/%y')]
 a.dt[nchar(date)==10, ddate := as.Date(date, '%d/%m/%Y')]
 cat('na date count:', a.dt[is.na(date), .N], '\n')
@@ -47,29 +66,41 @@ a.dt[, b365d := 1 / b365d]
 a.dt[, b365a := 1 / b365a]
 a.dt[, sip := b365h + b365d + b365a]
 a.dt <- rbind(
-  a.dt[, list(div, date, season, hometeam, awayteam, actr=ftr, ip=b365h, act=as.numeric(ftr=='H'), ftr='H')],
-  a.dt[, list(div, date, season, hometeam, awayteam, actr=ftr, ip=b365d, act=as.numeric(ftr=='D'), ftr='D')],
-  a.dt[, list(div, date, season, hometeam, awayteam, actr=ftr, ip=b365a, act=as.numeric(ftr=='A'), ftr='A')]
+  a.dt[ftr != "NA", list(div, date, season, hometeam, awayteam, actr=ftr, ip=b365h, act=as.numeric(ftr=='H'), ftr='H')],
+  a.dt[ftr != "NA", list(div, date, season, hometeam, awayteam, actr=ftr, ip=b365d, act=as.numeric(ftr=='D'), ftr='D')],
+  a.dt[ftr != "NA", list(div, date, season, hometeam, awayteam, actr=ftr, ip=b365a, act=as.numeric(ftr=='A'), ftr='A')],
+  a.dt[ftr == "NA", list(div, date, season, hometeam, awayteam, actr="NA", ip=b365h, act=-1, ftr='H')],
+  a.dt[ftr == "NA", list(div, date, season, hometeam, awayteam, actr="NA", ip=b365d, act=-1, ftr='D')],
+  a.dt[ftr == "NA", list(div, date, season, hometeam, awayteam, actr="NA", ip=b365a, act=-1, ftr='A')]
 )
+a.dt[, match_id := paste0(date, "|", hometeam, "|", awayteam, collapse="|"), list(date, hometeam, awayteam)]
 cat('data transposed count with NA', a.dt[, .N], '\n')
 a.dt <- na.omit(a.dt)
 cat('data transposed count', a.dt[, .N], '\n')
 setkey(a.dt, date)
 a.dt[, rn := seq(a.dt[, .N])]
-a.dt[, gain := act - ip]
+
 all.teams <- unique(c(a.dt[, hometeam], a.dt[, awayteam]))
 cat('team count', length(all.teams), '\n')
+
 result_lag <- function(i) {
   for(ateam in all.teams) {
   
     team.dt <- a.dt[(act == 1) & ((hometeam == ateam) | (awayteam == ateam)), ]
+    team.up.dt <- a.dt[(act == -1) & ((hometeam == ateam) | (awayteam == ateam)), ][, list(hometeam, awayteam, date)]
+    setkey(team.dt, date, hometeam, awayteam)
+    team.dt <- unique(team.dt)
     team.dt[(hometeam == ateam) & (ftr == 'H'), r := 'W']
     team.dt[(hometeam == ateam) & (ftr == 'A'), r := 'L']
     team.dt[(awayteam == ateam) & (ftr == 'H'), r := 'L']
     team.dt[(awayteam == ateam) & (ftr == 'A'), r := 'W']
     team.dt[ftr == 'D', r := 'D']
+    team.up.dt[, r := "NA"]
+    setkey(team.up.dt, date, hometeam, awayteam)
+    team.up.dt <- unique(team.up.dt)
+    team.dt <- rbind(team.dt, team.up.dt, fill=TRUE)
     setkey(team.dt, date)
-    team.dt[, trn :=seq(team.dt[, .N])]
+    team.dt[, trn := seq(team.dt[, .N])]
     l.team.dt <- team.dt[, list(hometeam, awayteam, pr=r, p_date=date, trn=trn+i)]
     l.team.dt[hometeam == ateam, pv := 'home']
     l.team.dt[awayteam == ateam, pv := 'away']
@@ -105,13 +136,11 @@ result_lag <- function(i) {
       h.teams.dt <- rbind(h.teams.dt, h.team.dt)
     } else {
       h.teams.dt <- h.team.dt
-      print(h.teams.dt)
     }
     if(exists("a.teams.dt")) {
       a.teams.dt <- rbind(a.teams.dt, a.team.dt)
     } else {
       a.teams.dt <- a.team.dt
-      print(a.teams.dt)
     }
   }
   cat('data count pre unique', a.dt[, .N], '\n')
@@ -158,7 +187,7 @@ result_lag <- function(i) {
   a.dt[, apr := as.factor(apr)]
   a.dt[, hphr := as.factor(hphr)]
   a.dt[, apar := as.factor(apar)]
-  ivars <-c("hpr", "apr", "hpp", "app", "hpd", "apd", "hphr", "hphd", "hphp", "apar", "apad", "apap")
+  ivars <-c("hpr", "apr", "hpp", "app", "hpd", "apd", "hpv", "apv", "hphr", "hphd", "hphp", "apar", "apad", "apap")
   setnames(a.dt, ivars, paste0(ivars, i))
   rm(h.teams.dt)
   rm(a.teams.dt)
@@ -194,7 +223,6 @@ a.dt[, season := as.factor(season)]
 a.dt[, div := as.factor(div)]
 a.dt[, ftr := as.factor(ftr)]
 a.dt[, ip := round(ip, 3)]
-a.dt[, gain := round(gain, 3)]
 summary(a.dt)
 cat('data count with missings', a.dt[, .N], '\n')
 a.dt[is.na(apr1), apr1 := "M"]
@@ -220,14 +248,19 @@ a.dt[is.na(hpd5), hpd5 := -1]
 for (x in colnames(a.dt)) {
   if(any(is.na(a.dt[[x]]))) print(x)
 }
+for (x in colnames(a.dt)) {
+  if(any(is.na(a.dt[[x]]))) print(x)
+}
 a.dt <- na.omit(a.dt)
 cat('data count no missings', a.dt[, .N], '\n')
 cat('data summary', '\n')
 summary(a.dt)
 # error with odds
 cat('data count odds error', a.dt[, .N], '\n')
-a.dt[gain == -Inf, ]
-a.dt <- a.dt[gain != -Inf, ]
+a.dt <- a.dt[ip != -Inf, ]
+a.dt <- a.dt[ip != Inf, ]
+a.dt <- a.dt[(1/ip) != -Inf, ]
+a.dt <- a.dt[(1/ip) != Inf, ]
 cat('data count no odds error', a.dt[, .N], '\n')
 
 setkey(a.dt, rn)
