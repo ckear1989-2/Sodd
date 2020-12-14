@@ -433,14 +433,21 @@ plot.detailed.strategy <- function(test.dt, upcoming.dt) {
   recent.dt[, match_id := paste0(date, "|", hometeam, "|", awayteam, collapse="|"), list(date, hometeam, awayteam)]
   recent.dt <- recent.dt[, list(match_id, actr=ftr)]
   upcoming.thin.dt <- merge(upcoming.thin.dt, recent.dt, all.x=TRUE, all.y=FALSE, by="match_id")
+  upcoming.thin.dt <- rbind(
+    upcoming.thin.dt,
+    data.table(
+      match_id="total",
+      strat_top_pct_5=sum(upcoming.thin.dt[ftr==actr, strat_top_pct_5*odds]),
+      strat_top_pct_5_wtd=sum(upcoming.thin.dt[ftr == actr, strat_top_pct_5_wtd*odds])
+   ), fill=TRUE)
 
   p.obj.test <- tableGrob(test.thin.dt, rows=NULL)
   p.obj.test <- colorise.tableGrob(p.obj.test, test.thin.dt, "grey90", "grey95")
   p.obj.upcoming <- tableGrob(upcoming.thin.dt, rows=NULL)
-  p.obj.upcoming <- colorise.tableGrob(p.obj.upcoming, upcoming.thin.dt, "grey90", "grey95", 8)
+  p.obj.upcoming <- colorise.tableGrob(p.obj.upcoming, upcoming.thin.dt, "grey90", "grey95", 10)
 
   set_row_border <- function(obj, row, color) {
-    gtable::gtable_add_grob(obj, grobs=grid::rectGrob(gp=grid::gpar(fill=NA, lwd=2, col=color)), t=row, b=0.98, l=1.02, r=ncol(obj))
+    gtable::gtable_add_grob(obj, grobs=grid::rectGrob(gp=grid::gpar(fill=color, lwd=2, col=color, alpha=0.5)), t=(row+1.02), b=(row+1.98), l=1.02, r=(ncol(obj)+1))
   }
 
   correct_preds <- sapply(1:upcoming.thin.dt[, .N], function(i) upcoming.thin.dt[i, ftr] == upcoming.thin.dt[i, actr])
@@ -472,9 +479,8 @@ plot.detailed.strategy <- function(test.dt, upcoming.dt) {
     ),
     p.obj.upcoming
   )
-  l <- rbind(c(1), c(2), c(2), c(2))
   grid::grid.newpage(); grid::grid.draw(p.obj.test)
-  grid.arrange(p.obj.upcoming, nrow=1, ncol=1)
+  grid::grid.newpage(); grid::grid.draw(p.obj.upcoming)
 }
 
 plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, logfile) {
