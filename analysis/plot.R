@@ -1,6 +1,7 @@
 
 source("analysis/strategy.R")
 source("utils/utils.R")
+source("data_prep/download.R")
 
 # univariate
 univariate <- function(a.dt, x) {
@@ -419,10 +420,38 @@ plot.detailed.strategy <- function(test.dt, upcoming.dt) {
   upcoming.thin.dt <- upcoming.dt[strat_top_pct_5_wtd > 0, list(
     match_id, ftr, ip, odds, gbmp, strat_top_pct_5, strat_top_pct_5_wtd
     )][order(-gbmp)]
+  dload_current_year(quiet=TRUE)
+  recent.csv <- paste0("~/data/", years[[1]], "/", leagues, ".csv")
+  alist <- lapply(
+    recent.csv
+    ,
+    fread
+  )
+  recent.dt <- rbindlist(alist, fill=TRUE)
+  setnames(recent.dt, colnames(recent.dt), tolower(colnames(recent.dt)))
+  recent.dt[, date := as.Date(date, '%d/%m/%y')]
+  recent.dt[, match_id := paste0(date, "|", hometeam, "|", awayteam, collapse="|"), list(date, hometeam, awayteam)]
+  recent.dt <- recent.dt[, list(match_id, actr=ftr)]
+  upcoming.thin.dt <- merge(upcoming.thin.dt, recent.dt, all.x=TRUE, all.y=FALSE, by="match_id")
+
   p.obj.test <- tableGrob(test.thin.dt, rows=NULL)
   p.obj.test <- colorise.tableGrob(p.obj.test, test.thin.dt, "grey90", "grey95")
   p.obj.upcoming <- tableGrob(upcoming.thin.dt, rows=NULL)
   p.obj.upcoming <- colorise.tableGrob(p.obj.upcoming, upcoming.thin.dt, "grey90", "grey95", 8)
+
+  set_row_border <- function(obj, row, color) {
+    gtable::gtable_add_grob(obj, grobs=grid::rectGrob(gp=grid::gpar(fill=NA, lwd=2, col=color)), t=row, b=0.98, l=1.02, r=ncol(obj))
+  }
+
+  correct_preds <- sapply(1:upcoming.thin.dt[, .N], function(i) upcoming.thin.dt[i, ftr] == upcoming.thin.dt[i, actr])
+  incorrect_preds <- sapply(1:upcoming.thin.dt[, .N], function(i) upcoming.thin.dt[i, ftr] != upcoming.thin.dt[i, actr])
+  unknown_preds <- sapply(1:upcoming.thin.dt[, .N], function(i) is.na(upcoming.thin.dt[i, actr]))
+
+  for (i in 1:upcoming.thin.dt[, .N]) {
+    if (isTRUE(correct_preds[[i]])) p.obj.upcoming <- set_row_border(p.obj.upcoming, i, "green")
+    if (isTRUE(incorrect_preds[[i]])) p.obj.upcoming <- set_row_border(p.obj.upcoming, i, "red")
+    if (isTRUE(unknown_preds[[i]])) p.obj.upcoming <- set_row_border(p.obj.upcoming, i, "black")
+  }
   p.obj.test <- grid::grobTree(
     grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=0, col="black", alpha=0.5)),
     grid::textGrob(
@@ -444,7 +473,6 @@ plot.detailed.strategy <- function(test.dt, upcoming.dt) {
     p.obj.upcoming
   )
   l <- rbind(c(1), c(2), c(2), c(2))
-  print(l)
   grid::grid.newpage(); grid::grid.draw(p.obj.test)
   grid.arrange(p.obj.upcoming, nrow=1, ncol=1)
 }

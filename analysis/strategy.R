@@ -36,7 +36,6 @@ calc.strategies <- function(a.dt) {
   a.dt[gbmp == max_match_pred, max_match_flag := 1]
   a.dt[, gbmp_one_per_match := -Inf]
   a.dt[gbmp == max_match_pred, gbmp_one_per_match := gbmp]
-  print(a.dt[, list(match_flag_count=sum(max_match_flag)), match_id][match_flag_count > 1, ])
   setkey(a.dt, gbmp_one_per_match)
   a.dt[, rn := seq(a.dt[, .N])]
   a.dt[, pct_grp_10 := cut(a.dt[, rn], breaks=quantile(a.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
@@ -101,6 +100,4 @@ run.strategy <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
   cat0n("top_pct_10_wtd,", sum(test.dt[, strat_top_pct_10_wtd]), ",", sum(test.dt[, gain_top_pct_10_wtd]))
   cat0n("top_pct_5_wtd,", sum(test.dt[, strat_top_pct_5_wtd]), ",", sum(test.dt[, gain_top_pct_5_wtd]))
   cat0n("top_pct_1_wtd,", sum(test.dt[, strat_top_pct_1_wtd]), ",", sum(test.dt[, gain_top_pct_1_wtd]))
-  print(test.dt[strat_top_pct_5_wtd > 0, ][, list(match_id, ftr, actr, act, ip, odds, strat_top_pct_5_wtd, gbmp, y, gain, spread, gain_top_pct_5_wtd)])
-  print(upcoming.dt[strat_top_pct_5_wtd > 0, ][, list(match_id, ftr, actr, act, ip, odds, strat_top_pct_5_wtd, gbmp, y, gain, spread, gain_top_pct_5_wtd)])
 }

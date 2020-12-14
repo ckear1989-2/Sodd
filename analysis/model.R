@@ -54,14 +54,14 @@ build.a.model <- function(adate, weights=FALSE) {
     "div",
     "ftr",
     paste0("hpp", 1:4),
-    paste0("app", 1:4),
-    paste0("hpd", 1:4),
-    paste0("apd", 1:4),
-    paste0("hphp", 1:3),
-    paste0("apap", 1:3),
-    paste0("hphd", 1:3),
-    paste0("apad", 1:3),
-    paste0("hpp_cum", 2:5),
+    # paste0("app", 1:4),
+    # paste0("hpd", 1:4),
+    # paste0("apd", 1:4),
+    # paste0("hphp", 1:3),
+    # paste0("apap", 1:3),
+    # paste0("hphd", 1:3),
+    # paste0("apad", 1:3),
+    # paste0("hpp_cum", 2:5),
     paste0("app_cum", 2:5)
   )
   uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
