@@ -420,26 +420,33 @@ plot.detailed.strategy <- function(test.dt, upcoming.dt) {
     match_id, ftr, ip, odds, gbmp, strat_top_pct_5, strat_top_pct_5_wtd
     )][order(-gbmp)]
   p.obj.test <- tableGrob(test.thin.dt, rows=NULL)
-  p.obj.test <- colorise.tableGrob(p.obj.test, test.thin.dt, "grey90", "grey95", 8)
+  p.obj.test <- colorise.tableGrob(p.obj.test, test.thin.dt, "grey90", "grey95")
   p.obj.upcoming <- tableGrob(upcoming.thin.dt, rows=NULL)
   p.obj.upcoming <- colorise.tableGrob(p.obj.upcoming, upcoming.thin.dt, "grey90", "grey95", 8)
-  p <- list(grid::grobTree(p.obj.test), grid::grobTree(p.obj.upcoming))
-  title.test <- grid::grobTree( 
-      grid::textGrob(
-        label=paste("test strategy top pct 5 n=", test.thin.dt[, .N]),
-        gp=grid::gpar(fontsize=12, fontface="bold", fill="black", col="black"),
-        x=0.5,
-        y=0.9
-      ))
-  title.upcoming <- grid::grobTree( 
-      grid::textGrob(
-        label=paste("upcoming strategy top pct 5 n=", upcoming.thin.dt[, .N]),
-        gp=grid::gpar(fontsize=12, fontface="bold", fill="black", col="black"),
-        x=0.5,
-        y=0.9
-      ))
-  grid.arrange(title.test, p.obj.test, nrow=2, ncol=1)
-  grid.arrange(title.upcoming, p.obj.upcoming, nrow=2, ncol=1)
+  p.obj.test <- grid::grobTree(
+    grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=0, col="black", alpha=0.5)),
+    grid::textGrob(
+      label=paste("test strategy top pct 5 n=", test.thin.dt[, .N]),
+      gp=grid::gpar(fontsize=12, fontface="bold", fill="black", col="black"),
+      x=0.5,
+      y=0.9,
+    ),
+    p.obj.test
+  )
+  p.obj.upcoming <- grid::grobTree(
+    grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=0, col="black", alpha=0.5)),
+    grid::textGrob(
+      label=paste("upcoming strategy top pct 5 n=", upcoming.thin.dt[, .N]),
+      gp=grid::gpar(fontsize=12, fontface="bold", fill="black", col="black"),
+      x=0.5,
+      y=0.95,
+    ),
+    p.obj.upcoming
+  )
+  l <- rbind(c(1), c(2), c(2), c(2))
+  print(l)
+  grid::grid.newpage(); grid::grid.draw(p.obj.test)
+  grid.arrange(p.obj.upcoming, nrow=1, ncol=1)
 }
 
 plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, logfile) {
