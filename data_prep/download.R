@@ -25,8 +25,11 @@ dload_upcoming <- function() {
 }
 
 if(interactive()) {
+  if(!file.exists("logs/")) dir.create("logs")
+  sink("logs/download.log")
   # lapply(leagues, dload_10_years)
   dload_current_year(leagues)
   dload_upcoming()
+  sink()
 }
 
