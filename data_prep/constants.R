@@ -19,3 +19,17 @@ years <- c(
 all.leagues <- expand.grid(years, leagues)
 all.csv <- paste0("~/data/", all.leagues[[1]], "/", all.leagues[[2]], ".csv")
 
+strats <- c(
+  "all",
+  "fav",
+  "out",
+  "home",
+  "draw",
+  "away",
+  "top_pct_10",
+  "top_pct_5",
+  "top_pct_1",
+  "top_per_match"
+)
+strats <- c(strats, paste0(strats, "_wtd"))
+

@@ -42,6 +42,12 @@ univariate <- function(a.dt, x) {
     breaks <- breaks[seq(1, row_count, 5)]
     labels <- labels[seq(1, row_count, 5)]
   }
+  if(length(breaks) != length(labels)) {
+    print(summary.dt)
+    print(breaks)
+    print(labels)
+    stop("length breaks labels differ")
+  }
   plot.obj <- plot.obj + ggplot2::scale_x_continuous(breaks=breaks, labels=labels)
   plot.obj <- plot.obj + ggplot2::theme(
     axis.text.x=ggplot2::element_text(angle=90, vjust=0.5, hjust=0.5),
@@ -101,6 +107,9 @@ partial.plot <- function(model, x, a.dt) {
     if(row_count >50) {
       breaks <- breaks[seq(1, row_count, 5)]
       labels <- labels[seq(1, row_count, 5)]
+    }
+    if(length(breaks) != length(labels)) {
+      stop("length breaks labels differ")
     }
     plot.obj <- plot.obj + ggplot2::scale_x_continuous(breaks=breaks, labels=labels)
     plot.obj <- plot.obj + ggplot2::theme(
@@ -163,13 +172,24 @@ colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
   }
   # bold first row
   for(x in 1:(ncol(dt)+1)) {
-    fg <- "core-fg"
-    if("colhead-fg" %in% obj$layout$name) fg <- "colhead-fg"
-    ind <- find_cell(obj, 1, x, fg)
-    if(!length(ind) > 0) {
-      next
-    } else {
-      obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs, fontface="bold")
+    for(fg in c("core-fg", "colhead-fg")) {
+      ind <- find_cell(obj, 1, x, fg)
+      if(!length(ind) > 0) {
+        next
+      } else {
+        obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs, fontface="bold")
+      }
+    }
+  }
+  # bold first column
+  for(x in 1:(nrow(dt)+1)) {
+    for(fg in c("core-fg", "rowhead-fg")) {
+      ind <- find_cell(obj, x, 1, fg)
+      if(!length(ind) > 0) {
+        next
+      } else {
+        obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs, fontface="bold")
+      }
     }
   }
   # alternate colors
@@ -192,6 +212,7 @@ colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
   }
   obj
 }
+
 plot.model.param <- function(model) {
   params <- c("n.trees", "shrinkage", "interaction.depth", "train.fraction", "train.error", "valid.error")
   params <- gsub(".", "\n", params, fixed=TRUE)
@@ -207,17 +228,18 @@ plot.model.param <- function(model) {
   p.obj <- gridExtra::tableGrob(params.dt, theme=table.theme(7), cols=NULL)
   p.obj <- colorise.tableGrob(p.obj, params.dt, "red1", "red3", 7)
   p.obj <- grid::grobTree(
-      grid::textGrob(
-        label="Parameters",
-        gp=grid::gpar(fontsize=16, fontface="bold", fill="black", col="black"),
-        x=0.5,
-        y=0.9
-      ),
-      grid::rectGrob(gp=grid::gpar(fill="red1", lwd=2, col="black", alpha=0.5)),
-      p.obj
+    grid::textGrob(
+      label="Parameters",
+      gp=grid::gpar(fontsize=16, fontface="bold", fill="black", col="black"),
+      x=0.5,
+      y=0.9
+    ),
+    grid::rectGrob(gp=grid::gpar(fill="red1", lwd=2, col="black", alpha=0.5)),
+    p.obj
   )
   p.obj
 }
+
 plot.deviances <- function(train.a.dt, train.b.dt, test.dt) {
   devs <- c(
     "train.a_mean_null",
@@ -238,7 +260,7 @@ plot.deviances <- function(train.a.dt, train.b.dt, test.dt) {
   )
   devs.dt <- t(data.frame(devs, value=vals))
   p.obj <- gridExtra::tableGrob(devs.dt, theme=table.theme(8), cols=NULL)
-  p.obj <- colorise.tableGrob(p.obj, devs.dt, "blue1", "blue4", 8)
+  p.obj <- colorise.tableGrob(p.obj, devs.dt, "gold", "gold3", 8)
   p.obj <- grid::grobTree(
       grid::textGrob(
         label="Deviances",
@@ -246,71 +268,36 @@ plot.deviances <- function(train.a.dt, train.b.dt, test.dt) {
         x=0.5,
         y=0.9
       ),
-      grid::rectGrob(gp=grid::gpar(fill="blue1", lwd=2, col="black", alpha=0.5)),
+      grid::rectGrob(gp=grid::gpar(fill="gold", lwd=2, col="black", alpha=0.5)),
       p.obj
   )
   p.obj
 }
+
 plot.strategies <- function(a.dt) {
-  strategy <- c("all_results", "all_fav", "all_out", "all_home", "all_draw", "all_away", "top_pct10", "top_pct5", "top_pct1")
+  strategy <- c(
+    "all",
+    "fav",
+    "out",
+    "home",
+    "draw",
+    "away",
+    "top_pct_10",
+    "top_pct_5",
+    "top_pct_1",
+    "top_per_match"
+  )
+  stake <- sapply(strategy, function(x) sum(a.dt[[paste0("strat_", x)]]))
+  gain <- sapply(strategy, function(x) round(sum(a.dt[[paste0("gain_", x)]]), 2))
+  stake_wtd <- sapply(strategy, function(x) sum(a.dt[[paste0("strat_", x, "_wtd")]]))
+  gain_wtd <- sapply(strategy, function(x) round(sum(a.dt[[paste0("gain_", x, "_wtd")]]), 2))
   strategy <- gsub("_", "\n", strategy)
-  stake <- c(
-    a.dt[, .N],
-    sum(a.dt[, strat_fav]),
-    sum(a.dt[, strat_out]),
-    sum(a.dt[, strat_home]),
-    sum(a.dt[, strat_draw]),
-    sum(a.dt[, strat_away]),
-    sum(a.dt[, strat_top_pct_10]),
-    sum(a.dt[, strat_top_pct_5]),
-    sum(a.dt[, strat_top_pct_1])
-  )
-  gain <- c(
-    round(sum(a.dt[, gain]), 2),
-    round(sum(a.dt[, gain_fav]), 2),
-    round(sum(a.dt[, gain_out]), 2),
-    round(sum(a.dt[, gain_home]), 2),
-    round(sum(a.dt[, gain_draw]), 2),
-    round(sum(a.dt[, gain_away]), 2),
-    round(sum(a.dt[, gain_top_pct_10]), 2),
-    round(sum(a.dt[, gain_top_pct_5]), 2),
-    round(sum(a.dt[, gain_top_pct_1]), 2)
-  )
-  stake_wtd <- c(
-    sum(a.dt[, strat_all_wtd]),
-    sum(a.dt[, strat_fav_wtd]),
-    sum(a.dt[, strat_out_wtd]),
-    sum(a.dt[, strat_home_wtd]),
-    sum(a.dt[, strat_draw_wtd]),
-    sum(a.dt[, strat_away_wtd]),
-    sum(a.dt[, strat_top_pct_10_wtd]),
-    sum(a.dt[, strat_top_pct_5_wtd]),
-    sum(a.dt[, strat_top_pct_1_wtd])
-  )
-  gain_wtd <- c(
-    round(sum(a.dt[, gain_all_wtd]), 2),
-    round(sum(a.dt[, gain_fav_wtd]), 2),
-    round(sum(a.dt[, gain_out_wtd]), 2),
-    round(sum(a.dt[, gain_home_wtd]), 2),
-    round(sum(a.dt[, gain_draw_wtd]), 2),
-    round(sum(a.dt[, gain_away_wtd]), 2),
-    round(sum(a.dt[, gain_top_pct_10_wtd]), 2),
-    round(sum(a.dt[, gain_top_pct_5_wtd]), 2),
-    round(sum(a.dt[, gain_top_pct_1_wtd]), 2)
-  )
   strat.dt <- t(data.frame(strategy=strategy, stake=stake, gain=gain, stake_wtd=stake_wtd, gain_wtd=gain_wtd))
   strat.p.obj <- gridExtra::tableGrob(strat.dt, theme=table.theme(12), cols=NULL)
   strat.p.obj <- colorise.tableGrob(strat.p.obj, strat.dt, "grey90", "grey95")
   strat.p.obj <- grid::grobTree(
-      grid::textGrob(
-        label="Strategy",
-        # note font color goes to most recently used fill and not black???
-        gp=grid::gpar(fontsize=16, fontface="bold", fill="black", col="black"),
-        x=0.5,
-        y=0.9
-      ),
-      grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=2, col="black", alpha=0.5)),
-      strat.p.obj
+    grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=2, col="black", alpha=0.5)),
+    strat.p.obj
   )
   strat.p.obj
 }
@@ -361,6 +348,12 @@ plot.var.importance <- function(model) {
   plot.obj <- plot.obj + ggplot2::xlab("modeled variable")
   breaks <- p.dt[, x]
   labels <- p.dt[, var]
+  if(length(breaks) != length(labels)) {
+    print(summary.dt)
+    print(breaks)
+    print(labels)
+    stop("length breaks labels differ")
+  }
   plot.obj <- plot.obj + ggplot2::scale_x_continuous(breaks=breaks, labels=labels)
   plot.obj
 }
@@ -370,9 +363,24 @@ plot.decile.perf <- function(train.a.dt, train.b.dt, test.dt) {
   setkey(train.a.dt, gbmp)
   setkey(train.b.dt, gbmp)
   setkey(test.dt, gbmp)
+  if(train.a.dt[is.na(gbmp),.N] > 0) {
+    print(train.a.dt[is.na(gbmp), ])
+    stop("train a na model predictions")
+  }
+  if(train.b.dt[is.na(gbmp),.N] > 0) {
+    print(train.b.dt[is.na(gbmp), ])
+    stop("train b na model predictions")
+  }
+  if(test.dt[is.na(gbmp),.N] > 0) {
+    print(test.dt[is.na(gbmp), ])
+    stop("test na model predictions")
+  }
   train.a.dt[, rn := seq(train.a.dt[, .N])]
   train.b.dt[, rn := seq(train.b.dt[, .N])]
   test.dt[, rn := seq(test.dt[, .N])]
+  train.a.breaks <- quantile(train.a.dt[, rn], probs=seq(0, 1, by=0.1))
+  train.b.breaks <- quantile(train.b.dt[, rn], probs=seq(0, 1, by=0.1))
+  test.breaks <- quantile(test.dt[, rn], probs=seq(0, 1, by=0.1))
   train.a.dt[, decile := cut(train.a.dt[, rn], breaks=quantile(train.a.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
   train.b.dt[, decile := cut(train.b.dt[, rn], breaks=quantile(train.b.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
   test.dt[, decile := cut(test.dt[, rn], breaks=quantile(test.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
@@ -411,13 +419,23 @@ grid.square <- quote({
   grid::grid.rect(x=0.75, y=0.75, width=0.50, height=0.50, gp=grid::gpar(lwd=5, col="black", fill=NA))
 })
 
-detailed.strat.gtable <- function(a.dt, recent, aname) {
-  a.thin.dt <- a.dt[strat_top_pct_5_wtd > 0, list(
-    match_id, ftr, actr, ip, pred_prob, odds, pred_odds, spread, pred_spread,
-    strat_top_pct_5, gain_top_pct_5, strat_top_pct_5_wtd, gain_top_pct_5_wtd
-    )][order(-pred_spread)]
+detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
+  a.thin.dt <- a.dt[strat_top_per_match > 0, list(
+    match_id,
+    ftr,
+    actr,
+    ip,
+    pred_prob=round(pred_prob, 3),
+    odds=round(odds, 3),
+    pred_odds=round(pred_odds, 3),
+    spread=round(spread, 3),
+    pred_spread=round(pred_spread, 3),
+    strat_top_per_match,
+    gain_top_per_match=round(gain_top_per_match, 3),
+    strat_top_per_match_wtd,
+    gain_top_per_match_wtd=round(gain_top_per_match_wtd, 3)
+    )][order(-pred_spread)][1:10, ]
   if(all(is.na(a.thin.dt[, ftr]))) {
-    print(aname)
     a.thin.dt[, ftr := NULL]
     setkey(a.thin.dt, match_id)
     setkey(recent.dt, match_id)
@@ -427,22 +445,25 @@ detailed.strat.gtable <- function(a.dt, recent, aname) {
     a.thin.dt,
     data.table(
       match_id="total",
-      strat_top_pct_5=sum(a.thin.dt[, strat_top_pct_5]),
-      strat_top_pct_5_wtd=sum(a.thin.dt[, strat_top_pct_5_wtd]),
-      gain_top_pct_5=sum(a.thin.dt[, gain_top_pct_5]),
-      gain_top_pct_5_wtd=sum(a.thin.dt[, gain_top_pct_5_wtd])
+      strat_top_per_match=sum(a.thin.dt[, strat_top_per_match]),
+      strat_top_per_match_wtd=sum(a.thin.dt[, strat_top_per_match_wtd]),
+      gain_top_per_match=sum(a.thin.dt[, gain_top_per_match]),
+      gain_top_per_match_wtd=sum(a.thin.dt[, gain_top_per_match_wtd])
    ), fill=TRUE)
+  setnames(a.thin.dt, colnames(a.thin.dt), gsub("_", "\n", colnames(a.thin.dt)))
   p.obj <- gridExtra::tableGrob(a.thin.dt, rows=NULL)
   p.obj <- colorise.tableGrob(p.obj, a.thin.dt, "grey90", "grey95")
 
   set_row_border <- function(obj, row, color) {
+    # row + 1 because of header
     gtable::gtable_add_grob(obj, grobs=grid::rectGrob(gp=grid::gpar(fill=color, lwd=2, col=color, alpha=0.5)), t=(row+1.02), b=(row+1.98), l=1.02, r=(ncol(obj)+1))
   }
 
-  correct_preds <- sapply(1:a.thin.dt[, .N], function(i) a.thin.dt[i, ftr] == a.thin.dt[i, actr])
-  incorrect_preds <- sapply(1:a.thin.dt[, .N], function(i) a.thin.dt[i, ftr] != a.thin.dt[i, actr])
-  unknown_preds <- sapply(1:a.thin.dt[, .N], function(i) is.na(a.thin.dt[i, actr]))
+  correct_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, ftr] == a.thin.dt[i, actr]) & (!a.thin.dt[i, actr] == "NA"))
+  incorrect_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, ftr] != a.thin.dt[i, actr]) & (!a.thin.dt[i, actr] == "NA"))
+  unknown_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, actr] == "NA") | is.na(a.thin.dt[i, actr]))
 
+  set_row_border(p.obj, 0, "black")
   for (i in 1:a.thin.dt[, .N]) {
     if (isTRUE(correct_preds[[i]])) p.obj <- set_row_border(p.obj, i, "green")
     if (isTRUE(incorrect_preds[[i]])) p.obj <- set_row_border(p.obj, i, "red")
@@ -451,7 +472,7 @@ detailed.strat.gtable <- function(a.dt, recent, aname) {
   p.obj <- grid::grobTree(
     grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=0, col="black", alpha=0.5)),
     grid::textGrob(
-      label=paste0(aname, " strategy top pct 5 n=", (a.thin.dt[, .N] -1)),
+      label=paste0(aname, " strategy top per match n=", (a.thin.dt[, .N] -1)),
       gp=grid::gpar(fontsize=12, fontface="bold", fill="black", col="black"),
       x=0.5,
       y=0.9,
@@ -462,7 +483,7 @@ detailed.strat.gtable <- function(a.dt, recent, aname) {
 }
 
 plot.detailed.strategy <- function(test.dt, upcoming.dt) {
-  dload_current_year(quiet=TRUE)
+  # dload_current_year(quiet=TRUE)
   recent.csv <- paste0("~/data/", years[[1]], "/", leagues, ".csv")
   alist <- lapply(
     recent.csv

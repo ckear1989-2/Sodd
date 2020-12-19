@@ -53,9 +53,7 @@ rebase.y.sum <- function(y1, y2) {
     output <- a.dt[b.dt, on=.(y2 >= y2min, y2 <= y2max), nomatch=NA,
              .(y2, order, y2min, y2max, q)]
     # remove duplicates for some reason
-    print(output[, .N])
     output <- unique(output, by="order")
-    print(output[, .N])
     # for some reason 99% percentile isn't merging right
     missing_y2 <- a.dt[, y2][!a.dt[, order] %in% output[, order]]
     missing_order <- a.dt[, order][!a.dt[, order] %in% output[, order]]
@@ -96,40 +94,67 @@ score.model <- quote({
   # score
   # multiply predictions by weight.  not necessary because balanced by season but still good practice
   # e.g. if weights or balancing technique changes?
-  train.dt[, gbmp := predict(model, train.dt, best.trees, type="response") * weight]
-  test.dt[, gbmp := predict(model, test.dt, best.trees, type="response") * weight]
-  upcoming.dt[, gbmp := predict(model, upcoming.dt, best.trees, type="response") * weight]
+  suppressWarnings({
+    train.dt[, gbmp := predict(model, train.dt, best.trees, type="link") * weight]
+    test.dt[, gbmp := predict(model, test.dt, best.trees, type="link") * weight]
+    upcoming.dt[, gbmp := predict(model, upcoming.dt, best.trees, type="link") * weight]
+  })
+  resample::cat0n("train raw score act, pred")
+  print(train.dt[, list(act=sum(y), pred=sum(gbmp))])
+  resample::cat0n("test raw score  act, pred")
+  print(test.dt[, list(act=sum(y), pred=sum(gbmp))])
+  resample::cat0n("upcoming raw score act, pred")
+  print(test.dt[, list(act=sum(y), pred=sum(gbmp))])
+  if(family=="bernoulli") {
+    train.dt[, gbmp := gbmp + offset]
+    test.dt[, gbmp := gbmp + offset]
+    upcoming.dt[, gbmp := gbmp + offset]
+    train.dt[, gbmp := 1/(1+exp(-gbmp))]
+    test.dt[, gbmp := 1/(1+exp(-gbmp))]
+    upcoming.dt[, gbmp := 1/(1+exp(-gbmp))]
+  } else if(family=="gaussian") {
+    train.dt[, gbmp := gbmp + offset]
+    test.dt[, gbmp := gbmp + offset]
+    upcoming.dt[, gbmp := gbmp + offset]
+    train.dt[, gbmp := exp(gbmp)]
+    test.dt[, gbmp := exp(gbmp)]
+    upcoming.dt[, gbmp := exp(gbmp)]
+  }
 })
 
 rebalance.model <- quote({
   # rebalance
   resample::cat0n(rep("#", 30), "\nRebalance")
   resample::cat0n("train pre-balance act, pred")
-  print(train.dt[, list(act=sum(y), pred=sum(gbmp))])
+  print(summary(train.dt[, list(y, gbmp)]))
   resample::cat0n("test pre-balance act, pred")
-  print(test.dt[, list(act=sum(y), pred=sum(gbmp))])
+  print(summary(test.dt[, list(y, gbmp)]))
+  resample::cat0n("upcoming pre-balance act, pred")
+  print(summary(upcoming.dt[, list(y, gbmp)]))
   season.dt <- train.dt[, list(balance_factor=(sum(y) / sum(gbmp))), season]
   resample::cat0n("balance factor by season")
   test.dt[, list(act=sum(y), pred=sum(gbmp))]
   print(season.dt)
   setkey(train.dt, season)
   setkey(test.dt, season)
+  setkey(upcoming.dt, season)
   setkey(season.dt, season)
   train.dt <- merge(train.dt, season.dt, all.x=TRUE, all.y=FALSE)
-  test.dt <- merge(test.dt, season.dt, all.x=TRUE, all.y=FALSE)
   train.dt[, gbmp := gbmp * balance_factor]
+  test.dt <- merge(test.dt, season.dt, all.x=TRUE, all.y=FALSE)
   test.dt[is.na(balance_factor), balance_factor := season.dt[season.dt[!is.na(balance_factor), .N], balance_factor]]
   test.dt[, gbmp := gbmp * balance_factor]
+  upcoming.dt <- merge(upcoming.dt, season.dt, all.x=TRUE, all.y=FALSE)
+  upcoming.dt[is.na(balance_factor), balance_factor := season.dt[season.dt[!is.na(balance_factor), .N], balance_factor]]
+  upcoming.dt[, gbmp := gbmp * balance_factor]
   resample::cat0n("train post-balance act, pred")
-  print(train.dt[, list(act=sum(y), pred=sum(gbmp))])
+  print(summary(train.dt[, list(y, gbmp)]))
   resample::cat0n("test post-balance act, pred")
-  print(test.dt[, list(act=sum(y), pred=sum(gbmp))])
+  print(summary(test.dt[, list(y, gbmp)]))
   resample::cat0n("upcoming post-balance act, pred")
-  print(upcoming.dt[, list(act=sum(y), pred=sum(gbmp))])
+  print(summary(upcoming.dt[, list(y, gbmp)]))
+  # normalise probabilities by match
   if(yvar == "act") {
-    train.dt[, pred_spread := gbmp - ip]
-    test.dt[, pred_spread := gbmp - ip]
-    upcoming.dt[, pred_spread := gbmp - ip]
     train.dt[, pred_prob := gbmp]
     test.dt[, pred_prob := gbmp]
     upcoming.dt[, pred_prob := gbmp]
@@ -142,9 +167,21 @@ rebalance.model <- quote({
     test.dt[, pred_prob := gbmp + ip]
     upcoming.dt[, pred_prob := gbmp + ip]
   }
+  train.dt[, match_pred_prob := sum(pred_prob), match_id]
+  test.dt[, match_pred_prob := sum(pred_prob), match_id]
+  upcoming.dt[, match_pred_prob := sum(pred_prob), match_id]
+  train.dt[, pred_prob := pred_prob / match_pred_prob]
+  test.dt[, pred_prob := pred_prob / match_pred_prob]
+  upcoming.dt[, pred_prob := pred_prob / match_pred_prob]
+  train.dt[, pred_spread := pred_prob - ip]
+  test.dt[, pred_spread := pred_prob - ip]
+  upcoming.dt[, pred_spread := pred_prob - ip]
   train.dt[, pred_odds := 1/pred_prob]
   test.dt[, pred_odds := 1/pred_prob]
   upcoming.dt[, pred_odds := 1/pred_prob]
+  train.dt[, match_pred_prob := sum(pred_prob), match_id]
+  test.dt[, match_pred_prob := sum(pred_prob), match_id]
+  upcoming.dt[, match_pred_prob := sum(pred_prob), match_id]
 })
 
 calc.deviances <- quote({
@@ -250,7 +287,7 @@ read.model.data <- quote({
     a.dt[, weight := rep(1, a.dt[, .N])]
   } 
   if(!file.exists("logs")) dir.create("logs")
-  sink(logfile)
+  sink(logfile, split=TRUE)
   # target variables
   # odds is the decimal multiplier of stake
   # gain is the weighted winnings minus stake
@@ -258,12 +295,20 @@ read.model.data <- quote({
   a.dt[, odds := round(1 / ip, 2)]
   a.dt[, gain := (weight * odds * act) - weight]
   a.dt[, spread := act-ip]
-  if(yvar == "spread") family <- "gaussian"
-  if(yvar == "act") family <- "bernoulli"
+  if(yvar == "act") {
+    family <- "bernoulli"
+    a.dt[, offset := log(ip)]
+  } else if(yvar=="spread") {
+    family <- "gaussian"
+    a.dt[, offset := log(rep(1, a.dt[, .N]))]
+  }
   a.dt[["y"]] <- a.dt[[yvar]]
   train.dt <- a.dt[actr != "NA" & date < as.Date(adate, "%Y-%m-%d"), ]
   test.dt <- a.dt[actr != "NA" & date >= as.Date(adate, "%Y-%m-%d"), ]
   upcoming.dt <- a.dt[actr == "NA", ]
+  if(upcoming.dt[, .N] == 0) {
+    stop("no upcoming matches")
+  }
   if(any(train.dt[, match_id] %in% test.dt[, match_id])) stop("matches in train and test")
   if(any(train.dt[, match_id] %in% upcoming.dt[, match_id])) stop("matches in train and upcoming")
   if(any(test.dt[, match_id] %in% upcoming.dt[, match_id])) stop("matches in test and upcoming")

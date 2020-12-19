@@ -14,30 +14,41 @@ read.all.data <- quote({
     read.a.file
   )
   a.dt <- data.table::rbindlist(alist, fill=TRUE)
+  data.table::setnames(a.dt, colnames(a.dt), tolower(colnames(a.dt)))
+  print(colnames(a.dt))
   upcoming.dt <- read.a.file(paste0("~/data/", upcoming_fixtures))
+  data.table::setnames(upcoming.dt, colnames(upcoming.dt), tolower(colnames(upcoming.dt)))
   upcoming.dt[, season := max(a.dt[, season])]
-  upcoming.dt[, FTR := NULL]
-  upcoming.dt[, FTR := "NA"]
+  upcoming.dt[, ftr := NULL]
+  upcoming.dt[, ftr := "NA"]
   for(var in colnames(a.dt)) {
     if(!var %in% colnames(upcoming.dt)) {
       if(is.numeric(a.dt[[var]])) {
         upcoming.dt[[var]] <- -1
       } else {
-        upcoming.dt[[var]] <- "NA"
+        upcoming.dt[[var]] <- "FUCK"
+      }
+    }
+    if(all(is.na(upcoming.dt[[var]]))) {
+      if(is.numeric(a.dt[[var]])) {
+        upcoming.dt[[var]] <- -1
+      } else {
+        upcoming.dt[[var]] <- "FUCK"
       }
     }
   }
-  upcoming.dt <- upcoming.dt[Div %in% leagues, ]
-  data.table::setnames(a.dt, colnames(a.dt), tolower(colnames(a.dt)))
-  data.table::setnames(upcoming.dt, colnames(upcoming.dt), tolower(colnames(upcoming.dt)))
+  upcoming.dt <- upcoming.dt[div %in% leagues, ]
   a.dt[, match_id := paste0(date, "|", hometeam, "|", awayteam, collapse="|"), list(date, hometeam, awayteam)]
   upcoming.dt[, match_id := paste0(date, "|", hometeam, "|", awayteam, collapse="|"), list(date, hometeam, awayteam)]
   if(any(a.dt[, match_id] %in% upcoming.dt[, match_id])) {
     warning("matches in historic and upcoming")
     upcoming.dt <-upcoming.dt[!match_id %in% a.dt[, match_id]]
   }
+  print(a.dt[, .N])
   a.dt <- rbind(a.dt, upcoming.dt, fill=TRUE)
   print(colnames(a.dt))
+  print(a.dt[, .N])
+  print(upcoming.dt[, .N])
 })
 
 transpose.rows <- quote({
@@ -52,7 +63,7 @@ transpose.rows <- quote({
   a.dt[nchar(date)==10, ddate := as.Date(date, '%d/%m/%Y')]
   cat('na date count:', a.dt[is.na(date), .N], '\n')
   a.dt <- a.dt[!is.na(ddate), ]
-  a.dt <- a.dt[, list(div, date=ddate, season, hometeam, awayteam, ftr, b365h, b365d, b365a)]
+  a.dt <- a.dt[, list(div, date=ddate, season, hometeam, awayteam, ftr, fthg, ftag, b365h, b365d, b365a)]
   cat('data summary\n')
   print(summary(a.dt))
   cat('null home team\n')
@@ -66,12 +77,12 @@ transpose.rows <- quote({
   a.dt[, b365a := 1 / b365a]
   a.dt[, sip := b365h + b365d + b365a]
   a.dt <- rbind(
-    a.dt[ftr != "NA", list(div, date, season, hometeam, awayteam, actr=ftr, ip=b365h, act=as.numeric(ftr=='H'), ftr='H')],
-    a.dt[ftr != "NA", list(div, date, season, hometeam, awayteam, actr=ftr, ip=b365d, act=as.numeric(ftr=='D'), ftr='D')],
-    a.dt[ftr != "NA", list(div, date, season, hometeam, awayteam, actr=ftr, ip=b365a, act=as.numeric(ftr=='A'), ftr='A')],
-    a.dt[ftr == "NA", list(div, date, season, hometeam, awayteam, actr="NA", ip=b365h, act=-1, ftr='H')],
-    a.dt[ftr == "NA", list(div, date, season, hometeam, awayteam, actr="NA", ip=b365d, act=-1, ftr='D')],
-    a.dt[ftr == "NA", list(div, date, season, hometeam, awayteam, actr="NA", ip=b365a, act=-1, ftr='A')]
+    a.dt[ftr != "NA", list(div, date, season, hometeam, awayteam, actr=ftr, fthg=fthg, ftag=ftag, match_ip=(b365h+b365d+b365a), ip=b365h, act=as.numeric(ftr=='H'), ftr='H')],
+    a.dt[ftr != "NA", list(div, date, season, hometeam, awayteam, actr=ftr, fthg=fthg, ftag=ftag, match_ip=(b365h+b365d+b365a), ip=b365d, act=as.numeric(ftr=='D'), ftr='D')],
+    a.dt[ftr != "NA", list(div, date, season, hometeam, awayteam, actr=ftr, fthg=fthg, ftag=ftag, match_ip=(b365h+b365d+b365a), ip=b365a, act=as.numeric(ftr=='A'), ftr='A')],
+    a.dt[ftr == "NA", list(div, date, season, hometeam, awayteam, actr="NA", fthg=fthg, ftag=ftag, match_ip=(b365h+b365d+b365a), ip=b365h, act=-1, ftr='H')],
+    a.dt[ftr == "NA", list(div, date, season, hometeam, awayteam, actr="NA", fthg=fthg, ftag=ftag, match_ip=(b365h+b365d+b365a), ip=b365d, act=-1, ftr='D')],
+    a.dt[ftr == "NA", list(div, date, season, hometeam, awayteam, actr="NA", fthg=fthg, ftag=ftag, match_ip=(b365h+b365d+b365a), ip=b365a, act=-1, ftr='A')]
   )
   a.dt[, match_id := paste0(date, "|", hometeam, "|", awayteam, collapse="|"), list(date, hometeam, awayteam)]
   cat('data transposed count with NA', a.dt[, .N], '\n')
@@ -82,6 +93,11 @@ transpose.rows <- quote({
   
   all.teams <- unique(c(a.dt[, hometeam], a.dt[, awayteam]))
   cat('team count', length(all.teams), '\n')
+  upcoming.dt <- a.dt[actr == "NA", ]
+  if(upcoming.dt[, .N] == 0) {
+    print(a.dt[, .N])
+    stop("no upcoming matches")
+  }
 })
 
 result_lag <- function(a.dt, i) {
@@ -102,34 +118,42 @@ result_lag <- function(a.dt, i) {
     team.dt <- rbind(team.dt, team.up.dt, fill=TRUE)
     data.table::setkey(team.dt, date)
     team.dt[, trn := seq(team.dt[, .N])]
-    l.team.dt <- team.dt[, list(hometeam, awayteam, pr=r, p_date=date, trn=trn+i)]
+    l.team.dt <- team.dt[, list(
+      hometeam, awayteam, pr=r, phg=fthg, pag=ftag, p_date=date, trn=trn+i)]
     l.team.dt[hometeam == ateam, pv := 'home']
     l.team.dt[awayteam == ateam, pv := 'away']
     l.team.dt[, hometeam := NULL]
     l.team.dt[, awayteam := NULL]
     data.table::setkey(team.dt, trn)
     data.table::setkey(l.team.dt, trn)
-    team.dt <- merge(team.dt, l.team.dt, all.x=TRUE, all.y=FALSE)[, list(hometeam, awayteam, date, r, pr, pv, p_date)]
+    team.dt <- merge(team.dt, l.team.dt, all.x=TRUE, all.y=FALSE)[, list(
+      hometeam, awayteam, date, r, pr, pv, p_date, phg, pag)]
     team.dt[, pd := as.numeric(date - p_date)]
     team.dt[, p_date := NULL]
+    team.dt[pv == "home", pgf := phg]
+    team.dt[pv == "away", pgf := pag]
+    team.dt[pv == "home", pga := pag]
+    team.dt[pv == "away", pga := phg]
   
-    h.team.dt <- team.dt[hometeam == ateam, list(hometeam, awayteam, date, r, pr, pv, pd)]
+    h.team.dt <- team.dt[hometeam == ateam, list(hometeam, awayteam, date, r, pr, pv, pd, pgf, pga)]
     data.table::setkey(h.team.dt, date)
     h.team.dt[, trn := seq(h.team.dt[, .N])]
     hl.team.dt <- h.team.dt[, list(hphr=r, hph_date=date, trn=trn+i)]
     data.table::setkey(h.team.dt, trn)
     data.table::setkey(hl.team.dt, trn)
-    h.team.dt <- merge(h.team.dt, hl.team.dt, all.x=TRUE, all.y=FALSE)[, list(hometeam, awayteam, date, hpr=pr, hpd=pd, hpv=pv, hphr, hph_date)]
+    h.team.dt <- merge(h.team.dt, hl.team.dt, all.x=TRUE, all.y=FALSE)[, list(
+      hometeam, awayteam, date, hpr=pr, hpd=pd, hpv=pv, hphr, hph_date, hpgf=pgf, hpga=pga)]
     h.team.dt[, hphd := as.numeric(date - hph_date)]
     h.team.dt[, hph_date := NULL]
 
-    a.team.dt <- team.dt[awayteam == ateam, list(hometeam, awayteam, date, r, pr, pv, pd)]
+    a.team.dt <- team.dt[awayteam == ateam, list(hometeam, awayteam, date, r, pr, pv, pd, pgf, pga)]
     data.table::setkey(a.team.dt, date)
     a.team.dt[, trn := seq(a.team.dt[, .N])]
     al.team.dt <- a.team.dt[, list(apar=r, apa_date=date, trn=trn+i)]
     data.table::setkey(a.team.dt, trn)
     data.table::setkey(al.team.dt, trn)
-    a.team.dt <- merge(a.team.dt, al.team.dt, all.x=TRUE, all.y=FALSE)[, list(hometeam, awayteam, date, apr=pr, apd=pd, apv=pv, apar, apa_date)]
+    a.team.dt <- merge(a.team.dt, al.team.dt, all.x=TRUE, all.y=FALSE)[, list(
+      hometeam, awayteam, date, apr=pr, apd=pd, apv=pv, apar, apa_date, apgf=pgf, apga=pga)]
     a.team.dt[, apad := as.numeric(date - apa_date)]
     a.team.dt[, apa_date := NULL]
  
@@ -197,10 +221,11 @@ result_lag <- function(a.dt, i) {
       "pr",
       "pp",
       "pd",
-      "pv"
+      "pv",
+      "pgf",
+      "pga"
     )
   )
-  print(all.vars)
   i.vars <- paste0(all.vars[[1]], all.vars[[2]])
   i.vars <- c(i.vars, paste0("h", c("phr", "phd", "php")))
   i.vars <- c(i.vars, paste0("a", c("par", "pad", "pap")))
@@ -299,7 +324,7 @@ if(length(args) > 3) file_run <- strsplit(args[[4]], "/")[[1]][[2]]
 # print(file_run)
 if(file_run == this_file) {
   if(!file.exists("logs/")) dir.create("logs")
-  sink("logs/standardise.log")
+  sink("logs/standardise.log", split=TRUE)
   eval(read.all.data)
   eval(transpose.rows)
   eval(prep.modeling.vars)
