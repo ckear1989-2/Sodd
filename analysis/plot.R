@@ -214,7 +214,15 @@ colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
 }
 
 plot.model.param <- function(model) {
-  params <- c("n.trees", "shrinkage", "interaction.depth", "train.fraction", "train.error", "valid.error")
+  params <- c(
+    "n.trees",
+    "shrinkage",
+    "interaction.depth",
+    "train.fraction",
+    "train.error",
+    "valid.error",
+    "cv.error"
+  )
   params <- gsub(".", "\n", params, fixed=TRUE)
   vals <- c(
     round(model$n.trees),
@@ -222,7 +230,8 @@ plot.model.param <- function(model) {
     round(model$interaction.depth),
     round(model$train.fraction, 2),
     round(model$train.error[[model$n.trees]], 4),
-    round(model$valid.error[[model$n.trees]], 4)
+    round(model$valid.error[[model$n.trees]], 4),
+    round(model$cv.error[[model$n.trees]], 4)
   )
   params.dt <- t(data.frame(params, value=vals))
   p.obj <- gridExtra::tableGrob(params.dt, theme=table.theme(7), cols=NULL)
@@ -294,7 +303,7 @@ plot.strategies <- function(a.dt) {
   strategy <- gsub("_", "\n", strategy)
   strat.dt <- t(data.frame(strategy=strategy, stake=stake, gain=gain, stake_wtd=stake_wtd, gain_wtd=gain_wtd))
   strat.p.obj <- gridExtra::tableGrob(strat.dt, theme=table.theme(12), cols=NULL)
-  strat.p.obj <- colorise.tableGrob(strat.p.obj, strat.dt, "grey90", "grey95")
+  strat.p.obj <- colorise.tableGrob(strat.p.obj, strat.dt, "grey90", "grey95", 8)
   strat.p.obj <- grid::grobTree(
     grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=2, col="black", alpha=0.5)),
     strat.p.obj
@@ -303,30 +312,34 @@ plot.strategies <- function(a.dt) {
 }
 
 plot.model.perf <- function(model) {
-  p.data <- data.table(train.a=model$train.error, train.b=model$valid.error)
+  p.data <- data.table(
+    train.a=model$train.error,
+    train.b=model$valid.error,
+    cv=model$cv.error
+  )
   p.data[, trees := seq(p.data[, .N])]
   min_y1 <- min(p.data[, train.a])
   max_y1 <- max(p.data[, train.a])
   range_y1 <- max_y1 - min_y1
-  p.data[, train.b_rs := rebase.y(p.data[, train.a], p.data[, train.b])]
+  p.data[, cv_rs := rebase.y(c(p.data[, train.a], p.data[, train.b]), p.data[, cv])]
   sf <- 0.2
   plot.obj <- ggplot2::ggplot(p.data)
   plot.obj <- plot.obj + ggplot2::geom_line(ggplot2::aes(x=trees, y=train.a), color="red", size=2)
-  plot.obj <- plot.obj + ggplot2::geom_line(ggplot2::aes(x=trees, y=train.b_rs), color="blue", size=2)
-  best.y <- min(p.data[, train.b_rs])
-  best.x <- p.data[train.b_rs == best.y, trees]
-  df <- data.frame(x1=c(best.x, best.x), x2=c(best.x, Inf), y1=c(best.y, best.y), y2=c(-Inf, best.y))
+  plot.obj <- plot.obj + ggplot2::geom_line(ggplot2::aes(x=trees, y=train.b), color="blue", size=2)
+  plot.obj <- plot.obj + ggplot2::geom_line(ggplot2::aes(x=trees, y=cv_rs), color="green", size=2)
+  best.y <- min(p.data[, train.b])
+  best.x <- p.data[train.b == best.y, trees]
+  df <- data.frame(x1=c(0, best.x), x2=c(best.x, best.x), y1=c(best.y, best.y), y2=c(best.y, -Inf))
   plot.obj <- plot.obj + ggplot2::geom_segment(ggplot2::aes(x=x1, y=y1, xend=x2, yend=y2), data=df, linetype="dashed")
   plot.obj <- plot.obj + ggplot2::theme(
     axis.text.x=ggplot2::element_text(angle=90, vjust=0.5, hjust=0.5),
     plot.title=ggplot2::element_text(hjust=0.5),
     panel.border=ggplot2::element_rect(colour="black", fill=NA, size=2)
   )
-  plot.obj <- plot.obj + ggplot2::ggtitle("mean deviance on train.a and train.b")
+  plot.obj <- plot.obj + ggplot2::ggtitle("mean deviance on train.a, train.b and cv")
   plot.obj <- plot.obj + ggplot2::scale_y_continuous(
-    limits=c((min_y1 - (sf * range_y1)), (max_y1 + (sf * range_y1))),
-    name="train.a.mean.deviance",
-    sec.axis=ggplot2::sec_axis(~ rebase.y(p.data[, train.b], .), name="train.b mean deviance")
+    name="train.a, train.b mean.deviance",
+    sec.axis=ggplot2::sec_axis(~ rebase.y(p.data[, cv], .), name="cv mean.deviance")
   )
   plot.obj
 }

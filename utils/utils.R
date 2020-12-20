@@ -84,10 +84,14 @@ rebase.y.sum <- function(y1, y2) {
 model.summary <- quote({
   # model summary
   resample::cat0n(rep("#", 30), "\nModel Summary")
-  best.trees <- gbm::gbm.perf(model, plot.it=FALSE, method="test")
-  resample::cat0n("gbm perf best.trees=", best.trees)
+  print(attributes(model))
+  best.trees.test <- gbm::gbm.perf(model, plot.it=FALSE, method="test")
+  best.trees.cv <- gbm::gbm.perf(model, plot.it=FALSE, method="cv")
+  best.trees.oob <- gbm::gbm.perf(model, plot.it=FALSE, method="OOB")
+  resample::cat0n("gbm perf best.trees.test=", best.trees.test)
+  resample::cat0n("gbm perf best.trees.cv=", best.trees.cv)
+  resample::cat0n("gbm perf best.trees.oob=", best.trees.oob)
   resample::cat0n("gbm summary")
-  summary(model, plotit=FALSE)
 })
 
 score.model <- quote({
@@ -95,9 +99,9 @@ score.model <- quote({
   # multiply predictions by weight.  not necessary because balanced by season but still good practice
   # e.g. if weights or balancing technique changes?
   suppressWarnings({
-    train.dt[, gbmp := predict(model, train.dt, best.trees, type="link") * weight]
-    test.dt[, gbmp := predict(model, test.dt, best.trees, type="link") * weight]
-    upcoming.dt[, gbmp := predict(model, upcoming.dt, best.trees, type="link") * weight]
+    train.dt[, gbmp := predict(model, train.dt, best.trees.cv, type="link") * weight]
+    test.dt[, gbmp := predict(model, test.dt, best.trees.cv, type="link") * weight]
+    upcoming.dt[, gbmp := predict(model, upcoming.dt, best.trees.cv, type="link") * weight]
   })
   resample::cat0n("train raw score act, pred")
   print(train.dt[, list(act=sum(y), pred=sum(gbmp))])
@@ -259,6 +263,7 @@ build.model <- quote({
     n.trees=n.trees,
     shrinkage=shrinkage,
     interaction.depth=interaction.depth,
+    cv.folds=cv.folds,
     keep.data=FALSE,
     verbose=TRUE
   )
@@ -269,6 +274,7 @@ model.params <- quote({
   resample::cat0n(rep("#", 30), "\nModel Parameters")
   resample::cat0n(
     "train.fraction:", train.fraction, "\n",
+    "cv.folds:", cv.folds, "\n",
     "n.trees:", n.trees, "\n",
     "shrinkage:", shrinkage, "\n",
     "interaction.depth:", interaction.depth, "\n",

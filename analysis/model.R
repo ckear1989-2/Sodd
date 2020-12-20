@@ -11,9 +11,10 @@ build.a.model <- function(adate, yvar, weights=FALSE) {
   if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
   # model params
   train.fraction <- 0.7
-  n.trees <- 10
+  n.trees <- 50
   shrinkage <- 0.01
   interaction.depth <- 3
+  cv.folds <- 3
   xvar <- c(
     "ip",
     "div",
