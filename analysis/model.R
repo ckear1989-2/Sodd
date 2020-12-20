@@ -11,27 +11,27 @@ build.a.model <- function(adate, yvar, weights=FALSE) {
   if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
   # model params
   train.fraction <- 0.7
-  n.trees <- 50
+  n.trees <- 500
   shrinkage <- 0.01
-  interaction.depth <- 3
+  interaction.depth <- 2
   cv.folds <- 3
   xvar <- c(
     "ip",
     "div",
     "ftr",
     paste0("hpp", 1:4),
-    # paste0("app", 1:4),
-    # paste0("hpgf", 1:4),
-    # paste0("apgf", 1:4),
-    # paste0("hpga", 1:4),
-    # paste0("apga", 1:4),
-    # paste0("hpd", 1:4),
-    # paste0("apd", 1:4),
-    # paste0("hphp", 1:3),
-    # paste0("apap", 1:3),
-    # paste0("hphd", 1:3),
-    # paste0("apad", 1:3),
-    # paste0("hpp_cum", 2:5),
+    paste0("app", 1:4),
+    paste0("hpgf", 1:4),
+    paste0("apgf", 1:4),
+    paste0("hpga", 1:4),
+    paste0("apga", 1:4),
+    paste0("hpd", 1:4),
+    paste0("apd", 1:4),
+    paste0("hphp", 1:3),
+    paste0("apap", 1:3),
+    paste0("hphd", 1:3),
+    paste0("apad", 1:3),
+    paste0("hpp_cum", 2:5),
     paste0("app_cum", 2:5)
   )
   uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
@@ -74,8 +74,7 @@ if(file_run == this_file) {
   #   print(all.args[x, Var3])
   #   build.a.model(all.args[x, Var1], all.args[x, Var2], weights=all.args[x, Var3])
   # }
-  build.a.model("2020-12-11", "spread", weights=FALSE)
-  # build.all.models.one.date("2020-12-11")
+  # build.a.model("2020-12-11", "spread", weights=FALSE)
+  build.all.models.one.date("2020-12-11")
 }
-warnings()
 

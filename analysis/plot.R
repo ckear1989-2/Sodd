@@ -127,14 +127,16 @@ partial.plot <- function(model, x, a.dt) {
   plot.obj
 }
 
-plot.model.run <- function(model, train.a.dt, train.b.dt, test.dt) {
+plot.model.run <- function(model, train.a.dt, train.b.dt, test.dt, upcoming.dt) {
   model.param.p.obj <- plot.model.param(model)
-  deviances.p.obj <- plot.deviances(train.a.dt, train.b.dt, test.dt)
+  model.perf.p.obj <- plot.data.perf(train.a.dt, train.b.dt, test.dt, upcoming.dt)
   strat.p.obj <- plot.strategies(test.dt)
-  gs <- list(model.param.p.obj, deviances.p.obj, strat.p.obj)
+  gs <- list(model.param.p.obj[[1]], model.param.p.obj[[2]], model.perf.p.obj, strat.p.obj)
   lay <- rbind(
-    c(1,2),
-    c(3,3)
+    c(1,3),
+    c(2,3),
+    c(4,4),
+    c(4,4)
   )
   gridExtra::arrangeGrob(grobs=gs, layout_matrix=lay)
 }
@@ -146,12 +148,15 @@ padding <- grid::unit.c(grid::unit(2, "mm"), grid::unit(2, "mm"))
 table.theme <- function(fs) {
   gridExtra::ttheme_default(
     core=list(
-      fg_params=list(fontsize=fs, hjust=0, x=0.1),
+      fg_params=list(fontsize=fs, just="left"),
       padding=padding
     ),
     rowhead=list(
-      fg_params=list(fontsize=fs, fontface="bold", hjust=0, x=0.1),
-      bg_params=list(fill=blues9[1:3], col=NA),
+      fg_params=list(fontsize=fs, fontface="bold", just="left"),
+      padding=padding
+    ),
+    colhead=list(
+      fg_params=list(fontsize=fs, fontface="bold", just="left"),
       padding=padding
     )
   )
@@ -165,7 +170,7 @@ colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
         if(!length(ind) > 0) {
           next
         } else {
-          obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs)
+          obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs, just="left")
         }
       }
     }
@@ -177,7 +182,7 @@ colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
       if(!length(ind) > 0) {
         next
       } else {
-        obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs, fontface="bold")
+        obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs, fontface="bold", just="left")
       }
     }
   }
@@ -188,7 +193,7 @@ colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
       if(!length(ind) > 0) {
         next
       } else {
-        obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs, fontface="bold")
+        obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs, fontface="bold", just="left")
       }
     }
   }
@@ -205,7 +210,7 @@ colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
             } else {
               fill <- col2
             }
-            obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fill=fill, col="white")
+            obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fill=fill, col="white", just="left")
         }
       }
     }
@@ -215,68 +220,105 @@ colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
 
 plot.model.param <- function(model) {
   params <- c(
+    "train.fraction",
+    "cv.folds",
     "n.trees",
     "shrinkage",
     "interaction.depth",
-    "train.fraction",
+    "family",
     "train.error",
     "valid.error",
-    "cv.error"
+    "cv.error",
+    "oobag.improve"
   )
-  params <- gsub(".", "\n", params, fixed=TRUE)
+  params <- gsub("\\.", "\n", params)
+  best.trees <- gbm::gbm.perf(model, plot.it=FALSE, method="test")
   vals <- c(
-    round(model$n.trees),
+    round(model$train.fraction, 2),
+    model$cv.folds,
+    model$n.trees,
     round(model$shrinkage, 3),
     round(model$interaction.depth),
-    round(model$train.fraction, 2),
-    round(model$train.error[[model$n.trees]], 4),
-    round(model$valid.error[[model$n.trees]], 4),
-    round(model$cv.error[[model$n.trees]], 4)
+    model$distribution$name,
+    round(model$train.error[[best.trees]], 4),
+    round(model$valid.error[[best.trees]], 4),
+    round(model$cv.error[[best.trees]], 4),
+    round(model$oobag.improve[[best.trees]], 4)
   )
-  params.dt <- t(data.frame(params, value=vals))
-  p.obj <- gridExtra::tableGrob(params.dt, theme=table.theme(7), cols=NULL)
-  p.obj <- colorise.tableGrob(p.obj, params.dt, "red1", "red3", 7)
-  p.obj <- grid::grobTree(
-    grid::textGrob(
-      label="Parameters",
-      gp=grid::gpar(fontsize=16, fontface="bold", fill="black", col="black"),
-      x=0.5,
-      y=0.9
-    ),
-    grid::rectGrob(gp=grid::gpar(fill="red1", lwd=2, col="black", alpha=0.5)),
-    p.obj
+  params.dt.0 <- t(data.frame(parameter=params[1:5], value=vals[1:5]))
+  p.obj.0 <- gridExtra::tableGrob(params.dt.0, theme=table.theme(10), cols=NULL)
+  p.obj.0 <- colorise.tableGrob(p.obj.0, params.dt.0, "red1", "red3", 10)
+  params.dt.1 <- t(data.frame(parameter=params[6:10], value=vals[6:10]))
+  p.obj.1 <- gridExtra::tableGrob(params.dt.1, theme=table.theme(10), cols=NULL)
+  p.obj.1 <- colorise.tableGrob(p.obj.1, params.dt.1, "red1", "red3", 10)
+  # p.obj <- gridExtra::arrangeGrob(list(p.obj.0, p.obj.1), layout=rbind(c(1), c(2)))
+  p.obj.0 <- grid::grobTree(
+    grid::rectGrob(gp=grid::gpar(fill="red1", lwd=0, col="black", alpha=0.5)),
+    p.obj.0
   )
-  p.obj
+  p.obj.1 <- grid::grobTree(
+    grid::rectGrob(gp=grid::gpar(fill="red1", lwd=0, col="black", alpha=0.5)),
+    p.obj.1
+  )
+  list(p.obj.0, p.obj.1)
 }
 
-plot.deviances <- function(train.a.dt, train.b.dt, test.dt) {
-  devs <- c(
-    "train.a_mean_null",
-    "train.a_mean_model",
-    "train.b_mean_null", 
-    "train.b_mean_model",
-    "test_mean_null",
-    "test_mean_model"
+plot.data.perf <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
+  dts <- c(
+    "train.a",
+    "train.b",
+    "test",
+    "upcoming"
   )
-  devs <- gsub("_", "\n", devs, fixed=TRUE)
-  vals <- c(
+  min.date <- c(
+    min(train.a.dt[, date]),
+    min(train.b.dt[, date]),
+    min(test.dt[, date]),
+    min(upcoming.dt[, date])
+  )
+  max.date <- c(
+    max(train.a.dt[, date]),
+    max(train.b.dt[, date]),
+    max(test.dt[, date]),
+    max(upcoming.dt[, date])
+  )
+  records <- c(
+    train.a.dt[, .N],
+    train.b.dt[, .N],
+    test.dt[, .N],
+    upcoming.dt[, .N]
+  )
+  matches <- c(
+    length(unique(train.a.dt[, match_id])),
+    length(unique(train.b.dt[, match_id])),
+    length(unique(test.dt[, match_id])),
+    length(unique(upcoming.dt[, match_id]))
+  )
+  null.dev <- c(
     round(mean(train.a.dt[, null_dev]), 4),
-    round(mean(train.a.dt[, model_dev]), 4),
-    round(mean(train.b.dt[, null_dev]), 4),
     round(mean(train.b.dt[, model_dev]), 4),
     round(mean(test.dt[, null_dev]), 4),
-    round(mean(test.dt[, model_dev]), 4)
+    NA
   )
-  devs.dt <- t(data.frame(devs, value=vals))
-  p.obj <- gridExtra::tableGrob(devs.dt, theme=table.theme(8), cols=NULL)
-  p.obj <- colorise.tableGrob(p.obj, devs.dt, "gold", "gold3", 8)
+  model.dev <- c(
+    round(mean(train.a.dt[, model_dev]), 4),
+    round(mean(train.b.dt[, null_dev]), 4),
+    round(mean(test.dt[, model_dev]), 4),
+    NA
+  )
+  devs.dt <- data.frame(
+    data=dts,
+    min.date=min.date,
+    max.date=max.date,
+    records=records,
+    matches=matches,
+    null.dev=null.dev,
+    model.dev=model.dev
+  )
+  setnames(devs.dt, colnames(devs.dt), gsub("\\.", "\n", colnames(devs.dt)))
+  p.obj <- gridExtra::tableGrob(devs.dt, theme=table.theme(7), rows=NULL)
+  p.obj <- colorise.tableGrob(p.obj, devs.dt, "gold", "gold3", 7)
   p.obj <- grid::grobTree(
-      grid::textGrob(
-        label="Deviances",
-        gp=grid::gpar(fontsize=16, fontface="bold", fill="black", col="black"),
-        x=0.5,
-        y=0.9
-      ),
       grid::rectGrob(gp=grid::gpar(fill="gold", lwd=2, col="black", alpha=0.5)),
       p.obj
   )
@@ -302,8 +344,8 @@ plot.strategies <- function(a.dt) {
   gain_wtd <- sapply(strategy, function(x) round(sum(a.dt[[paste0("gain_", x, "_wtd")]]), 2))
   strategy <- gsub("_", "\n", strategy)
   strat.dt <- t(data.frame(strategy=strategy, stake=stake, gain=gain, stake_wtd=stake_wtd, gain_wtd=gain_wtd))
-  strat.p.obj <- gridExtra::tableGrob(strat.dt, theme=table.theme(12), cols=NULL)
-  strat.p.obj <- colorise.tableGrob(strat.p.obj, strat.dt, "grey90", "grey95", 8)
+  strat.p.obj <- gridExtra::tableGrob(strat.dt, theme=table.theme(10), cols=NULL)
+  strat.p.obj <- colorise.tableGrob(strat.p.obj, strat.dt, "grey90", "grey95", 10)
   strat.p.obj <- grid::grobTree(
     grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=2, col="black", alpha=0.5)),
     strat.p.obj
@@ -329,7 +371,7 @@ plot.model.perf <- function(model) {
   plot.obj <- plot.obj + ggplot2::geom_line(ggplot2::aes(x=trees, y=cv_rs), color="green", size=2)
   best.y <- min(p.data[, train.b])
   best.x <- p.data[train.b == best.y, trees]
-  df <- data.frame(x1=c(0, best.x), x2=c(best.x, best.x), y1=c(best.y, best.y), y2=c(best.y, -Inf))
+  df <- data.frame(x1=c(1, best.x), x2=c(best.x, best.x), y1=c(best.y, best.y), y2=c(best.y, -Inf))
   plot.obj <- plot.obj + ggplot2::geom_segment(ggplot2::aes(x=x1, y=y1, xend=x2, yend=y2), data=df, linetype="dashed")
   plot.obj <- plot.obj + ggplot2::theme(
     axis.text.x=ggplot2::element_text(angle=90, vjust=0.5, hjust=0.5),
@@ -391,12 +433,9 @@ plot.decile.perf <- function(train.a.dt, train.b.dt, test.dt) {
   train.a.dt[, rn := seq(train.a.dt[, .N])]
   train.b.dt[, rn := seq(train.b.dt[, .N])]
   test.dt[, rn := seq(test.dt[, .N])]
-  train.a.breaks <- quantile(train.a.dt[, rn], probs=seq(0, 1, by=0.1))
-  train.b.breaks <- quantile(train.b.dt[, rn], probs=seq(0, 1, by=0.1))
-  test.breaks <- quantile(test.dt[, rn], probs=seq(0, 1, by=0.1))
-  train.a.dt[, decile := cut(train.a.dt[, rn], breaks=quantile(train.a.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
-  train.b.dt[, decile := cut(train.b.dt[, rn], breaks=quantile(train.b.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
-  test.dt[, decile := cut(test.dt[, rn], breaks=quantile(test.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)]
+  train.a.dt[, decile := as.numeric(as.character(cut(train.a.dt[, rn], breaks=quantile(train.a.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)))]
+  train.b.dt[, decile := as.numeric(as.character(cut(train.b.dt[, rn], breaks=quantile(train.b.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)))]
+  test.dt[, decile := as.numeric(as.character(cut(test.dt[, rn], breaks=quantile(test.dt[, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)))]
   summary.dt <- rbind(
     train.a.dt[, list(dt="train.a", dtc="red", gain=sum(gain), gain_wtd=sum(gain_all_wtd), count=.N, weight=sum(weight)), decile],
     train.b.dt[, list(dt="train.b", dtc="blue", gain=sum(gain), gain_wtd=sum(gain_all_wtd), count=.N, weight=sum(weight)), decile],
@@ -447,12 +486,13 @@ detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
     gain_top_per_match=round(gain_top_per_match, 3),
     strat_top_per_match_wtd,
     gain_top_per_match_wtd=round(gain_top_per_match_wtd, 3)
-    )][order(-pred_spread)][1:10, ]
+    )][order(-pred_spread)][1:20, ]
   if(all(is.na(a.thin.dt[, ftr]))) {
     a.thin.dt[, ftr := NULL]
     setkey(a.thin.dt, match_id)
     setkey(recent.dt, match_id)
     a.thin.dt <- merge(a.thin.dt, recent.dt, all.x=TRUE, all.y=FALSE, by="match_id")
+    a.thin.dt[, spread := NA]
   }
   a.thin.dt <- rbind(
     a.thin.dt,
@@ -464,8 +504,8 @@ detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
       gain_top_per_match_wtd=sum(a.thin.dt[, gain_top_per_match_wtd])
    ), fill=TRUE)
   setnames(a.thin.dt, colnames(a.thin.dt), gsub("_", "\n", colnames(a.thin.dt)))
-  p.obj <- gridExtra::tableGrob(a.thin.dt, rows=NULL)
-  p.obj <- colorise.tableGrob(p.obj, a.thin.dt, "grey90", "grey95")
+  p.obj <- gridExtra::tableGrob(a.thin.dt, theme=table.theme(16), rows=NULL)
+  p.obj <- colorise.tableGrob(p.obj, a.thin.dt, "grey90", "grey95", 16)
 
   set_row_border <- function(obj, row, color) {
     # row + 1 because of header
@@ -485,8 +525,8 @@ detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
   p.obj <- grid::grobTree(
     grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=0, col="black", alpha=0.5)),
     grid::textGrob(
-      label=paste0(aname, " strategy top per match n=", (a.thin.dt[, .N] -1)),
-      gp=grid::gpar(fontsize=12, fontface="bold", fill="black", col="black"),
+      label=paste0(aname, " strategy top per match topn=", (a.thin.dt[, .N] -1)),
+      gp=grid::gpar(fontsize=16, fontface="bold", fill="black", col="black"),
       x=0.5,
       y=0.9,
     ),
@@ -519,7 +559,7 @@ plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, 
   pdffile <- gsub(".log", ".pdf", logfile)
   pdf(pdffile, h=7, w=14)
     gridExtra::grid.arrange(
-      plot.model.run(model, train.a.dt, train.b.dt, test.dt),
+      plot.model.run(model, train.a.dt, train.b.dt, test.dt, upcoming.dt),
       plot.model.perf(model),
       plot.var.importance(model),
       plot.decile.perf(train.a.dt, train.b.dt, test.dt)

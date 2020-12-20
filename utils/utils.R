@@ -222,6 +222,7 @@ act.pred.summary <- quote({
   resample::cat0n("summary test act, pred")
   summary(upcoming.dt[, list(act=spread, pred=pred_spread)])
 })
+
 positive.model.predictions <- quote({
   # positive model prediciton
   resample::cat0n(rep("#", 30), "\nPositive Model Predictions")
@@ -229,25 +230,23 @@ positive.model.predictions <- quote({
   resample::cat0n("train positive prediction count ", train.ppc)
   if(train.ppc > 0) {
     resample::cat0n("train positive prediction")
-    print(train.dt[pred_spread > 0, list(date, hometeam, awayteam, ftr, actr, ip, pred_spread, y)][order(-pred_spread)])
-    resample::cat0n("train y", sum(train.dt[pred_spread > 0, y]))
-    resample::cat0n("train mean y", mean(train.dt[pred_spread > 0, y]))
+    resample::cat0n("train gain", sum(train.dt[pred_spread > 0, gain]))
+    resample::cat0n("train mean gain", mean(train.dt[pred_spread > 0, gain]))
+    print(train.dt[pred_spread > 0, list(match_id, ftr, actr, ip, pred_odds, pred_spread, gain)][order(-pred_spread)])
   }
   test.ppc <- test.dt[pred_spread > 0, .N]
   resample::cat0n("test positive prediction count ", test.ppc)
   if(test.ppc > 0) {
     resample::cat0n("test positive prediction")
-    print(test.dt[pred_spread > 0, list(date, hometeam, awayteam, ftr, actr, ip, pred_spread, y)][order(-pred_spread)])
-    resample::cat0n("test y", sum(test.dt[pred_spread > 0, y]))
-    resample::cat0n("test mean y", mean(test.dt[pred_spread > 0, y]))
+    resample::cat0n("test gain", sum(test.dt[pred_spread > 0, gain]))
+    resample::cat0n("test mean gain", mean(test.dt[pred_spread > 0, gain]))
+    print(test.dt[pred_spread > 0, list(match_id, ftr, actr, ip, pred_odds, pred_spread, gain)][order(-pred_spread)])
   }
   upcoming.ppc <- upcoming.dt[pred_spread > 0, .N]
   resample::cat0n("upcoming positive prediction count ", upcoming.ppc)
   if(upcoming.ppc > 0) {
     resample::cat0n("upcoming positive prediction")
-    print(upcoming.dt[pred_spread > 0, list(date, hometeam, awayteam, ftr, actr, ip, pred_spread, y)][order(-pred_spread)])
-    resample::cat0n("upcoming y", sum(upcoming.dt[pred_spread > 0, y]))
-    resample::cat0n("upcoming mean y", mean(upcoming.dt[pred_spread > 0, y]))
+    print(upcoming.dt[pred_spread > 0, list(match_id, ftr, ip, pred_odds, pred_spread)][order(-pred_spread)])
   }
 })
 
@@ -273,12 +272,12 @@ model.params <- quote({
   # model params
   resample::cat0n(rep("#", 30), "\nModel Parameters")
   resample::cat0n(
+    "yvar:", yvar, "\n",
     "train.fraction:", train.fraction, "\n",
     "cv.folds:", cv.folds, "\n",
     "n.trees:", n.trees, "\n",
     "shrinkage:", shrinkage, "\n",
     "interaction.depth:", interaction.depth, "\n",
-    "yvar:", yvar, "\n",
     "family:", family
   )
 })
