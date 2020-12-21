@@ -486,13 +486,16 @@ detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
     gain_top_per_match=round(gain_top_per_match, 3),
     strat_top_per_match_wtd,
     gain_top_per_match_wtd=round(gain_top_per_match_wtd, 3)
-    )][order(-pred_spread)][1:20, ]
-  if(all(is.na(a.thin.dt[, ftr]))) {
-    a.thin.dt[, ftr := NULL]
+    )][order(-pred_spread)]
+  if(a.thin.dt[, .N] > 20) a.thin.dt <- a.thin.dt[1:20, ]
+  # check if updated recent fixtures has full time scores
+  if(all((is.na(a.thin.dt[, actr])) | (a.thin.dt[, actr] == "NA"))) {
     setkey(a.thin.dt, match_id)
     setkey(recent.dt, match_id)
     a.thin.dt <- merge(a.thin.dt, recent.dt, all.x=TRUE, all.y=FALSE, by="match_id")
-    a.thin.dt[, spread := NA]
+    a.thin.dt[, actr := actr_new]
+    a.thin.dt[, actr_new := NULL]
+    a.thin.dt[, spread := as.numeric(NA)]
   }
   a.thin.dt <- rbind(
     a.thin.dt,
@@ -547,7 +550,7 @@ plot.detailed.strategy <- function(test.dt, upcoming.dt) {
   setnames(recent.dt, colnames(recent.dt), tolower(colnames(recent.dt)))
   recent.dt[, date := as.Date(date, '%d/%m/%y')]
   recent.dt[, match_id := paste0(date, "|", hometeam, "|", awayteam, collapse="|"), list(date, hometeam, awayteam)]
-  recent.dt <- recent.dt[, list(match_id, actr=ftr)]
+  recent.dt <- recent.dt[, list(match_id, actr_new=ftr)]
 
   p.obj.test <- detailed.strat.gtable(test.dt, recent.dt, "test")
   p.obj.upcoming <- detailed.strat.gtable(upcoming.dt, recent.dt, "upcoming")
