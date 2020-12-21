@@ -2,6 +2,8 @@
 library("data.table")
 
 source("utils/utils.R")
+source("analysis/strategy.R")
+source("analysis/plot.R")
 
 create_test_dataset <- quote({
   # 10% sample of existing dataset
@@ -101,11 +103,48 @@ create_test_model <- quote({
 
 })
 
+read.test.model <-quote({
+  model <- readRDS("~/data/R/rds/test.model.rds")
+})
+
+create_test_model_doc <- quote({
+  adate <- "2020-12-11"
+  yvar <- "spread"
+  eval(read.test.model.data)
+  if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
+  # model params
+  train.fraction <- 0.7
+  n.trees <- 50
+  shrinkage <- 0.01
+  interaction.depth <- 2
+  cv.folds <- 3
+  xvar <- c(
+    "ip",
+    "div",
+    "ftr",
+    paste0("hpp", 1:4)
+  )
+  uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
+  formula <- as.formula(paste("y", paste(xvar, collapse="+"), sep="~offset(offset)+"))
+  eval(read.test.model)
+  eval(model.params)
+  eval(model.summary)
+  eval(score.model)
+  eval(rebalance.model)
+  eval(calc.deviances)
+  eval(act.pred.summary)
+  eval(positive.model.predictions)
+  run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
+  plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, logfile)
+  sink()
+})
+
 args = commandArgs()
 this_file <- "create_test_data.R"
 file_run <- ""
 if(length(args) > 3) file_run <- strsplit(args[[4]], "/")[[1]][[2]]
 if(file_run == this_file) {
   # eval(create_test_dataset)
-  eval(create_test_model)
+  # eval(create_test_model)
+  eval(create_test_model_doc)
 }
