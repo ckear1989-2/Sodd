@@ -3,7 +3,9 @@ source("analysis/strategy.R")
 source("utils/utils.R")
 source("data_prep/download.R")
 
-library("ggplot2")
+suppressPackageStartupMessages({
+  library("ggplot2")
+})
 
 # univariate
 univariate <- function(a.dt, x) {

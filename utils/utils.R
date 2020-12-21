@@ -1,4 +1,6 @@
 
+library("huxtable")
+
 weight_from_season <- function(s) {
   o <- rep(1, length(s))
   o[s =="1011"] <- 0.1
@@ -13,6 +15,23 @@ weight_from_season <- function(s) {
   o[s =="1920"] <- 1.0
   o[s =="2021"] <- 1.1
   o
+}
+
+pprint <- function(a.dt, caption="") {
+  p.dt <- hux(a.dt, add_rownames=FALSE)
+  if("match_id" %in% colnames(a.dt))  {
+    p.dt <- set_col_width(p.dt, col=match("match_id", colnames(a.dt)), 0.3)
+  }
+  p.dt <- set_bold(p.dt, row=1, col=everywhere, value=TRUE)
+  p.dt <- set_all_borders(p.dt, TRUE)
+  p.dt <- set_position(p.dt, "left")
+  p.dt <- set_all_padding(p.dt, 0)
+  p.dt <- set_outer_padding(p.dt, 0)
+  p.dt <- set_caption(p.dt, caption)
+  p.dt <- set_caption_pos(p.dt, "topleft")
+  print_screen(p.dt, colnames=FALSE)
+  resample::cat0n()
+  invisible()
 }
 
 rebase.y <- function(y1, y2, nreturn=length(y2), verbose=FALSE) {
@@ -102,12 +121,9 @@ score.model <- quote({
     test.dt[, gbmp := predict(model, test.dt, best.trees.cv, type="link") * weight]
     upcoming.dt[, gbmp := predict(model, upcoming.dt, best.trees.cv, type="link") * weight]
   })
-  resample::cat0n("train raw score act, pred")
-  print(train.dt[, list(act=sum(y), pred=sum(gbmp))])
-  resample::cat0n("test raw score  act, pred")
-  print(test.dt[, list(act=sum(y), pred=sum(gbmp))])
-  resample::cat0n("upcoming raw score act, pred")
-  print(test.dt[, list(act=sum(y), pred=sum(gbmp))])
+  pprint(train.dt[, list(act=sum(y), pred=sum(gbmp))], "train raw score act, pred")
+  pprint(test.dt[, list(act=sum(y), pred=sum(gbmp))], "test raw score  act, pred")
+  pprint(upcoming.dt[, list(act=sum(y), pred=sum(gbmp))], "upcoming raw score  act, pred")
   if(family=="bernoulli") {
     train.dt[, gbmp := gbmp + offset]
     test.dt[, gbmp := gbmp + offset]
@@ -128,16 +144,11 @@ score.model <- quote({
 rebalance.model <- quote({
   # rebalance
   resample::cat0n(rep("#", 30), "\nRebalance")
-  resample::cat0n("train pre-balance act, pred")
-  print(summary(train.dt[, list(y, gbmp)]))
-  resample::cat0n("test pre-balance act, pred")
-  print(summary(test.dt[, list(y, gbmp)]))
-  resample::cat0n("upcoming pre-balance act, pred")
-  print(summary(upcoming.dt[, list(y, gbmp)]))
+  pprint(summary(train.dt[, list(y, gbmp)]), "train pre-balance act, pred")
+  pprint(summary(test.dt[, list(y, gbmp)]), "test pre-balance act, pred")
+  pprint(summary(upcoming.dt[, list(y, gbmp)]), "upcoming pre-balance act, pred")
   season.dt <- train.dt[, list(balance_factor=(sum(y) / sum(gbmp))), season]
-  resample::cat0n("balance factor by season")
-  test.dt[, list(act=sum(y), pred=sum(gbmp))]
-  print(season.dt)
+  pprint(season.dt, "balance factor by season")
   setkey(train.dt, season)
   setkey(test.dt, season)
   setkey(upcoming.dt, season)
@@ -150,12 +161,9 @@ rebalance.model <- quote({
   upcoming.dt <- merge(upcoming.dt, season.dt, all.x=TRUE, all.y=FALSE)
   upcoming.dt[is.na(balance_factor), balance_factor := season.dt[season.dt[!is.na(balance_factor), .N], balance_factor]]
   upcoming.dt[, gbmp := gbmp * balance_factor]
-  resample::cat0n("train post-balance act, pred")
-  print(summary(train.dt[, list(y, gbmp)]))
-  resample::cat0n("test post-balance act, pred")
-  print(summary(test.dt[, list(y, gbmp)]))
-  resample::cat0n("upcoming post-balance act, pred")
-  print(summary(upcoming.dt[, list(y, gbmp)]))
+  pprint(summary(train.dt[, list(y, gbmp)]), "train post-balance act, pred")
+  pprint(summary(test.dt[, list(y, gbmp)]), "test post-balance act, pred")
+  pprint(summary(upcoming.dt[, list(y, gbmp)]), "upcoming post-balance act, pred")
   # normalise probabilities by match
   if(yvar == "act") {
     train.dt[, pred_prob := gbmp]
@@ -250,22 +258,34 @@ positive.model.predictions <- quote({
   if(train.ppc > 0) {
     resample::cat0n("train positive prediction")
     resample::cat0n("train gain", sum(train.dt[pred_spread > 0, gain]))
-    resample::cat0n("train mean gain", mean(train.dt[pred_spread > 0, gain]))
-    print(train.dt[pred_spread > 0, list(match_id, ftr, actr, ip, pred_odds, pred_spread, gain)][order(-pred_spread)])
+    positive.train.dt <- train.dt[pred_spread > 0, list(
+      match_id, ftr, actr, ip, pred_odds, pred_spread, gain)][order(-pred_spread)]
+    if(positive.train.dt[, .N] > 10) {
+      positive.train.dt <- rbind(positive.train.dt[1:10, ], data.table(match_id="..."), fill=TRUE)
+    }
+    pprint(positive.train.dt, "train positive prediction")
   }
   test.ppc <- test.dt[pred_spread > 0, .N]
   resample::cat0n("test positive prediction count ", test.ppc)
   if(test.ppc > 0) {
     resample::cat0n("test positive prediction")
     resample::cat0n("test gain", sum(test.dt[pred_spread > 0, gain]))
-    resample::cat0n("test mean gain", mean(test.dt[pred_spread > 0, gain]))
-    print(test.dt[pred_spread > 0, list(match_id, ftr, actr, ip, pred_odds, pred_spread, gain)][order(-pred_spread)])
+    positive.test.dt <- test.dt[pred_spread > 0, list(
+      match_id, ftr, actr, ip, pred_odds, pred_spread, gain)][order(-pred_spread)]
+    if(positive.test.dt[, .N] > 10) {
+      positive.test.dt <- rbind(positive.test.dt[1:10, ], data.table(match_id="..."), fill=TRUE)
+    }
+    pprint(positive.test.dt, "test positive prediction")
   }
   upcoming.ppc <- upcoming.dt[pred_spread > 0, .N]
   resample::cat0n("upcoming positive prediction count ", upcoming.ppc)
   if(upcoming.ppc > 0) {
-    resample::cat0n("upcoming positive prediction")
-    print(upcoming.dt[pred_spread > 0, list(match_id, ftr, ip, pred_odds, pred_spread)][order(-pred_spread)])
+    positive.upcoming.dt <- upcoming.dt[pred_spread > 0, list(
+      match_id, ftr, ip, pred_odds, pred_spread)][order(-pred_spread)]
+    if(positive.upcoming.dt[, .N] > 10) {
+      positive.upcoming.dt <- rbind(positive.upcoming.dt[1:10, ], data.table(match_id="..."), fill=TRUE)
+    }
+    pprint(positive.upcoming.dt, "upcoming positive prediction")
   }
 })
 
@@ -352,3 +372,4 @@ read.model.data <- quote({
   setkey(test.dt, date)
   test.dt <- merge(test.matches.one.match.dt, test.dt, all.x=TRUE, all.y=FALSE)
 })
+
