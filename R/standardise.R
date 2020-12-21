@@ -1,4 +1,3 @@
-source("data_prep/constants.R")
 
 read.a.file <- function(a.file) {
   s <- strsplit(a.file, "/") [[1]]
@@ -315,20 +314,20 @@ save.modeling.data <- quote({
   saveRDS(a.dt, '~/data/R/rds/a.dt.rds')
 })
 
-args = commandArgs()
-this_file <- "standardise.R"
-file_run <- ""
-if(length(args) > 3) file_run <- strsplit(args[[4]], "/")[[1]][[2]]
-# "--file=data_prep/standardise.R"
-# print(this_file)
-# print(file_run)
-if(file_run == this_file) {
-  if(!file.exists("logs/")) dir.create("logs")
-  sink("logs/standardise.log", split=TRUE)
-  eval(read.all.data)
-  eval(transpose.rows)
-  eval(prep.modeling.vars)
-  eval(save.modeling.data)
-  sink()
-}
+# args = commandArgs()
+# this_file <- "standardise.R"
+# file_run <- ""
+# if(length(args) > 3) file_run <- strsplit(args[[4]], "/")[[1]][[2]]
+# # "--file=data_prep/standardise.R"
+# # print(this_file)
+# # print(file_run)
+# if(file_run == this_file) {
+#   if(!file.exists("logs/")) dir.create("logs")
+#   sink("logs/standardise.log", split=TRUE)
+#   eval(read.all.data)
+#   eval(transpose.rows)
+#   eval(prep.modeling.vars)
+#   eval(save.modeling.data)
+#   sink()
+# }
 

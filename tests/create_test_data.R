@@ -1,10 +1,4 @@
 
-library("data.table")
-
-source("utils/utils.R")
-source("analysis/strategy.R")
-source("analysis/plot.R")
-
 create_test_dataset_spread <- quote({
   # 10% sample of existing dataset
   adate <- "2020-12-11"

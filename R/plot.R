@@ -1,12 +1,4 @@
 
-source("analysis/strategy.R")
-source("utils/utils.R")
-source("data_prep/download.R")
-
-suppressPackageStartupMessages({
-  library("ggplot2")
-})
-
 # univariate
 univariate <- function(a.dt, x) {
   setnames(a.dt, x, "x")

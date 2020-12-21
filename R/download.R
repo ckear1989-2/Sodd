@@ -1,4 +1,3 @@
-source("data_prep/constants.R")
 
 dload_league_season <- function(l, s, quiet=FALSE) {
   if(!file.exists("~/data/")) dir.create("~/data/")
@@ -27,16 +26,16 @@ dload_upcoming <- function(quiet=FALSE) {
   utils::download.file(file.path(base_dload_path, upcoming_fixtures), file.path("~/data/", upcoming_fixtures), quiet=quiet)
 }
 
-args = commandArgs()
-this_file <- "download.R"
-file_run <- ""
-if(length(args) > 3) file_run <- strsplit(args[[4]], "/")[[1]][[2]]
-if(file_run == this_file) {
-  if(!file.exists("logs/")) dir.create("logs")
-  sink("logs/download.log", split=TRUE)
-  # lapply(leagues, dload_10_years)
-  dload_current_year(quiet=TRUE)
-  dload_upcoming(quiet=TRUE)
-  sink()
-}
+# args = commandArgs()
+# this_file <- "download.R"
+# file_run <- ""
+# if(length(args) > 3) file_run <- strsplit(args[[4]], "/")[[1]][[2]]
+# if(file_run == this_file) {
+#   if(!file.exists("logs/")) dir.create("logs")
+#   sink("logs/download.log", split=TRUE)
+#   # lapply(leagues, dload_10_years)
+#   dload_current_year(quiet=TRUE)
+#   dload_upcoming(quiet=TRUE)
+#   sink()
+# }
 

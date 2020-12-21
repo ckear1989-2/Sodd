@@ -1,7 +1,4 @@
 
-source("utils/utils.R")
-source("data_prep/constants.R")
-
 calc.strategies <- function(a.dt) {
 
   choose_one_result <- function(id, ftr) {
@@ -105,3 +102,4 @@ run.strategy <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
   resample::cat0n("strategy,stake,gain")
   for(strat in strats) cat_strat(strat)
 }
+

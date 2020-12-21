@@ -46,3 +46,6 @@ logs/
 *log*
 nohup.out
 TODO
+
+# doc
+man/

@@ -1,9 +1,14 @@
-library("data.table")
 
-source("analysis/plot.R")
-source("analysis/strategy.R")
-source("utils/utils.R")
-
+#' Build gbm model
+#'
+#' @param adate a date in string format "%Y-%m-%d"
+#' @param yvar model response variable "act" or "spread"
+#' @param weights include weigthing of observations.  Defaults to FALSE
+#' @return gbm model object
+#' @examples
+#' build.a.model("2020-01-01", "act")
+#' build.a.model("2020-01-01", "spread", weights=TRUE)
+#' @export 
 build.a.model <- function(adate, yvar, weights=FALSE) {
   # print to log file
   set.seed(123)
@@ -47,6 +52,7 @@ build.a.model <- function(adate, yvar, weights=FALSE) {
   run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
   plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, logfile)
   sink()
+  invisible(model)
 }
 
 build.all.models.one.date <- function(adate) {
@@ -56,25 +62,25 @@ build.all.models.one.date <- function(adate) {
   build.a.model(adate, "act", weights=TRUE)
 }
 
-args = commandArgs()
-this_file <- "model.R"
-file_run <- ""
-if(length(args) > 3) file_run <- strsplit(args[[4]], "/")[[1]][[2]]
-if(file_run == this_file) {
-  dates <- c(paste0("2020-", c("08", "09", "10", "11", "12"), "-01"))
-  yvar <- c("spread", "act")
-  weights <- c(TRUE, FALSE)
-  all.args <- data.table(expand.grid(dates, yvar, weights))
-  all.args[, Var1 := as.character(Var1)]
-  all.args[, Var2 := as.character(Var2)]
-  all.args[, Var3 := as.logical(Var3)]
-  # for (x in 1:20) {
-  #   print(all.args[x, Var1])
-  #   print(all.args[x, Var2])
-  #   print(all.args[x, Var3])
-  #   build.a.model(all.args[x, Var1], all.args[x, Var2], weights=all.args[x, Var3])
-  # }
-  # build.a.model("2020-12-11", "spread", weights=FALSE)
-  build.all.models.one.date("2020-12-11")
-}
+# args = commandArgs()
+# this_file <- "model.R"
+# file_run <- ""
+# if(length(args) > 3) file_run <- strsplit(args[[4]], "/")[[1]][[2]]
+# if(file_run == this_file) {
+#   dates <- c(paste0("2020-", c("08", "09", "10", "11", "12"), "-01"))
+#   yvar <- c("spread", "act")
+#   weights <- c(TRUE, FALSE)
+#   all.args <- data.table(expand.grid(dates, yvar, weights))
+#   all.args[, Var1 := as.character(Var1)]
+#   all.args[, Var2 := as.character(Var2)]
+#   all.args[, Var3 := as.logical(Var3)]
+#   # for (x in 1:20) {
+#   #   print(all.args[x, Var1])
+#   #   print(all.args[x, Var2])
+#   #   print(all.args[x, Var3])
+#   #   build.a.model(all.args[x, Var1], all.args[x, Var2], weights=all.args[x, Var3])
+#   # }
+#   # build.a.model("2020-12-11", "spread", weights=FALSE)
+#   build.all.models.one.date("2020-12-11")
+# }
 

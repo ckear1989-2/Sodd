@@ -11,6 +11,10 @@ function install_package {
 # R CMD INSTALL --help
 mkdir -p $LIB
 
+# sudo apt-get install libxml2-dev
+# sudo apt-get install libssl-dev
+# sudo apt-get install libgit2-dev
+
 # install_package data.table_1.13.2
 # install_package gbm_2.1.8
 # install_package digest_0.6.27
@@ -66,8 +70,14 @@ mkdir -p $LIB
 # install_package foreach_1.5.1
 # install_package doParallel_1.0.16
 # install_package xml2_1.3.2
-# sudo apt-get install libxml2-dev
 # curl ${CRAN}xml2_1.3.2.tar.gz > ${LIB}xml2_1.3.2.tar.gz
 # R CMD INSTALL ${LIB}xml2_1.3.2.tar.gz --configure-vars='INCLUDE_DIR="${LIB}" LIB_DIR="${LIB}"' -l "${LIB}"
-install_package huxtable_5.1.1
+# install_package huxtable_5.1.1
+# sudo apt-get install libcurl4-openssl-dev
+# install_package curl_4.3
+
+# Rscript -e "devtools::setup(\"./\")"
+# Rscript -e "devtools::load_all()"
+Rscript -e "devtools::document()"
+Rscript -e "devtools::install()"
 

@@ -1,6 +1,4 @@
 
-library("huxtable")
-
 weight_from_season <- function(s) {
   o <- rep(1, length(s))
   o[s =="1011"] <- 0.1
@@ -18,7 +16,7 @@ weight_from_season <- function(s) {
 }
 
 pprint <- function(a.dt, caption="") {
-  p.dt <- hux(a.dt, add_rownames=FALSE)
+  p.dt <- huxtable::hux(a.dt, add_rownames=FALSE)
   if("match_id" %in% colnames(a.dt))  {
     p.dt <- set_col_width(p.dt, col=match("match_id", colnames(a.dt)), 0.3)
   }
@@ -362,8 +360,8 @@ read.model.data <- quote({
   for(i in seq(2, test.matches.dt[, .N])) {
     for (j in seq((i-1), 1, -1)) {
       if(any(test.matches.dt[i, teams][[1]] %in% test.matches.dt[j, teams][[1]])) {
-        test.matches.dt[i, contains_team_prev_played := 1]
-        next
+        test.matches.dt[i:test.matches.dt[, .N], contains_team_prev_played := 1]
+        break
       }
     }
   }
