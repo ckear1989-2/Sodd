@@ -61,5 +61,8 @@ mkdir -p $LIB
 # install_package ggplot2_3.3.2
 # install_package gridExtra_2.3
 # install_package resample_0.4
-install_package TeachingDemos_2.12
+# install_package TeachingDemos_2.12
+install_package iterators_1.0.13
+install_package foreach_1.5.1
+install_package doParallel_1.0.16
 

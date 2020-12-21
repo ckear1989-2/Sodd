@@ -558,6 +558,50 @@ plot.detailed.strategy <- function(test.dt, upcoming.dt) {
   grid::grid.newpage(); grid::grid.draw(p.obj.upcoming)
 }
 
+get_uvar_list <- function(
+  x,
+  train.dt,
+  train.a.dt,
+  train.b.dt,
+  test.dt,
+  model
+) {
+  list(
+    univariate(train.a.dt, x),
+    univariate(train.b.dt, x),
+    univariate(test.dt, x),
+    partial.plot(model, x, train.dt)
+  )
+}
+
+parallel.uvar <- quote({
+  doParallel::registerDoParallel(1)
+  library("foreach")
+  foreach(i=1:nrow(m), .combine=rbind)
+  uvar_list <- foreach(u=uvar) %dopar% get_uvar_list(u, train.dt, train.a.dt, train.b.dt, test.dt, model)
+  for(plist in uvar_list) {
+    gridExtra::grid.arrange(
+      plist[[1]], plist[[2]], plist[[3]], plist[[4]],
+      ncol=2
+    )
+    eval(grid.square)
+  }
+  doParallel::stopImplicitCluster()
+})
+
+series.uvar <- quote({
+  for (x in uvar) {
+    gridExtra::grid.arrange(
+      univariate(train.a.dt, x),
+      univariate(train.b.dt, x),
+      univariate(test.dt, x),
+      partial.plot(model, x, train.dt),
+      ncol=2
+    )
+    eval(grid.square)
+  }
+})
+
 plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, logfile) {
   pdffile <- gsub(".log", ".pdf", logfile)
   pdf(pdffile, h=7, w=14)
@@ -569,16 +613,12 @@ plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, 
     )
     eval(grid.square)
     plot.detailed.strategy(test.dt, upcoming.dt)
-    for (x in uvar) {
-      gridExtra::grid.arrange(
-        univariate(train.a.dt, x),
-        univariate(train.b.dt, x),
-        univariate(test.dt, x),
-        partial.plot(model, x, train.dt),
-        ncol=2
-      )
-      eval(grid.square)
-    }
+    # test parallelizing univar plots
+    # seems to be no gain on my system
+    # z <- Sys.time()
+    # print(z)
+    eval(series.uvar)
+    # print(Sys.time() - z)
   dev.off()
 }
 
