@@ -3,6 +3,8 @@ source("analysis/strategy.R")
 source("utils/utils.R")
 source("data_prep/download.R")
 
+library("ggplot2")
+
 # univariate
 univariate <- function(a.dt, x) {
   setnames(a.dt, x, "x")
@@ -251,7 +253,6 @@ plot.model.param <- function(model) {
   params.dt.1 <- t(data.frame(parameter=params[6:10], value=vals[6:10]))
   p.obj.1 <- gridExtra::tableGrob(params.dt.1, theme=table.theme(10), cols=NULL)
   p.obj.1 <- colorise.tableGrob(p.obj.1, params.dt.1, "red1", "red3", 10)
-  # p.obj <- gridExtra::arrangeGrob(list(p.obj.0, p.obj.1), layout=rbind(c(1), c(2)))
   p.obj.0 <- grid::grobTree(
     grid::rectGrob(gp=grid::gpar(fill="red1", lwd=0, col="black", alpha=0.5)),
     p.obj.0
@@ -494,7 +495,7 @@ detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
     strat_top_per_match_wtd,
     gain_top_per_match_wtd=round(gain_top_per_match_wtd, 3)
     )][order(-pred_spread)]
-  if(a.thin.dt[, .N] > 20) a.thin.dt <- a.thin.dt[1:20, ]
+  if(a.thin.dt[, .N] > 16) a.thin.dt <- a.thin.dt[1:16, ]
   # check if updated recent fixtures has full time scores
   if(all((is.na(a.thin.dt[, actr])) | (a.thin.dt[, actr] == "NA"))) {
     setkey(a.thin.dt, match_id)
@@ -538,7 +539,7 @@ detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
       label=paste0(aname, " strategy top per match topn=", (a.thin.dt[, .N] -1)),
       gp=grid::gpar(fontsize=16, fontface="bold", fill="black", col="black"),
       x=0.5,
-      y=0.9,
+      y=0.92,
     ),
     p.obj
   )
@@ -609,7 +610,23 @@ series.uvar <- quote({
   }
 })
 
-plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, logfile) {
+plot.dist <- function(x, xlabel) {
+  w <- (max(x) - min(x)) / 100
+  g <- ggplot(data=NULL)
+  g <- g + geom_histogram(aes(x=x), fill="yellow", alpha=0.3, binwidth=w)
+  g <- g + xlab(xlabel) + ggtitle(paste("distribution of", xlabel))
+  g
+}
+
+plot.response.vars <- function(train.dt, test.dt, yvar) {
+  gridExtra::grid.arrange(
+    plot.dist(c(train.dt[, y], test.dt[, y]), yvar),
+    plot.dist(c(train.dt[, gbmp], test.dt[, gbmp]), "model prediction"),
+    nrow=2
+  )
+}
+
+plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, logfile) {
   pdffile <- gsub(".log", ".pdf", logfile)
   pdf(pdffile, h=7, w=14)
     gridExtra::grid.arrange(
@@ -620,6 +637,7 @@ plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, 
     )
     eval(grid.square)
     plot.detailed.strategy(test.dt, upcoming.dt)
+    plot.response.vars(train.dt, test.dt, yvar)
     # test parallelizing univar plots
     # seems to be no gain on my system
     # z <- Sys.time()

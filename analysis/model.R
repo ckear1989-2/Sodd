@@ -45,7 +45,7 @@ build.a.model <- function(adate, yvar, weights=FALSE) {
   eval(act.pred.summary)
   eval(positive.model.predictions)
   run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
-  plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, logfile)
+  plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, logfile)
   sink()
 }
 

@@ -84,10 +84,9 @@ rebase.y.sum <- function(y1, y2) {
 model.summary <- quote({
   # model summary
   resample::cat0n(rep("#", 30), "\nModel Summary")
-  print(attributes(model))
   best.trees.test <- gbm::gbm.perf(model, plot.it=FALSE, method="test")
   best.trees.cv <- gbm::gbm.perf(model, plot.it=FALSE, method="cv")
-  best.trees.oob <- gbm::gbm.perf(model, plot.it=FALSE, method="OOB")
+  suppressMessages(best.trees.oob <- gbm::gbm.perf(model, plot.it=FALSE, method="OOB"))
   resample::cat0n("gbm perf best.trees.test=", best.trees.test)
   resample::cat0n("gbm perf best.trees.cv=", best.trees.cv)
   resample::cat0n("gbm perf best.trees.oob=", best.trees.oob)
