@@ -295,15 +295,21 @@ plot.data.perf <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
     length(unique(upcoming.dt[, match_id]))
   )
   null.dev <- c(
-    round(mean(train.a.dt[, null_dev]), 4),
-    round(mean(train.b.dt[, model_dev]), 4),
-    round(mean(test.dt[, null_dev]), 4),
+    round(sum(train.a.dt[, null_dev]) / sum(train.a.dt[, weight]), 4),
+    round(sum(train.b.dt[, null_dev]) / sum(train.b.dt[, weight]), 4),
+    round(sum(test.dt[, null_dev]) / sum(test.dt[, weight]), 4),
+    NA
+  )
+  offset.dev <- c(
+    round(sum(train.a.dt[, offset_dev]) / sum(train.a.dt[, weight]), 4),
+    round(sum(train.b.dt[, offset_dev]) / sum(train.b.dt[, weight]), 4),
+    round(sum(test.dt[, offset_dev]) / sum(test.dt[, weight]), 4),
     NA
   )
   model.dev <- c(
-    round(mean(train.a.dt[, model_dev]), 4),
-    round(mean(train.b.dt[, null_dev]), 4),
-    round(mean(test.dt[, model_dev]), 4),
+    round(sum(train.a.dt[, model_dev]) / sum(train.a.dt[, weight]), 4),
+    round(sum(train.b.dt[, model_dev]) / sum(train.b.dt[, weight]), 4),
+    round(sum(test.dt[, model_dev]) / sum(test.dt[, weight]), 4),
     NA
   )
   devs.dt <- data.frame(
@@ -313,11 +319,12 @@ plot.data.perf <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
     records=records,
     matches=matches,
     null.dev=null.dev,
+    offset.dev=offset.dev,
     model.dev=model.dev
   )
   setnames(devs.dt, colnames(devs.dt), gsub("\\.", "\n", colnames(devs.dt)))
-  p.obj <- gridExtra::tableGrob(devs.dt, theme=table.theme(7), rows=NULL)
-  p.obj <- colorise.tableGrob(p.obj, devs.dt, "gold", "gold3", 7)
+  p.obj <- gridExtra::tableGrob(devs.dt, theme=table.theme(6), rows=NULL)
+  p.obj <- colorise.tableGrob(p.obj, devs.dt, "gold", "gold3", 6)
   p.obj <- grid::grobTree(
       grid::rectGrob(gp=grid::gpar(fill="gold", lwd=2, col="black", alpha=0.5)),
       p.obj

@@ -192,24 +192,44 @@ calc.deviances <- quote({
   # deviances
   # gausiann SSE
   # bernoulli :
-  # adWeight[i]*(adY[i]*adF[i] - log(1.0+exp(adF[i])));
   resample::cat0n(rep("#", 30), "\nDeviances")
   train.a.rows <- floor(train.dt[, .N] *train.fraction)
   train.mean <- mean(train.dt[, y])
   train.dt[, mean_pred := train.mean]
-  train.dt[, null_dev:= ((y - mean_pred) ** 2) * weight]
-  train.dt[, model_dev:= ((y - gbmp) ** 2) * weight]
   test.dt[, mean_pred := train.mean]
-  test.dt[, null_dev:= ((y - mean_pred) ** 2) * weight]
-  test.dt[, model_dev:= ((y - gbmp) ** 2) * weight]
+  calc.bernoulli.dev <- function(act, pred, weight=1) {
+    pred_l <- -log((1/pred) -1)
+    -2 * weight * ((act * pred_l) - log(1.0 + exp(pred_l)))
+  }
+  if(family == "bernoulli") {
+    train.dt[, null_dev:= calc.bernoulli.dev(y, mean_pred, weight)]
+    test.dt[, null_dev:= calc.bernoulli.dev(y, mean_pred, weight)]
+    train.dt[, offset_dev:= calc.bernoulli.dev(y, exp(offset), weight)]
+    test.dt[, offset_dev:= calc.bernoulli.dev(y, exp(offset), weight)]
+    train.dt[, model_dev:= calc.bernoulli.dev(y, gbmp, weight)]
+    test.dt[, model_dev:= calc.bernoulli.dev(y, gbmp, weight)]
+  }
+  else if(family == "gaussian") {
+    train.dt[, null_dev:= ((y - mean_pred) ** 2) * weight]
+    test.dt[, null_dev:= ((y - mean_pred) ** 2) * weight]
+    train.dt[, offset_dev:= ((y - exp(offset)) ** 2) * weight]
+    test.dt[, offset_dev:= ((y - exp(offset)) ** 2) * weight]
+    train.dt[, model_dev:= ((y - gbmp) ** 2) * weight]
+    test.dt[, model_dev:= ((y - gbmp) ** 2) * weight]
+  }
   train.a.dt <- train.dt[1:train.a.rows, ]
   train.b.dt <- train.dt[train.a.rows:train.dt[, .N], ]
-  resample::cat0n("train.a mean null dev=", mean(train.a.dt[, null_dev]))
-  resample::cat0n("train.a mean model dev=", mean(train.a.dt[, model_dev]))
-  resample::cat0n("train.b mean null dev=", mean(train.b.dt[, null_dev]))
-  resample::cat0n("train.b mean model dev=", mean(train.b.dt[, model_dev]))
-  resample::cat0n("test mean null dev=", mean(test.dt[, null_dev]))
-  resample::cat0n("test mean model dev=", mean(test.dt[, model_dev]))
+  resample::cat0n("train.a mean null dev=", sum(train.a.dt[, null_dev]) / sum(train.a.dt[, weight]))
+  resample::cat0n("train.a mean offset dev=", sum(train.a.dt[, offset_dev]) / sum(train.a.dt[, weight]))
+  resample::cat0n("train.a mean model dev=", sum(train.a.dt[, model_dev]) / sum(train.a.dt[, weight]))
+  resample::cat0n("train.b mean null dev=", sum(train.b.dt[, null_dev]) / sum(train.b.dt[, weight]))
+  resample::cat0n("train.b mean offset dev=", sum(train.b.dt[, offset_dev]) / sum(train.b.dt[, weight]))
+  resample::cat0n("train.b mean model dev=", sum(train.b.dt[, model_dev]) / sum(train.b.dt[, weight]))
+  resample::cat0n("test mean null dev=", sum(test.dt[, null_dev]) / sum(test.dt[, weight]))
+  resample::cat0n("test mean offset dev=", sum(test.dt[, offset_dev]) / sum(test.dt[, weight]))
+  resample::cat0n("test mean model dev=", sum(test.dt[, model_dev]) / sum(test.dt[, weight]))
+  # how does initF work with offset?
+  resample::cat0n("initF=", model$initF)
 })
 
 act.pred.summary <- quote({
