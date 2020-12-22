@@ -1,14 +1,16 @@
 
 read.a.file <- function(a.file) {
-  if(!file.exists(afile)) stop(paste(
-    "input file", afile, "not found.  Please use dload_league_season to obtain csv"))
+  if(!file.exists(a.file)) stop(paste(
+    "input file", a.file, "not found.  Please use dload_league_season to obtain csv"))
   s <- strsplit(a.file, "/") [[1]]
   s <- s[[(length(s)-1)]]
   a.dt <- data.table::fread(a.file)
   a.dt[, season := s]
   a.dt
 }
-read.all.data <- quote({
+read.all.data <- function(leagues, years) {
+  yl <- expand.grid(all.years[1:years], leagues)
+  all.csv <- paste0("~/data/", yl[[1]], "/", yl[[2]], ".csv")
   alist <- lapply(
     all.csv
     ,
@@ -50,11 +52,12 @@ read.all.data <- quote({
   print(colnames(a.dt))
   print(a.dt[, .N])
   print(upcoming.dt[, .N])
-})
+  a.dt
+}
 
 transpose.rows <- quote({
   # check teams in leagues
-  # for (l in leagues) print(a.dt[div== l, list(count=.N), hometeam][order(-count)][1:5, ])
+  # for (l in all.leagues) print(a.dt[div== l, list(count=.N), hometeam][order(-count)][1:5, ])
   a.dt[, match_id := paste0(date, "|", hometeam, "|", awayteam, collapse="|"), list(date, hometeam, awayteam)]
   match.dt <- a.dt[, list(count=.N), match_id][order(-count)]
   match.dt
@@ -91,7 +94,9 @@ transpose.rows <- quote({
   cat('data transposed count', a.dt[, .N], '\n')
   data.table::setkey(a.dt, date)
   a.dt[, rn := seq(a.dt[, .N])]
-  
+})
+
+result_lag <- function(a.dt, i) {
   all.teams <- unique(c(a.dt[, hometeam], a.dt[, awayteam]))
   cat('team count', length(all.teams), '\n')
   upcoming.dt <- a.dt[actr == "NA", ]
@@ -99,9 +104,6 @@ transpose.rows <- quote({
     print(a.dt[, .N])
     stop("no upcoming matches")
   }
-})
-
-result_lag <- function(a.dt, i) {
   for(ateam in all.teams) {
   
     team.dt <- a.dt[(act == 1) & ((hometeam == ateam) | (awayteam == ateam)), ]
@@ -318,15 +320,20 @@ save.modeling.data <- quote({
 
 #' Create sodd modeling data
 #'
+#' @param leagues Character vector of leagues to use
+#' @param years Number of years to use. Defaults to 10
 #' @return NULL
 #' @examples
 #' create.sodd.modeling.data()
 #' @export 
-create.sodd.modeling.data <- function(){
-  eval(read.all.data)
+create.sodd.modeling.data <- function(leagues, years=10){
+  if(!file.exists("logs/")) dir.create("logs/")
+  sink("logs/standardise.log")
+  a.dt <- read.all.data(leagues, years)
   eval(transpose.rows)
   eval(prep.modeling.vars)
   eval(save.modeling.data)
+  sink()
   invisible()
 }
 

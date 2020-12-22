@@ -3,5 +3,8 @@
 export(build.all.sodd.models.one.date)
 export(build.sodd.model)
 export(create.sodd.modeling.data)
+export(dload_current_year)
 export(dload_league_season)
 export(dload_upcoming)
+export(dload_x_years)
+export(document.sodd.model)

@@ -9,6 +9,7 @@
 #' @param shrinkage gbm parameter. Rate of change towards prediction. Defaults to 0.01
 #' @param interaction.depth gbm parameter. Depth of each tree in model. Defaults to 2
 #' @param cv.folds gbm parameter. Number of cross validation folds in training data. Defaults to 3
+#' @param plot.it Create output plot. Defaults to FALSE
 #' @return gbm model object
 #' @examples
 #' build.sodd.model("2020-01-01", "act")
@@ -23,10 +24,11 @@ build.sodd.model <- function(
   n.trees=500,
   shrinkage=0.7,
   interaction.depth=2,
-  cv.folds=3
+  cv.folds=3,
+  plot.it=FALSE,
+  log.it=FALSE
   ) {
   set.seed(123)
-  # print to log file
   eval(read.model.data)
   if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
   # model params
@@ -60,9 +62,45 @@ build.sodd.model <- function(
   eval(act.pred.summary)
   eval(positive.model.predictions)
   run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
-  plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, logfile)
   sink()
-  invisible(model)
+  if(isTRUE(plot.it)) plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, logfile)
+  # dunno why attr(model, x) <- x doesn't work
+  # attr(model, "adate") <- adate
+  class(model) <- c("sodd", class(model))
+  model$adate <- adate
+  model$train.a.dt <- train.a.dt
+  model$train.b.dt <- train.b.dt
+  model$train.dt <- train.dt
+  model$test.dt <- test.dt
+  model$upcoming.dt <- upcoming.dt
+  model$uvar <- uvar
+  model$yvar <- yvar
+  model$logfile <- logfile
+  model$pdffile <- pdffile
+  model
+}
+
+#' Create model documentation
+#'
+#' @param model sodd model object
+#' @return character location of output file
+#' @examples
+#' model <- sodd.build.model("2020-12-22", "act")
+#' document.sodd.model(model)
+#' @export 
+document.sodd.model <- function(model) {
+  plot.model(
+    model,
+    model$adate,
+    model$train.a.dt,
+    model$train.b.dt,
+    model$train.dt,
+    model$test.dt,
+    model$upcoming.dt,
+    model$uvar,
+    model$yvar,
+    model$pdffile
+  )
 }
 
 #' Build gbm sodd models for all responses and weights

@@ -540,9 +540,9 @@ detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
   p.obj
 }
 
-plot.detailed.strategy <- function(test.dt, upcoming.dt) {
+plot.detailed.strategy <- function(test.dt, upcoming.dt, leagues=all.leagues) {
   # dload_current_year(quiet=TRUE)
-  recent.csv <- paste0("~/data/", years[[1]], "/", leagues, ".csv")
+  recent.csv <- paste0("~/data/", all.years[[1]], "/", leagues, ".csv")
   alist <- lapply(
     recent.csv
     ,
@@ -620,8 +620,7 @@ plot.response.vars <- function(train.dt, test.dt, yvar) {
   )
 }
 
-plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, logfile) {
-  pdffile <- gsub(".log", ".pdf", logfile)
+plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile) {
   pdf(pdffile, h=7, w=14)
     gridExtra::grid.arrange(
       plot.model.run(model, train.a.dt, train.b.dt, test.dt, upcoming.dt),
@@ -639,5 +638,6 @@ plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, 
     eval(series.uvar)
     # print(Sys.time() - z)
   dev.off()
+  paste("see model documentation in", pdffile)
 }
 

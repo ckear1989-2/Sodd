@@ -84,4 +84,5 @@ mkdir -p $LIB
 Rscript -e "devtools::document()"
 Rscript -e "devtools::build_manual()"
 Rscript -e "devtools::install()"
+Rscript -e "rmarkdown::render(\"README.Rmd\", output_file=\"README.md\", output_dir=\"./\")"
 

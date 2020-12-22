@@ -323,13 +323,19 @@ read.model.data <- quote({
   a.dt <- readRDS("~/data/R/rds/a.dt.rds")
   if(isTRUE(weights)) {
     logfile <- paste0("logs/model_", adate, "_", yvar, "_wtd", ".log")
+    pdffile <- paste0("logs/model_", adate, "_", yvar, "_wtd", ".pdf")
     a.dt[, weight := weight_from_season(season)]
   } else {
     logfile <- paste0("logs/model_", adate, "_", yvar, ".log")
+    pdffile <- paste0("logs/model_", adate, "_", yvar, ".pdf")
     a.dt[, weight := rep(1, a.dt[, .N])]
   } 
-  if(!file.exists("logs")) dir.create("logs")
-  sink(logfile, split=TRUE)
+  if(isTRUE(log.it)) {
+    if(!file.exists("logs")) dir.create("logs")
+    sink(logfile, split=TRUE)
+  } else {
+    sink("/dev/null")
+  }
   # target variables
   # odds is the decimal multiplier of stake
   # gain is the weighted winnings minus stake
@@ -348,18 +354,20 @@ read.model.data <- quote({
   train.dt <- a.dt[actr != "NA" & date < as.Date(adate, "%Y-%m-%d"), ]
   test.dt <- a.dt[actr != "NA" & date >= as.Date(adate, "%Y-%m-%d"), ]
   upcoming.dt <- a.dt[actr == "NA", ]
-  if(upcoming.dt[, .N] == 0) {
-    stop("no upcoming matches")
-  }
+  if(test.dt[, .N] == 0) stop("no test matches")
+  if(upcoming.dt[, .N] == 0) stop("no upcoming matches")
   if(any(train.dt[, match_id] %in% test.dt[, match_id])) stop("matches in train and test")
   if(any(train.dt[, match_id] %in% upcoming.dt[, match_id])) stop("matches in train and upcoming")
   if(any(test.dt[, match_id] %in% upcoming.dt[, match_id])) stop("matches in test and upcoming")
   resample::cat0n("setting test.dt to one set of fixtures")
-  test.matches.dt <- test.dt[, list(count=.N, distinct_matches=length(unique(hometeam)),
+  test.matches.dt <- test.dt[, list(
+    count=.N,
+    distinct_matches=length(unique(hometeam)),
     teams=list(unique((c(hometeam, awayteam)))),
-    contains_team_prev_played=0), date][order(date)]
+    contains_team_prev_played=0
+    ), date][order(date)]
   for(i in seq(2, test.matches.dt[, .N])) {
-    for (j in seq((i-1), 1, -1)) {
+    for (j in seq(1, (i-1), 1)) {
       if(any(test.matches.dt[i, teams][[1]] %in% test.matches.dt[j, teams][[1]])) {
         test.matches.dt[i:test.matches.dt[, .N], contains_team_prev_played := 1]
         break

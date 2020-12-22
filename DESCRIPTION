@@ -1,6 +1,6 @@
 Package: sodd
 Title: Model soccer match outcomes
-Version: 0.0.2
+Version: 0.0.3
 Author: Conor Kearney
 Description:
   Download historic match betting data.  Build models and score on upcoming
