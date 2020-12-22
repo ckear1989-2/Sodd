@@ -1,25 +1,35 @@
 
-#' Build gbm model
+#' Build gbm sodd model
 #'
-#' @param adate a date in string format "%Y-%m-%d"
+#' @param adate a date in string format "%Y-%m-%d".  Splits train.a and train.b data
 #' @param yvar model response variable "act" or "spread"
-#' @param weights include weigthing of observations.  Defaults to FALSE
+#' @param weights include weigthing of observations. Defaults to FALSE
+#' @param train.fraction gbm parameter. Proportion of training data for train.a. Defaults to 0.7
+#' @param n.trees gbm parameter. Number of trees to build in gbm. Defaults to 500
+#' @param shrinkage gbm parameter. Rate of change towards prediction. Defaults to 0.01
+#' @param interaction.depth gbm parameter. Depth of each tree in model. Defaults to 2
+#' @param cv.folds gbm parameter. Number of cross validation folds in training data. Defaults to 3
 #' @return gbm model object
 #' @examples
-#' build.a.model("2020-01-01", "act")
-#' build.a.model("2020-01-01", "spread", weights=TRUE)
+#' build.sodd.model("2020-01-01", "act")
+#' build.sodd.model("2020-01-01", "spread", weights=TRUE)
+#' build.sodd.model("2020-01-01", "spread", n.trees=50)
 #' @export 
-build.a.model <- function(adate, yvar, weights=FALSE) {
-  # print to log file
+build.sodd.model <- function(
+  adate,
+  yvar,
+  weights=FALSE,
+  train.fraction=0.7,
+  n.trees=500,
+  shrinkage=0.7,
+  interaction.depth=2,
+  cv.folds=3
+  ) {
   set.seed(123)
+  # print to log file
   eval(read.model.data)
   if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
   # model params
-  train.fraction <- 0.7
-  n.trees <- 500
-  shrinkage <- 0.01
-  interaction.depth <- 2
-  cv.folds <- 3
   xvar <- c(
     "ip",
     "div",
@@ -55,32 +65,21 @@ build.a.model <- function(adate, yvar, weights=FALSE) {
   invisible(model)
 }
 
-build.all.models.one.date <- function(adate) {
-  build.a.model(adate, "spread", weights=FALSE)
-  build.a.model(adate, "spread", weights=TRUE)
-  build.a.model(adate, "act", weights=FALSE)
-  build.a.model(adate, "act", weights=TRUE)
+#' Build gbm sodd models for all responses and weights
+#'
+#' @param adate a date in string format "%Y-%m-%d".  Splits train.a and train.b data
+#' @param ... arguments to pass to build.sodd.model
+#' @return list of gbm model objects
+#' @examples
+#' build.all.sodd.models.one.date("2020-01-01")
+#' build.all.sodd.models.one.date("2020-01-01", n.trees=50, interaction.depth=3)
+#' @export 
+build.all.sodd.models.one.date <- function(adate, ...) {
+  list(
+    build.sodd.model(adate, "spread", weights=FALSE, ...),
+    build.sodd.model(adate, "spread", weights=TRUE, ...),
+    build.sodd.model(adate, "act", weights=FALSE, ...),
+    build.sodd.model(adate, "act", weights=TRUE, ...)
+  )
 }
-
-# args = commandArgs()
-# this_file <- "model.R"
-# file_run <- ""
-# if(length(args) > 3) file_run <- strsplit(args[[4]], "/")[[1]][[2]]
-# if(file_run == this_file) {
-#   dates <- c(paste0("2020-", c("08", "09", "10", "11", "12"), "-01"))
-#   yvar <- c("spread", "act")
-#   weights <- c(TRUE, FALSE)
-#   all.args <- data.table(expand.grid(dates, yvar, weights))
-#   all.args[, Var1 := as.character(Var1)]
-#   all.args[, Var2 := as.character(Var2)]
-#   all.args[, Var3 := as.logical(Var3)]
-#   # for (x in 1:20) {
-#   #   print(all.args[x, Var1])
-#   #   print(all.args[x, Var2])
-#   #   print(all.args[x, Var3])
-#   #   build.a.model(all.args[x, Var1], all.args[x, Var2], weights=all.args[x, Var3])
-#   # }
-#   # build.a.model("2020-12-11", "spread", weights=FALSE)
-#   build.all.models.one.date("2020-12-11")
-# }
 

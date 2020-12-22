@@ -1,5 +1,7 @@
 
 read.a.file <- function(a.file) {
+  if(!file.exists(afile)) stop(paste(
+    "input file", afile, "not found.  Please use dload_league_season to obtain csv"))
   s <- strsplit(a.file, "/") [[1]]
   s <- s[[(length(s)-1)]]
   a.dt <- data.table::fread(a.file)
@@ -314,20 +316,17 @@ save.modeling.data <- quote({
   saveRDS(a.dt, '~/data/R/rds/a.dt.rds')
 })
 
-# args = commandArgs()
-# this_file <- "standardise.R"
-# file_run <- ""
-# if(length(args) > 3) file_run <- strsplit(args[[4]], "/")[[1]][[2]]
-# # "--file=data_prep/standardise.R"
-# # print(this_file)
-# # print(file_run)
-# if(file_run == this_file) {
-#   if(!file.exists("logs/")) dir.create("logs")
-#   sink("logs/standardise.log", split=TRUE)
-#   eval(read.all.data)
-#   eval(transpose.rows)
-#   eval(prep.modeling.vars)
-#   eval(save.modeling.data)
-#   sink()
-# }
+#' Create sodd modeling data
+#'
+#' @return NULL
+#' @examples
+#' create.sodd.modeling.data()
+#' @export 
+create.sodd.modeling.data <- function(){
+  eval(read.all.data)
+  eval(transpose.rows)
+  eval(prep.modeling.vars)
+  eval(save.modeling.data)
+  invisible()
+}
 

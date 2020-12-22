@@ -354,8 +354,9 @@ read.model.data <- quote({
   if(any(train.dt[, match_id] %in% test.dt[, match_id])) stop("matches in train and test")
   if(any(train.dt[, match_id] %in% upcoming.dt[, match_id])) stop("matches in train and upcoming")
   if(any(test.dt[, match_id] %in% upcoming.dt[, match_id])) stop("matches in test and upcoming")
+  resample::cat0n("setting test.dt to one set of fixtures")
   test.matches.dt <- test.dt[, list(count=.N, distinct_matches=length(unique(hometeam)),
-    teams=list(unique((c(as.character(hometeam), as.character(awayteam))))),
+    teams=list(unique((c(hometeam, awayteam)))),
     contains_team_prev_played=0), date][order(date)]
   for(i in seq(2, test.matches.dt[, .N])) {
     for (j in seq((i-1), 1, -1)) {
@@ -369,5 +370,6 @@ read.model.data <- quote({
   setkey(test.matches.one.match.dt, date)
   setkey(test.dt, date)
   test.dt <- merge(test.matches.one.match.dt, test.dt, all.x=TRUE, all.y=FALSE)
+  resample::cat0n("test.dt complete")
 })
 

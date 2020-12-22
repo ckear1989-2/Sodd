@@ -11,9 +11,12 @@ function install_package {
 # R CMD INSTALL --help
 mkdir -p $LIB
 
+# ubuntu requirements
 # sudo apt-get install libxml2-dev
 # sudo apt-get install libssl-dev
 # sudo apt-get install libgit2-dev
+# sudo apt-get install texlive
+# sudo apt-get install texlive-fonts-extra
 
 # install_package data.table_1.13.2
 # install_package gbm_2.1.8
@@ -79,5 +82,6 @@ mkdir -p $LIB
 # Rscript -e "devtools::setup(\"./\")"
 # Rscript -e "devtools::load_all()"
 Rscript -e "devtools::document()"
+Rscript -e "devtools::build_manual()"
 Rscript -e "devtools::install()"
 
