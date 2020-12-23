@@ -1,7 +1,12 @@
 sodd
 ================
 Conor Kearney
-2020-12-22
+2020-12-23
+
+``` r
+  install.packages("devtools")
+  devtools::install_github("ckear1989/sodd")
+```
 
 ``` r
   leagues <- c("E0", "E1", "SP1", "SP2")
@@ -17,4 +22,11 @@ Conor Kearney
   document.sodd.model(todays.model)
 ```
 
-    ## [1] "see model documentation in logs/model_2020-12-15_act.pdf"
+    ## [1] "see model documentation in logs/model_2020-12-16_act.pdf"
+
+``` r
+  strat <- upcoming.strategy.sodd.model(todays.model)
+  grid::grid.draw(strat)
+```
+
+![](inst/extdata/README_files/figure-markdown_github/output-1.png)

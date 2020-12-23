@@ -1,4 +1,17 @@
 
+is.package.available <- function(x) {
+  x %in% rownames(installed.packages())
+}
+
+if(!isTRUE(is.package.available("huxtable"))) {
+  message("printing data.table native style.  Try install.packages(\"huxtable\")")
+}
+
+if(!is.package.available("TeachingDemos")) {
+  message("not setting seed for result tie settling. Try  install.packages(\"TeachingDemos\")")
+}
+
+
 weight_from_season <- function(s) {
   o <- rep(1, length(s))
   o[s =="1011"] <- 0.1
@@ -16,19 +29,35 @@ weight_from_season <- function(s) {
 }
 
 pprint <- function(a.dt, caption="") {
-  p.dt <- huxtable::hux(a.dt, add_rownames=FALSE)
-  if("match_id" %in% colnames(a.dt))  {
-    p.dt <- set_col_width(p.dt, col=match("match_id", colnames(a.dt)), 0.3)
+  if(!"data.table" %in% class(a.dt)) a.dt <- data.table(a.dt)
+  all_na <- sapply(a.dt, function(x) all(is.na(x)) | all(x == ""))
+  for(x in names(all_na)) {
+    if(isTRUE(all_na[[x]])) a.dt[[x]] <- NULL
   }
-  p.dt <- set_bold(p.dt, row=1, col=everywhere, value=TRUE)
-  p.dt <- set_all_borders(p.dt, TRUE)
-  p.dt <- set_position(p.dt, "left")
-  p.dt <- set_all_padding(p.dt, 0)
-  p.dt <- set_outer_padding(p.dt, 0)
-  p.dt <- set_caption(p.dt, caption)
-  p.dt <- set_caption_pos(p.dt, "topleft")
-  print_screen(p.dt, colnames=FALSE)
-  resample::cat0n()
+  if(isTRUE(is.package.available("huxtable"))) {
+    add_colnames <- TRUE
+    if(any(c("V1", "V2", "N") %in% colnames(a.dt))) add_colnames <- FALSE
+    p.dt <- huxtable::hux(a.dt, add_rownames=FALSE, add_colnames=add_colnames)
+    col_lengths <- sapply(a.dt, function(x) {
+      if(is.numeric(x)) {
+        y <- max(nchar(round(x[!is.na(x)], 4)))
+      } else {
+        y <- max(nchar(as.character(x[!is.na(x)])))
+      }
+      y
+    })
+    col_lengths <- col_lengths/ sum(col_lengths)
+    p.dt <- huxtable::set_col_width(p.dt, col_lengths)
+    p.dt <- huxtable::set_bold(p.dt, row=1, col=huxtable::everywhere, value=TRUE)
+    p.dt <- huxtable::set_all_borders(p.dt, TRUE)
+    p.dt <- huxtable::set_position(p.dt, "left")
+    p.dt <- huxtable::set_all_padding(p.dt, 0)
+    p.dt <- huxtable::set_outer_padding(p.dt, 0)
+    p.dt <- huxtable::set_caption(p.dt, caption)
+    p.dt <- huxtable::set_caption_pos(p.dt, "topleft")
+    huxtable::print_screen(p.dt, min_width=0, max_width=Inf, colnames=FALSE)
+    resample::cat0n()
+  } else {print(a.dt)}
   invisible()
 }
 

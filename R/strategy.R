@@ -2,7 +2,7 @@
 calc.strategies <- function(a.dt) {
 
   choose_one_result <- function(id, ftr) {
-    suppressWarnings(TeachingDemos::char2seed(id))
+    if(is.package.available("TeachingDemos")) suppressWarnings(TeachingDemos::char2seed(id))
     r <- sample(as.character(ftr), 1)
     ifelse(ftr == r, 1, 0)
   }

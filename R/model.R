@@ -10,6 +10,7 @@
 #' @param interaction.depth gbm parameter. Depth of each tree in model. Defaults to 2
 #' @param cv.folds gbm parameter. Number of cross validation folds in training data. Defaults to 3
 #' @param plot.it Create output plot. Defaults to FALSE
+#' @param log.it Create output log and print to stdout. Defaults to FALSE
 #' @return gbm model object
 #' @examples
 #' build.sodd.model("2020-01-01", "act")
@@ -101,6 +102,29 @@ document.sodd.model <- function(model) {
     model$yvar,
     model$pdffile
   )
+}
+
+#' Get summary table for upcoming fixture strategy
+#'
+#' @param model sodd model object
+#' @return grobTree object
+#' @examples
+#' model <- sodd.build.model("2020-12-22", "act")
+#' upcoming.strategy.sodd.model(model)
+#' @export 
+upcoming.strategy.sodd.model <- function(model) {
+  recent.csv <- paste0("~/data/", all.years[[1]], "/", leagues, ".csv")
+  alist <- lapply(
+    recent.csv
+    ,
+    fread
+  )
+  recent.dt <- rbindlist(alist, fill=TRUE)
+  setnames(recent.dt, colnames(recent.dt), tolower(colnames(recent.dt)))
+  recent.dt[, date := as.Date(date, '%d/%m/%y')]
+  recent.dt[, match_id := paste0(date, "|", hometeam, "|", awayteam, collapse="|"), list(date, hometeam, awayteam)]
+  recent.dt <- recent.dt[, list(match_id, actr_new=ftr)]
+  detailed.strat.gtable(model$upcoming.dt, recent.dt, "upcoming")
 }
 
 #' Build gbm sodd models for all responses and weights
