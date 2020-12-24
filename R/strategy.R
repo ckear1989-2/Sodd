@@ -1,8 +1,25 @@
 
+#' import from stats quantile
+#' @param a.dt data.table to calculate strategies on
 calc.strategies <- function(a.dt) {
-
+  ip <- ftr <- hometeam <- awayteam <- pred_spread <- match_id <- strat_all <-
+  strat_fav <- strat_out <- strat_home <- strat_draw <- strat_away <-
+  strat_top_pct_10 <- strat_top_pct_5 <- strat_top_pct_1 <-
+  strat_top_per_match <- strat_all_wtd <- strat_fav_wtd <- strat_out_wtd <-
+  strat_home_wtd <- strat_draw_wtd <- strat_away_wtd <- strat_top_pct_10_wtd <-
+  strat_top_pct_5_wtd <- strat_top_pct_1_wtd <- strat_top_per_match_wtd <-
+  gain_all <- gain_fav <- gain_out <- gain_home <- gain_draw <- gain_away <-
+  gain_top_pct_10 <- gain_top_pct_5 <- gain_top_pct_1 <- gain_top_per_match <-
+  gain_all_wtd <- gain_fav_wtd <- gain_out_wtd <- gain_home_wtd <-
+  gain_draw_wtd <- gain_away_wtd <- gain_top_pct_10_wtd <- gain_top_pct_5_wtd <-
+  gain_top_pct_1_wtd <- gain_top_per_match_wtd <- maxp <- match_fav_count <-
+  match_out_count <- max_match_pred <- max_match_flag <- max_match_flag_count <-
+  pred_spread_one_per_match <- rn <- pct_grp_10 <- pct_grp_5 <- pct_grp_1 <-
+  act <- odds <- min_ip <- gain_strat <- NULL
   choose_one_result <- function(id, ftr) {
-    if(is.package.available("TeachingDemos")) suppressWarnings(TeachingDemos::char2seed(id))
+    if(is.package.available("TeachingDemos")) {
+      suppressWarnings(TeachingDemos::char2seed(id))
+    }
     r <- sample(as.character(ftr), 1)
     ifelse(ftr == r, 1, 0)
   }
@@ -52,9 +69,31 @@ calc.strategies <- function(a.dt) {
   a.dt[, pct_grp_10 := -1]
   a.dt[, pct_grp_5 := -1]
   a.dt[, pct_grp_1 := -1]
-  a.dt[max_match_flag == 1, pct_grp_10 := as.numeric(as.character(cut(a.dt[max_match_flag == 1, rn], breaks=quantile(a.dt[max_match_flag == 1, rn], probs=seq(0, 1, by=0.1)), include.lowest=TRUE, labels=1:10)))]
-  a.dt[max_match_flag == 1, pct_grp_5 := as.numeric(as.character(cut(a.dt[max_match_flag == 1, rn], breaks=quantile(a.dt[max_match_flag == 1, rn], probs=seq(0, 1, by=0.05)), include.lowest=TRUE, labels=1:20)))]
-  a.dt[max_match_flag == 1, pct_grp_1 := as.numeric(as.character(cut(a.dt[max_match_flag == 1, rn], breaks=quantile(a.dt[max_match_flag == 1, rn], probs=seq(0, 1, by=0.01)), include.lowest=TRUE, labels=1:100)))]
+  a.dt[max_match_flag == 1,
+    pct_grp_10 := as.numeric(as.character(cut(
+    a.dt[max_match_flag == 1, rn],
+    breaks=quantile(a.dt[max_match_flag == 1, rn],
+    probs=seq(0, 1, by=0.1)),
+    include.lowest=TRUE,
+    labels=1:10)))
+  ]
+  a.dt[max_match_flag == 1,
+    pct_grp_5 := as.numeric(as.character(cut(
+      a.dt[max_match_flag == 1, rn],
+      breaks=quantile(a.dt[max_match_flag == 1, rn],
+      probs=seq(0, 1, by=0.05)),
+      include.lowest=TRUE,
+      labels=1:20)))
+  ]
+  a.dt[max_match_flag == 1,
+    pct_grp_1 := as.numeric(as.character(cut(
+      a.dt[max_match_flag == 1, rn],
+      breaks=quantile(a.dt[max_match_flag == 1, rn],
+      probs=seq(0, 1, by=0.01)),
+      include.lowest=TRUE,
+      labels=1:100
+    )))
+  ]
   a.dt[, strat_top_pct_10 := 0]
   a.dt[, strat_top_pct_5 := 0]
   a.dt[, strat_top_pct_1 := 0]
@@ -63,16 +102,26 @@ calc.strategies <- function(a.dt) {
   a.dt[pct_grp_1 == 100, strat_top_pct_1 := 1]
 
   # weighted by dist of model prediction
-  a.dt[, strat_all_wtd := round(rebase.y.sum(a.dt[, strat_all], a.dt[, pred_spread]), 2)]
-  a.dt[, strat_fav_wtd := round(rebase.y.sum(a.dt[, strat_fav], a.dt[, pred_spread]), 2)]
-  a.dt[, strat_out_wtd := round(rebase.y.sum(a.dt[, strat_out], a.dt[, pred_spread]), 2)]
-  a.dt[, strat_home_wtd := round(rebase.y.sum(a.dt[, strat_home], a.dt[, pred_spread]), 2)]
-  a.dt[, strat_draw_wtd := round(rebase.y.sum(a.dt[, strat_draw], a.dt[, pred_spread]), 2)]
-  a.dt[, strat_away_wtd := round(rebase.y.sum(a.dt[, strat_away], a.dt[, pred_spread]), 2)]
-  a.dt[, strat_top_pct_10_wtd := round(rebase.y.sum(a.dt[, strat_top_pct_10], a.dt[, pred_spread]), 2)]
-  a.dt[, strat_top_pct_5_wtd := round(rebase.y.sum(a.dt[, strat_top_pct_5], a.dt[, pred_spread]), 2)]
-  a.dt[, strat_top_pct_1_wtd := round(rebase.y.sum(a.dt[, strat_top_pct_1], a.dt[, pred_spread]), 2)]
-  a.dt[, strat_top_per_match_wtd := round(rebase.y.sum(a.dt[, strat_top_per_match], a.dt[, pred_spread]), 2)]
+  a.dt[, strat_all_wtd := round(rebase.y.sum(
+    a.dt[, strat_all], a.dt[, pred_spread]), 2)]
+  a.dt[, strat_fav_wtd := round(rebase.y.sum(
+    a.dt[, strat_fav], a.dt[, pred_spread]), 2)]
+  a.dt[, strat_out_wtd := round(rebase.y.sum(
+    a.dt[, strat_out], a.dt[, pred_spread]), 2)]
+  a.dt[, strat_home_wtd := round(rebase.y.sum(
+    a.dt[, strat_home], a.dt[, pred_spread]), 2)]
+  a.dt[, strat_draw_wtd := round(rebase.y.sum(
+    a.dt[, strat_draw], a.dt[, pred_spread]), 2)]
+  a.dt[, strat_away_wtd := round(rebase.y.sum(
+    a.dt[, strat_away], a.dt[, pred_spread]), 2)]
+  a.dt[, strat_top_pct_10_wtd := round(rebase.y.sum(
+    a.dt[, strat_top_pct_10], a.dt[, pred_spread]), 2)]
+  a.dt[, strat_top_pct_5_wtd := round(rebase.y.sum(
+    a.dt[, strat_top_pct_5], a.dt[, pred_spread]), 2)]
+  a.dt[, strat_top_pct_1_wtd := round(rebase.y.sum(
+    a.dt[, strat_top_pct_1], a.dt[, pred_spread]), 2)]
+  a.dt[, strat_top_per_match_wtd := round(rebase.y.sum(
+    a.dt[, strat_top_per_match], a.dt[, pred_spread]), 2)]
   # calculate predicted gain
   calc.gain <- function(strat, a.dt) {
     setnames(a.dt, paste0("strat_", strat), "strat")
@@ -87,6 +136,7 @@ calc.strategies <- function(a.dt) {
 }
 
 run.strategy <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
+  gain_strat <- NULL
   resample::cat0n(rep("#", 30), "\nStrategies")
   train.a.dt <- calc.strategies(train.a.dt)
   train.b.dt <- calc.strategies(train.b.dt)

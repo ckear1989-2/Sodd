@@ -1,16 +1,22 @@
 Package: sodd
 Title: Model soccer match outcomes
-Version: 0.0.4
-Author: Conor Kearney
+Version: 0.0.5
+Author:
+  Conor Kearney
 Description:
-    Download historic match betting data.  Build models and score on upcoming
-    fixtures for opportunities of beating bookie spread
-License: friends
+  Download historic match betting data.  Build models and score on upcoming
+  fixtures for opportunities of beating bookie spread.
+License:
+  GPL-3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Depends:
-  gbm, data.table, ggplot2
+  data.table, gbm, ggplot2
+Imports:
+  grid, gridExtra, gtable, resample
 Suggests:
   huxtable, TeachingDemos
+Maintainer:
+  Conor Kearney <ckear1989@gmail.com>

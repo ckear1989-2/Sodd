@@ -1,0 +1,7 @@
+^README.Rmd
+^README.html
+^README_files/
+^logs/
+^betting_log/
+^install_packages.sh
+^nohup.out

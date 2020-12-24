@@ -1,3 +1,10 @@
+globalVariables(c(
+  # hide from R CMD check
+  # data.table syntax
+  ":=",
+  ".N",
+  "."
+))
 
 base_dload_path <- "https://www.football-data.co.uk/"
 historic_subdir <- "mmz4281"
@@ -16,8 +23,6 @@ all.years <- c(
   "1112",
   "1011"
 )
-yl <- expand.grid(all.years, all.leagues)
-all.csv <- paste0("~/data/", all.leagues[[1]], "/", all.leagues[[2]], ".csv")
 
 strats <- c(
   "all",

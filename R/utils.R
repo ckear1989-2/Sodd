@@ -1,6 +1,6 @@
 
 is.package.available <- function(x) {
-  x %in% rownames(installed.packages())
+  x %in% rownames(utils::installed.packages())
 }
 
 if(!isTRUE(is.package.available("huxtable"))) {
@@ -85,6 +85,7 @@ rebase.y <- function(y1, y2, nreturn=length(y2), verbose=FALSE) {
 }
 
 rebase.y.sum <- function(y1, y2) {
+  y2max <- y2min <- NULL
   # sum(new_y2) = sum(y1).  order maintained ignoring zeros
   y2l <- length(y2)
   if(all(y2 < 0)) {
@@ -127,18 +128,20 @@ rebase.y.sum <- function(y1, y2) {
   new_y2
 }
 
+#' @import gbm
 model.summary <- quote({
   # model summary
   resample::cat0n(rep("#", 30), "\nModel Summary")
-  best.trees.test <- gbm::gbm.perf(model, plot.it=FALSE, method="test")
-  best.trees.cv <- gbm::gbm.perf(model, plot.it=FALSE, method="cv")
-  suppressMessages(best.trees.oob <- gbm::gbm.perf(model, plot.it=FALSE, method="OOB"))
+  best.trees.test <- gbm.perf(model, plot.it=FALSE, method="test")
+  best.trees.cv <- gbm.perf(model, plot.it=FALSE, method="cv")
+  suppressMessages(best.trees.oob <- gbm.perf(model, plot.it=FALSE, method="OOB"))
   resample::cat0n("gbm perf best.trees.test=", best.trees.test)
   resample::cat0n("gbm perf best.trees.cv=", best.trees.cv)
   resample::cat0n("gbm perf best.trees.oob=", best.trees.oob)
   resample::cat0n("gbm summary")
 })
 
+#' @import gbm
 score.model <- quote({
   # score
   # multiply predictions by weight.  not necessary because balanced by season but still good practice
@@ -316,10 +319,10 @@ positive.model.predictions <- quote({
   }
 })
 
+#' @import gbm
 build.model <- quote({
-  # build model
   resample::cat0n(rep("#", 30), "\nBuild Model")
-  model <- gbm::gbm(
+  model <- gbm(
     formula=formula,
     data=train.dt,
     weights=train.dt[, weight],
@@ -349,18 +352,19 @@ model.params <- quote({
 })
 
 read.model.data <- quote({
-  a.dt <- readRDS("~/data/R/rds/a.dt.rds")
+  a.dt <- readRDS(file.path(getOption("sodd.data.dir", "~/data/"), "a.dt.rds"))
+  output.dir <- getOption("sodd.output.dir", "logs/")
   if(isTRUE(weights)) {
-    logfile <- paste0("logs/model_", adate, "_", yvar, "_wtd", ".log")
-    pdffile <- paste0("logs/model_", adate, "_", yvar, "_wtd", ".pdf")
+    output.prefix <- paste0("model_", adate, "_", yvar, "_wtd")
     a.dt[, weight := weight_from_season(season)]
   } else {
-    logfile <- paste0("logs/model_", adate, "_", yvar, ".log")
-    pdffile <- paste0("logs/model_", adate, "_", yvar, ".pdf")
+    output.prefix <- paste0("model_", adate, "_", yvar)
     a.dt[, weight := rep(1, a.dt[, .N])]
   } 
+  logfile <- paste0(output.dir, output.prefix, ".log")
+  pdffile <- paste0(output.dir, output.prefix, ".pdf")
   if(isTRUE(log.it)) {
-    if(!file.exists("logs")) dir.create("logs")
+    if(!file.exists(output.dir)) dir.create(output.dir)
     sink(logfile, split=TRUE)
   } else {
     sink("/dev/null")
@@ -384,7 +388,18 @@ read.model.data <- quote({
   test.dt <- a.dt[actr != "NA" & date >= as.Date(adate, "%Y-%m-%d"), ]
   upcoming.dt <- a.dt[actr == "NA", ]
   if(test.dt[, .N] == 0) stop("no test matches")
-  if(upcoming.dt[, .N] == 0) stop("no upcoming matches")
+  if(upcoming.dt[, .N] == 0) {
+    if(isTRUE(getOption("sodd.force.upcoming", FALSE))) {
+      upcoming.dt <- test.dt[date == max(test.dt[, date]), ]
+      test.dt <- test.dt[date < max(test.dt[, date]), ]
+      upcoming.dt[, actr := NULL]
+      upcoming.dt[, actr := "NA"]
+      resample::cat0n("forcing upcoming matches from test.dt")
+    }
+    else {
+      stop("no upcoming matches")
+    }
+  }
   if(any(train.dt[, match_id] %in% test.dt[, match_id])) stop("matches in train and test")
   if(any(train.dt[, match_id] %in% upcoming.dt[, match_id])) stop("matches in train and upcoming")
   if(any(test.dt[, match_id] %in% upcoming.dt[, match_id])) stop("matches in test and upcoming")
@@ -409,4 +424,18 @@ read.model.data <- quote({
   test.dt <- merge(test.matches.one.match.dt, test.dt, all.x=TRUE, all.y=FALSE)
   resample::cat0n("test.dt complete")
 })
+
+#' @import data.table
+get.recent.dt <- function(leagues=all.leagues){
+  date <- match_id <- hometeam <- awayteam <- actr_new <- ftr <- NULL
+  recent.csv <- paste0(getOption("sodd.data.dir", "~/data/"), all.years[[1]], "/", leagues, ".csv")
+  recent.dt <- rbindlist(lapply(recent.csv, fread), fill=TRUE)
+  setnames(recent.dt, colnames(recent.dt), tolower(colnames(recent.dt)))
+  recent.dt[, date := as.Date(date, '%d/%m/%y')]
+  recent.dt[, match_id := paste0(
+    date, "|", hometeam, "|", awayteam, collapse="|"),
+  list(date, hometeam, awayteam)]
+  recent.dt <- recent.dt[, list(match_id, actr_new=ftr)]
+  recent.dt
+}
 

@@ -256,16 +256,11 @@ create_test_model_doc_act <- quote({
   plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, logfile)
   sink()
 })
-args = commandArgs()
-this_file <- "create_test_data.R"
-file_run <- ""
-if(length(args) > 3) file_run <- strsplit(args[[4]], "/")[[1]][[2]]
-if(file_run == this_file) {
-  # eval(create_test_dataset_spread)
-  # eval(create_test_model_spread)
-  eval(create_test_model_doc_spread)
-  # eval(create_test_dataset_act)
-  # eval(create_test_model_act)
-  eval(create_test_model_doc_act)
-}
+
+# eval(create_test_dataset_spread)
+# eval(create_test_model_spread)
+# eval(create_test_model_doc_spread)
+# eval(create_test_dataset_act)
+# eval(create_test_model_act)
+# eval(create_test_model_doc_act)
 

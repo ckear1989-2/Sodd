@@ -12,11 +12,15 @@
 #' @param plot.it Create output plot. Defaults to FALSE
 #' @param log.it Create output log and print to stdout. Defaults to FALSE
 #' @return gbm model object
+#' @family model
 #' @examples
+#' \donttest{
 #' build.sodd.model("2020-01-01", "act")
 #' build.sodd.model("2020-01-01", "spread", weights=TRUE)
 #' build.sodd.model("2020-01-01", "spread", n.trees=50)
-#' @export 
+#' }
+#' @export
+#' @import data.table
 build.sodd.model <- function(
   adate,
   yvar,
@@ -29,6 +33,8 @@ build.sodd.model <- function(
   plot.it=FALSE,
   log.it=FALSE
   ) {
+  logfile <- ip <- a.dt <- train.a.dt <- train.b.dt <- test.dt <-
+  upcoming.dt <- train.dt <- pdffile <- model <- a.date <- NULL
   set.seed(123)
   eval(read.model.data)
   if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
@@ -53,7 +59,7 @@ build.sodd.model <- function(
     paste0("app_cum", 2:5)
   )
   uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
-  formula <- as.formula(paste("y", paste(xvar, collapse="+"), sep="~offset(offset)+"))
+  formula <- stats::as.formula(paste("y", paste(xvar, collapse="+"), sep="~offset(offset)+"))
   eval(model.params)
   eval(build.model)
   eval(model.summary)
@@ -85,9 +91,12 @@ build.sodd.model <- function(
 #'
 #' @param model sodd model object
 #' @return character location of output file
+#' @family output
 #' @examples
-#' model <- sodd.build.model("2020-12-22", "act")
+#' \donttest{
+#' model <- build.sodd.model("2020-12-22", "act")
 #' document.sodd.model(model)
+#' }
 #' @export 
 document.sodd.model <- function(model) {
   plot.model(
@@ -108,22 +117,17 @@ document.sodd.model <- function(model) {
 #'
 #' @param model sodd model object
 #' @return grobTree object
+#' @family output
 #' @examples
-#' model <- sodd.build.model("2020-12-22", "act")
+#' \donttest{
+#' model <- build.sodd.model("2020-12-22", "act")
 #' upcoming.strategy.sodd.model(model)
+#' }
 #' @export 
 upcoming.strategy.sodd.model <- function(model) {
-  recent.csv <- paste0("~/data/", all.years[[1]], "/", leagues, ".csv")
-  alist <- lapply(
-    recent.csv
-    ,
-    fread
-  )
-  recent.dt <- rbindlist(alist, fill=TRUE)
-  setnames(recent.dt, colnames(recent.dt), tolower(colnames(recent.dt)))
-  recent.dt[, date := as.Date(date, '%d/%m/%y')]
-  recent.dt[, match_id := paste0(date, "|", hometeam, "|", awayteam, collapse="|"), list(date, hometeam, awayteam)]
-  recent.dt <- recent.dt[, list(match_id, actr_new=ftr)]
+  div <- NULL
+  leagues <- unique(as.character(model$train.dt[, div]))
+  recent.dt <- get.recent.dt(leagues)
   detailed.strat.gtable(model$upcoming.dt, recent.dt, "upcoming")
 }
 
@@ -132,9 +136,12 @@ upcoming.strategy.sodd.model <- function(model) {
 #' @param adate a date in string format "%Y-%m-%d".  Splits train.a and train.b data
 #' @param ... arguments to pass to build.sodd.model
 #' @return list of gbm model objects
+#' @family model
 #' @examples
+#' \donttest{
 #' build.all.sodd.models.one.date("2020-01-01")
 #' build.all.sodd.models.one.date("2020-01-01", n.trees=50, interaction.depth=3)
+#' }
 #' @export 
 build.all.sodd.models.one.date <- function(adate, ...) {
   list(
