@@ -15,15 +15,34 @@
 #' )
 #' }
 #' @export
-set_sodd_options <- function(
+set.sodd.options <- function(
   data.dir="~/data/",
   output.dir="logs/",
-  force.upcoming=FALSE
+  force.upcoming=FALSE,
+  verbosity=FALSE
   ) {
   options(list(
     sodd.data.dir=data.dir,
     sodd.output.dir=output.dir,
-    sodd.force.upcoming=force.upcoming
+    sodd.force.upcoming=force.upcoming,
+    sodd.verbosity=FALSE
   ))
   invisible()
 }
+
+get.sodd.data.dir <- function() {
+  getOption("sodd.data.dir", "~/data/")
+}
+
+get.sodd.output.dir <- function() {
+  getOption("sodd.data.dir", "~/logs/")
+}
+
+get.sodd.force.upcoming <- function() {
+  getOption("sodd.force.upcoming", FALSE)
+}
+
+get.sodd.verbosity <- function() {
+  getOption("sodd.verbosity", 0)
+}
+

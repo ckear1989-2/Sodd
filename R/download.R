@@ -9,11 +9,11 @@
 #' @family download
 #' @examples
 #' \donttest{
-#' dload_league_season("E0", "1920")
+#' dload.league.season("E0", "1920")
 #' }
 #' @export 
-dload_league_season <- function(l, s, quiet=FALSE, force=TRUE) {
-  data.dir <- getOption("sodd.data.dir", "~/data/")
+dload.league.season <- function(l, s, quiet=FALSE, force=TRUE) {
+  data.dir <- get.sodd.data.dir()
   if(!file.exists(data.dir)) dir.create(data.dir)
   if(!file.exists(paste0(data.dir, s))) dir.create(paste0(data.dir, s))
   output.path <- file.path(data.dir, s, paste0(l, ".csv"))
@@ -27,33 +27,33 @@ dload_league_season <- function(l, s, quiet=FALSE, force=TRUE) {
 #'
 #' @param l League(s) to download data for. Defaults to all.leagues
 #' @param x Number of years to download
-#' @param ... Args to pass to dload_league_season
+#' @param ... Args to pass to dload.league.season
 #' @family download
 #' @examples
 #' \donttest{
-#' dload_x_years("E0", 10)
-#' dload_x_years(c("E0", "S1"), 10, quiet=TRUE)
+#' dload.x.years("E0", 10)
+#' dload.x.years(c("E0", "S1"), 10, quiet=TRUE)
 #' }
 #' @export 
-dload_x_years <- function(l, x=10, ...) {
+dload.x.years <- function(l, x=10, ...) {
   for (li in l) {
-    for (i in seq(x)) dload_league_season(li, all.years[[i]], ...)
+    for (i in seq(x)) dload.league.season(li, all.years[[i]], ...)
   }
 }
 
 #' Download current year fixtures
 #'
 #' @param l League(s) to download data for. Defaults to all.leagues
-#' @param ... Args to pass to dload_league_season
+#' @param ... Args to pass to dload.league.season
 #' @family download
 #' @examples
 #' \donttest{
-#' dload_current_year()
-#' dload_current_year(quiet=TRUE)
+#' dload.current.year()
+#' dload.current.year(quiet=TRUE)
 #' }
 #' @export 
-dload_current_year <- function(l=all.leagues, ...) {
-  for (li in l) dload_league_season(li, all.years[[1]], ...)
+dload.current.year <- function(l=all.leagues, ...) {
+  for (li in l) dload.league.season(li, all.years[[1]], ...)
 }
 
 #' Download upcoming fixtures
@@ -62,12 +62,12 @@ dload_current_year <- function(l=all.leagues, ...) {
 #' @family download
 #' @examples
 #' \donttest{
-#' dload_upcoming()
-#' dload_upcoming(TRUE)
+#' dload.upcoming()
+#' dload.upcoming(TRUE)
 #' }
 #' @export 
-dload_upcoming <- function(quiet=FALSE) {
-  data.dir <- getOption("sodd.data.dir", "~/data/")
+dload.upcoming <- function(quiet=FALSE) {
+  data.dir <- get.sodd.data.dir()
   utils::download.file(file.path(base_dload_path, upcoming_fixtures), file.path(data.dir, upcoming_fixtures), quiet=quiet)
 }
 

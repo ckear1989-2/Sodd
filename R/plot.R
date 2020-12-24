@@ -588,7 +588,7 @@ detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
 
 #' @importFrom grid grid.newpage grid.draw
 plot.detailed.strategy <- function(test.dt, upcoming.dt, leagues=all.leagues) {
-  # dload_current_year(quiet=TRUE)
+  # dload.current.year(quiet=TRUE)
   recent.dt <- get.recent.dt(leagues)
   p.obj.test <- detailed.strat.gtable(test.dt, recent.dt, "test")
   p.obj.upcoming <- detailed.strat.gtable(upcoming.dt, recent.dt, "upcoming")

@@ -352,8 +352,8 @@ model.params <- quote({
 })
 
 read.model.data <- quote({
-  a.dt <- readRDS(file.path(getOption("sodd.data.dir", "~/data/"), "a.dt.rds"))
-  output.dir <- getOption("sodd.output.dir", "logs/")
+  a.dt <- readRDS(file.path(get.sodd.data.dir(), "a.dt.rds"))
+  output.dir <- get.sodd.output.dir()
   if(isTRUE(weights)) {
     output.prefix <- paste0("model_", adate, "_", yvar, "_wtd")
     a.dt[, weight := weight_from_season(season)]
@@ -389,7 +389,7 @@ read.model.data <- quote({
   upcoming.dt <- a.dt[actr == "NA", ]
   if(test.dt[, .N] == 0) stop("no test matches")
   if(upcoming.dt[, .N] == 0) {
-    if(isTRUE(getOption("sodd.force.upcoming", FALSE))) {
+    if(isTRUE(get.sodd.force.upcoming())) {
       upcoming.dt <- test.dt[date == max(test.dt[, date]), ]
       test.dt <- test.dt[date < max(test.dt[, date]), ]
       upcoming.dt[, actr := NULL]
@@ -428,7 +428,7 @@ read.model.data <- quote({
 #' @import data.table
 get.recent.dt <- function(leagues=all.leagues){
   date <- match_id <- hometeam <- awayteam <- actr_new <- ftr <- NULL
-  recent.csv <- paste0(getOption("sodd.data.dir", "~/data/"), all.years[[1]], "/", leagues, ".csv")
+  recent.csv <- paste0(get.sodd.data.dir(), all.years[[1]], "/", leagues, ".csv")
   recent.dt <- rbindlist(lapply(recent.csv, fread), fill=TRUE)
   setnames(recent.dt, colnames(recent.dt), tolower(colnames(recent.dt)))
   recent.dt[, date := as.Date(date, '%d/%m/%y')]

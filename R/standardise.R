@@ -3,7 +3,7 @@
 read.a.file <- function(a.file) {
   season <- match_id <- hometeam <- awayteam <- date <- ddate <- NULL
   if(!file.exists(a.file)) stop(paste(
-    "input file", a.file, "not found.  Please use dload_league_season to obtain csv"))
+    "input file", a.file, "not found.  Please use dload.league.season to obtain csv"))
   s <- strsplit(a.file, "/") [[1]]
   s <- s[[(length(s)-1)]]
   a.dt <- fread(a.file)
@@ -23,7 +23,7 @@ read.a.file <- function(a.file) {
 #' @import data.table
 read.all.data <- function(leagues, years) {
   season <- ftr <- div <- hometeam <- awayteam <- date <- match_id <- NULL
-  data.dir <- getOption("sodd.data.dir", "~/data/")
+  data.dir <- get.sodd.data.dir()
   yl <- expand.grid(all.years[1:years], leagues)
   all.csv <- paste0(
     data.dir,
@@ -55,13 +55,13 @@ read.all.data <- function(leagues, years) {
   }
   upcoming.dt <- upcoming.dt[div %in% leagues, ]
   if(any(a.dt[, match_id] %in% upcoming.dt[, match_id])) {
-    if(!isTRUE(getOption("sodd.force.upcoming", FALSE))) {
+    if(!isTRUE(get.sodd.force.upcoming())) {
       warning("matches in historic and upcoming")
     }
     upcoming.dt <-upcoming.dt[!match_id %in% a.dt[, match_id]]
   }
   if(upcoming.dt[, .N] == 0) {
-    if(isTRUE(getOption("sodd.force.upcoming", FALSE))) {
+    if(isTRUE(get.sodd.force.upcoming())) {
       upcoming.dt <- a.dt[date == max(a.dt[, date]), ]
       a.dt <- a.dt[date < max(a.dt[, date]), ]
       resample::cat0n("forcing upcoming matches from a.dt")
@@ -320,7 +320,7 @@ prep.modeling.vars <- quote({
 #' @import data.table
 save.modeling.data <- quote({
   setkey(a.dt, rn)
-  data.dir <- getOption("sodd.data.dir", "~/data/")
+  data.dir <- get.sodd.data.dir()
   if(!file.exists(data.dir)) dir.create(data.dir)
   saveRDS(a.dt, file.path(data.dir, 'a.dt.rds'))
 })
@@ -338,7 +338,7 @@ save.modeling.data <- quote({
 #' }
 #' @export
 create.sodd.modeling.data <- function(leagues=all.leagues, years=10, log.it=FALSE){
-  output.dir <- getOption("sodd.output.dir", "logs/")
+  output.dir <- get.sodd.output.dir()
   if(!file.exists(output.dir)) dir.create(output.dir)
   if(isTRUE(log.it)) {
     sink(file.path(output.dir, "standardise.log"), split=TRUE)
