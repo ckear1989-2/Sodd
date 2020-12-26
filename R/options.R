@@ -35,7 +35,7 @@ get.sodd.data.dir <- function() {
 }
 
 get.sodd.output.dir <- function() {
-  getOption("sodd.data.dir", "~/logs/")
+  getOption("sodd.output.dir", "logs/")
 }
 
 get.sodd.force.upcoming <- function() {

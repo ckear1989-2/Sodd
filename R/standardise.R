@@ -104,16 +104,19 @@ transpose.rows <- quote({
       actr=ftr, fthg=fthg, ftag=ftag, ip=b365a, act=as.numeric(ftr=='A'), ftr='A')],
     a.dt[ftr == "NA", list(
       match_id, div, date, season, hometeam, awayteam, match_ip,
-      actr="NA", fthg=fthg, ftag=ftag, ip=b365h, ftr='H')],
+      actr="NA", fthg=fthg, ftag=ftag, ip=b365h, act=-1, ftr='H')],
     a.dt[ftr == "NA", list(
       match_id, div, date, season, hometeam, awayteam, match_ip,
-      actr="NA", fthg=fthg, ftag=ftag, ip=b365d, ftr='D')],
+      actr="NA", fthg=fthg, ftag=ftag, ip=b365d, act=-1, ftr='D')],
     a.dt[ftr == "NA", list(
       match_id, div, date, season, hometeam, awayteam, match_ip,
-      actr="NA", fthg=fthg, ftag=ftag, ip=b365a, ftr='A')],
+      actr="NA", fthg=fthg, ftag=ftag, ip=b365a, act=-1, ftr='A')],
     fill=TRUE
   )
   print(a.dt[, .N,, list(actr, ftr)])
+  for(var in colnames(a.dt)) {
+    if(any(is.na(a.dt[[var]]))) print(var)
+  }
   cat('data transposed count with NA', a.dt[, .N], '\n')
   a.dt <- na.omit(a.dt)
   cat('data transposed count', a.dt[, .N], '\n')
@@ -251,8 +254,8 @@ result_lag <- function(a.dt, i) {
   i.vars <- paste0(all.vars[[1]], all.vars[[2]])
   i.vars <- c(i.vars, paste0("h", c("phr", "phd", "php")))
   i.vars <- c(i.vars, paste0("a", c("par", "pad", "pap")))
-  print(i.vars)
-  print(colnames(a.dt))
+  # print(i.vars)
+  # print(colnames(a.dt))
   setnames(a.dt, i.vars, paste0(i.vars, i))
   rm(h.teams.dt)
   rm(a.teams.dt)
@@ -267,7 +270,6 @@ prep.modeling.vars <- quote({
   ftr <- ip <- NULL
   lag_result_i <- 1:5
   for (i in lag_result_i) a.dt <- result_lag(a.dt, i)
-  # print(head(a.dt))
   a.dt[, .N, hpr1]
   a.dt[, .N, apr1]
   a.dt[, .N, hpr2]
@@ -297,16 +299,16 @@ prep.modeling.vars <- quote({
   a.dt[, ip := round(ip, 3)]
   summary(a.dt)
   cat('data count with missings', a.dt[, .N], '\n')
-  for (x in colnames(a.dt)) {
-    if(any(is.na(a.dt[[x]]))) print(x)
-  }
-  for (x in colnames(a.dt)) {
-    if(any(is.na(a.dt[[x]]))) print(x)
-  }
+  # for (x in colnames(a.dt)) {
+  #   if(any(is.na(a.dt[[x]]))) print(x)
+  # }
+  # for (x in colnames(a.dt)) {
+  #   if(any(is.na(a.dt[[x]]))) print(x)
+  # }
   a.dt <- na.omit(a.dt)
   cat('data count no missings', a.dt[, .N], '\n')
   cat('data summary', '\n')
-  summary(a.dt)
+  print(summary(a.dt))
   # error with odds
   cat('data count odds error', a.dt[, .N], '\n')
   a.dt <- a.dt[ip != -Inf, ]

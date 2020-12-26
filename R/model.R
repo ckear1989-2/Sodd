@@ -70,7 +70,7 @@ build.sodd.model <- function(
   eval(positive.model.predictions)
   run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
   sink()
-  if(isTRUE(plot.it)) plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, logfile)
+  if(isTRUE(plot.it)) plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile)
   # dunno why attr(model, x) <- x doesn't work
   # attr(model, "adate") <- adate
   class(model) <- c("sodd", class(model))
