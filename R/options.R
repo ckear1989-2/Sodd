@@ -5,6 +5,7 @@
 #' @param output.dir path to store model output. Defaults to "logs/"
 #' @param force.upcoming Get upcoming matches from already played matches if
 #' none found. Defaults to FALSE
+#' @param verbosity Not yet implemented. Defaults to FALSE
 #' @family data_prep
 #' @examples
 #' \donttest{

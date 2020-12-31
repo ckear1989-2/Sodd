@@ -73,6 +73,7 @@ mkdir -p $LIB
 # install_package foreach_1.5.1
 # install_package doParallel_1.0.16
 # install_package xml2_1.3.2
+
 # curl ${CRAN}xml2_1.3.2.tar.gz > ${LIB}xml2_1.3.2.tar.gz
 # R CMD INSTALL ${LIB}xml2_1.3.2.tar.gz --configure-vars='INCLUDE_DIR="${LIB}" LIB_DIR="${LIB}"' -l "${LIB}"
 # install_package huxtable_5.1.1

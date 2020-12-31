@@ -1,6 +1,6 @@
 Package: sodd
 Title: Model soccer match outcomes
-Version: 0.0.6
+Version: 0.0.7
 Author:
   Conor Kearney
 Description:
@@ -17,6 +17,6 @@ Depends:
 Imports:
   grid, gridExtra, gtable, resample
 Suggests:
-  huxtable, TeachingDemos
+  huxtable, TeachingDemos, cronR, gmailr
 Maintainer:
   Conor Kearney <ckear1989@gmail.com>

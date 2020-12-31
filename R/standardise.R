@@ -2,10 +2,14 @@
 #' @import data.table
 read.a.file <- function(a.file) {
   season <- match_id <- hometeam <- awayteam <- date <- ddate <- NULL
-  if(!file.exists(a.file)) stop(paste(
-    "input file", a.file, "not found.  Please use dload.league.season to obtain csv"))
   s <- strsplit(a.file, "/") [[1]]
+  l <- s[[(length(s)-2)]]
   s <- s[[(length(s)-1)]]
+  if(!file.exists(a.file)) {
+    dload.league.season(l, s)
+    warning(paste("input file", a.file, "not found.",
+    "Downloading", l, s))
+  }
   a.dt <- fread(a.file)
   a.dt[, season := s]
   setnames(a.dt, colnames(a.dt), tolower(colnames(a.dt)))

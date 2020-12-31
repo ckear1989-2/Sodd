@@ -4,13 +4,20 @@ is.package.available <- function(x) {
 }
 
 if(!isTRUE(is.package.available("huxtable"))) {
-  message("printing data.table native style.  Try install.packages(\"huxtable\")")
+  message("printing data.table native style. Try install.packages(\"huxtable\")")
 }
 
 if(!is.package.available("TeachingDemos")) {
-  message("not setting seed for result tie settling. Try  install.packages(\"TeachingDemos\")")
+  message("not setting seed for result tie settling. Try install.packages(\"TeachingDemos\")")
 }
 
+if(!is.package.available("cronR")) {
+  message("model build scheduling not available. Try install.packages(\"cronR\")")
+}
+
+if(!is.package.available("gmailr")) {
+  message("email sending not available. Try install.packages(\"gmailr\")")
+}
 
 weight_from_season <- function(s) {
   o <- rep(1, length(s))
@@ -102,9 +109,11 @@ rebase.y.sum <- function(y1, y2) {
     # remove duplicates for some reason
     output <- unique(output, by="order")
     # for some reason 99% percentile isn't merging right
-    missing_y2 <- a.dt[, y2][!a.dt[, order] %in% output[, order]]
-    missing_order <- a.dt[, order][!a.dt[, order] %in% output[, order]]
-    output <- rbind(output, data.table(y2=missing_y2, order=missing_order, q=1.00), fill=TRUE)
+    if(a.dt[!order %in% output[, order], .N] > 0) {
+      missing_y2 <- a.dt[, y2][!a.dt[, order] %in% output[, order]]
+      missing_order <- a.dt[, order][!a.dt[, order] %in% output[, order]]
+      output <- rbind(output, data.table(y2=missing_y2, order=missing_order, q=1.00), fill=TRUE)
+    }
     output <- output[!is.na(y2), ]
     output <- output[!is.na(order), ]
     y2 <- output[, q]
