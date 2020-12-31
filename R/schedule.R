@@ -5,7 +5,8 @@
 #' @param leagues Leagues to include in modeling data. Defaults to all.leagues
 #' @param years integer. Number of years to look back in modeling data. Defaul
 #' ts to 10
-#' @param address character. email address to send model results to
+#' @param address character. email address to send model results to. Deaults to
+#' NULL
 #' @return NULL
 #' @family model
 #' @examples
@@ -36,19 +37,19 @@ schedule.model.build <- function(
 
 create.scheduled.model.script <- function(leagues, years, f, address) {
   code <- "library(\"sodd\")\n"
-  code <- paste0(code, "dload.x.years(c(",
-    paste(leagues, collapse=", "), ")", years, ")\n")
+  code <- paste0(code, "dload.x.years(c(\"",
+    paste(leagues, collapse="\", \""), "\"), ", years, ", force=FALSE)\n")
   code <- paste0(code,
-    "dload.current.year(c(", paste(leagues, collapse=", "), "))\n")
+    "dload.current.year(c(\"", paste(leagues, collapse="\", \""), "\"))\n")
   code <- paste0(code,
     "dload.upcoming()\n")
   code <- paste0(code,
-    "create.sodd.modeling.data(c(", paste(leagues, collapse=", "), ")", years, ", log.it=TRUE)\n")
+    "create.sodd.modeling.data(c(\"", paste(leagues, collapse="\", \""), "\"), ", years, ", log.it=TRUE)\n")
   code <- paste0(code,
-    "build.all.sodd.models.one.date(", format((Sys.Date()-7), "%Y-%m-%d"), "log.it=TRUE, plot.it=TRUE)\n")
+    "build.all.sodd.models.one.date(format((Sys.Date()-7), \"%Y-%m-%d\"), log.it=TRUE, plot.it=TRUE)\n")
   if(!is.null(address)) {
     code <- paste0(code,
-      "email.sodd.model.results(", format((Sys.Date()-7), "%Y-%m-%d"), ", ", address,  ")\n")
+      "email.sodd.model.results(format((Sys.Date()-7), \"%Y-%m-%d\"), ", address,  ")\n")
   }
   fc <- file(f)
   writeLines(code, fc)

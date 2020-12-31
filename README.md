@@ -74,8 +74,6 @@ email.sodd.model.results(format(Sys.Date()-7, "%Y-%m-%d"), "ckear1989@gmail.com"
 
     ## The gmailr package is using a cached token for ckear1989@gmail.com.
 
-    ## Auto-refreshing stale OAuth token.
-
 # Schedule daily model build
 
 ``` r

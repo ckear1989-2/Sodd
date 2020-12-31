@@ -39,7 +39,7 @@ email.sodd.model.results <- function(
     test_email <- gmailr::gm_text_body(test_email, "See attachments")
     for(f in fs) test_email <- attach.if.available(test_email, f)
     gmailr::gm_create_draft(test_email)
-    gmailr::gm_send_message(test_email)
+    if(!is.null(address)) gmailr::gm_send_message(test_email)
   }
   invisible()
 }
