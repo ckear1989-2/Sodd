@@ -48,7 +48,7 @@ create.scheduled.model.script <- function(leagues, years, f, address) {
     "build.all.sodd.models.one.date(", format((Sys.Date()-7), "%Y-%m-%d"), "log.it=TRUE, plot.it=TRUE)\n")
   if(!is.null(address)) {
     code <- paste0(code,
-      "email.sodd.model.results", format((Sys.Date()-7), "%Y-%m-%d"), ", ", address,  ")\n")
+      "email.sodd.model.results(", format((Sys.Date()-7), "%Y-%m-%d"), ", ", address,  ")\n")
   }
   fc <- file(f)
   writeLines(code, fc)
