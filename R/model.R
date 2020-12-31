@@ -5,7 +5,7 @@
 #' @param yvar model response variable "act" or "spread"
 #' @param weights include weigthing of observations. Defaults to FALSE
 #' @param train.fraction gbm parameter. Proportion of training data for train.a. Defaults to 0.7
-#' @param n.trees gbm parameter. Number of trees to build in gbm. Defaults to 500
+#' @param n.trees gbm parameter. Number of trees to build in gbm. Defaults to 300
 #' @param shrinkage gbm parameter. Rate of change towards prediction. Defaults to 0.01
 #' @param interaction.depth gbm parameter. Depth of each tree in model. Defaults to 2
 #' @param cv.folds gbm parameter. Number of cross validation folds in training data. Defaults to 3
@@ -26,8 +26,8 @@ build.sodd.model <- function(
   yvar,
   weights=FALSE,
   train.fraction=0.7,
-  n.trees=500,
-  shrinkage=0.7,
+  n.trees=300,
+  shrinkage=0.01,
   interaction.depth=2,
   cv.folds=3,
   plot.it=FALSE,
@@ -56,7 +56,9 @@ build.sodd.model <- function(
     paste0("hphd", 1:3),
     paste0("apad", 1:3),
     paste0("hpp_cum", 2:5),
-    paste0("app_cum", 2:5)
+    paste0("app_cum", 2:5),
+    paste0("happ", 1:5),
+    paste0("happ_cum", 2:5)
   )
   uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
   formula <- stats::as.formula(paste("y", paste(xvar, collapse="+"), sep="~offset(offset)+"))
