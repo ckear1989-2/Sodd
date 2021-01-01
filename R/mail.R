@@ -18,9 +18,10 @@ email.sodd.model.results <- function(
     message("email sending not available. Try install.packages(\"gmailr\")")
   } else {
     output.dir <- get.sodd.output.dir()
-    mzip <- file.path(output.dir, paste0("model_", adate, ".zip"))
     fs <- c(
-      dlogf=file.path(output.dir, paste0("standardise.log")),
+      dlogf=file.path(output.dir, paste0("download.log")),
+      slogf=file.path(output.dir, paste0("standardise.log")),
+      sclogf=file.path(output.dir, paste0("scheduled.model.log")),
       mlogf0=file.path(output.dir, paste0("model_", adate, "_act", ".log")),
       mpdff0=file.path(output.dir, paste0("model_", adate, "_act", ".pdf")),
       mlogf1=file.path(output.dir, paste0("model_", adate, "_spread", ".log")),
@@ -37,6 +38,39 @@ email.sodd.model.results <- function(
     test_email <- gmailr::gm_from(test_email, address)
     test_email <- gmailr::gm_subject(test_email, paste(adate, "model results"))
     test_email <- gmailr::gm_text_body(test_email, "See attachments")
+    for(f in fs) test_email <- attach.if.available(test_email, f)
+    gmailr::gm_create_draft(test_email)
+    if(!is.null(address)) gmailr::gm_send_message(test_email)
+  }
+  invisible()
+}
+
+#' Email no data change status
+#'
+#' @param address character. email address to send model results to
+#' @return NULL
+#' @family model
+#' @examples
+#' \donttest{
+#' email.no.data.change("ckear1989@gmail.com")
+#' }
+#' @export
+email.no.data.change <- function(address) {
+  if(!is.package.available("gmailr")) {
+    message("email sending not available. Try install.packages(\"gmailr\")")
+  } else {
+    output.dir <- get.sodd.output.dir()
+    fs <- c(
+      dlogf=file.path(output.dir, paste0("download.log")),
+      sclogf=file.path(output.dir, paste0("scheduled.model.log"))
+    )
+    gmailr::gm_auth_configure()
+    gmailr::gm_auth(email=TRUE, cache="~/.secret")
+    test_email <- gmailr::gm_mime()
+    test_email <- gmailr::gm_to(test_email, address)
+    test_email <- gmailr::gm_from(test_email, address)
+    test_email <- gmailr::gm_subject(test_email, "no data change")
+    test_email <- gmailr::gm_text_body(test_email, "models not run due to no change in data")
     for(f in fs) test_email <- attach.if.available(test_email, f)
     gmailr::gm_create_draft(test_email)
     if(!is.null(address)) gmailr::gm_send_message(test_email)

@@ -37,20 +37,36 @@ schedule.model.build <- function(
 
 create.scheduled.model.script <- function(leagues, years, f, address) {
   code <- "library(\"sodd\")\n"
-  code <- paste0(code, "dload.x.years(c(\"",
-    paste(leagues, collapse="\", \""), "\"), ", years, ", force=FALSE)\n")
+  code <- paste0(
+    code,
+    "set.sodd.options(\n  ",
+    "data.dir=\"", get.sodd.data.dir(), "\",\n  ",
+    "output.dir=\"", get.sodd.output.dir(), "\",\n  ",
+    "force.upcoming=", get.sodd.force.upcoming(), ",\n  ",
+    "verbosity=", get.sodd.verbosity(), "\n)\n")
+  code <- paste0(code, "check.status <- ", "dload.x.years(c(\"",
+    paste(leagues, collapse="\", \""), "\"), ", years, ", force=FALSE, check=TRUE, quiet=TRUE)\n")
+  code <- paste0(code, "check.status <- c(check.status, ",
+    "dload.current.year(c(\"", paste(leagues, collapse="\", \""), "\"), check=TRUE, quiet=TRUE))\n")
+  code <- paste0(code, "check.status <- c(check.status, ",
+    "dload.upcoming(check=TRUE, quiet=TRUE))\n")
+  code <- paste0(code, "print(check.status)\nprint(any(check.status))\nif(any(check.status)) {\n  ")
   code <- paste0(code,
-    "dload.current.year(c(\"", paste(leagues, collapse="\", \""), "\"))\n")
-  code <- paste0(code,
-    "dload.upcoming()\n")
-  code <- paste0(code,
-    "create.sodd.modeling.data(c(\"", paste(leagues, collapse="\", \""), "\"), ", years, ", log.it=TRUE)\n")
+    "create.sodd.modeling.data(c(\"", paste(leagues, collapse="\", \""), "\"), ", years, ", log.it=TRUE)\n  ")
   code <- paste0(code,
     "build.all.sodd.models.one.date(format((Sys.Date()-7), \"%Y-%m-%d\"), log.it=TRUE, plot.it=TRUE)\n")
   if(!is.null(address)) {
-    code <- paste0(code,
-      "email.sodd.model.results(format((Sys.Date()-7), \"%Y-%m-%d\"), \"", address,  "\")\n")
+    code <- paste0(code, "  ",
+      "email.sodd.model.results(format((Sys.Date()-7), \"%Y-%m-%d\"), \"", address, "\")\n")
   }
+  code <- paste0(code,
+    "} else {\n  message(\"no changes detected in any files\")\n"
+  )
+  if(!is.null(address)) {
+    code <- paste0(code,
+      "  email.no.data.change(\"", address, "\")\n")
+  }
+  code <- paste0(code, "}\n")
   fc <- file(f)
   writeLines(code, fc)
   close(fc)

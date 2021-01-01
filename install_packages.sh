@@ -82,6 +82,7 @@ mkdir -p $LIB
 
 # Rscript -e "devtools::setup(\"./\")"
 # Rscript -e "devtools::load_all()"
+Rscript -e "devtools::test()"
 Rscript -e "devtools::document()"
 Rscript -e "devtools::build_manual()"
 Rscript -e "devtools::check(document=FALSE, manual=FALSE, force_suggests=TRUE)"

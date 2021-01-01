@@ -32,11 +32,15 @@ set.sodd.options <- function(
 }
 
 get.sodd.data.dir <- function() {
-  getOption("sodd.data.dir", "~/data/")
+  d <- getOption("sodd.data.dir", "~/data/")
+  d <- gsub("~", Sys.getenv("HOME"), d)[[1]]
+  d
 }
 
 get.sodd.output.dir <- function() {
-  getOption("sodd.output.dir", "logs/")
+  d <- getOption("sodd.output.dir", "logs/")
+  d <- gsub("~", Sys.getenv("HOME"), d)[[1]]
+  d
 }
 
 get.sodd.force.upcoming <- function() {

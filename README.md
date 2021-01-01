@@ -1,7 +1,7 @@
 sodd
 ================
 Conor Kearney
-2020-12-31
+2021-01-01
 
 # Install
 
@@ -54,7 +54,7 @@ todays.model <- build.sodd.model(format((Sys.Date()-7), '%Y-%m-%d'), "act", n.tr
 document.sodd.model(todays.model)
 ```
 
-    ## [1] "see model documentation in ~/sodd.output/model_2020-12-24_act.pdf"
+    ## [1] "see model documentation in /home/bort/sodd.output/model_2020-12-25_act.pdf"
 
 ``` r
 strat <- upcoming.strategy.sodd.model(todays.model)
@@ -74,17 +74,13 @@ email.sodd.model.results(format(Sys.Date()-7, "%Y-%m-%d"), "ckear1989@gmail.com"
 
     ## The gmailr package is using a cached token for ckear1989@gmail.com.
 
+    ## Auto-refreshing stale OAuth token.
+
 # Schedule daily model build
 
 ``` r
 schedule.model.build(address="ckear1989@gmail.com")
 ```
 
-    ## Adding cronjob:
-    ## ---------------
-    ## 
-    ## ## cronR job
-    ## ## id:   sodd.model.build
-    ## ## tags: 
-    ## ## desc: 
-    ## 0 7 * * * /usr/lib/R/bin/Rscript '~/sodd.output//scheduled.model.R'  >> '~/sodd.output//scheduled.model.log' 2>&1
+    ## cron task already exists
+    ## Error in cronR::cron_add(command = cmd, frequency = "daily", at = "7AM", : Can't add this job: a job with id 'sodd.model.build' already exists.
