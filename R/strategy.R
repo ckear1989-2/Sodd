@@ -137,7 +137,7 @@ calc.strategies <- function(a.dt) {
 
 run.strategy <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
   gain_strat <- NULL
-  resample::cat0n(rep("#", 30), "\nStrategies")
+  cat0n(rep("#", 30), "\nStrategies", verbosity=2)
   train.a.dt <- calc.strategies(train.a.dt)
   train.b.dt <- calc.strategies(train.b.dt)
   test.dt <- calc.strategies(test.dt)
@@ -145,11 +145,11 @@ run.strategy <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
   cat_strat <- function(strat) {
     setnames(test.dt, paste0("strat_", strat), "strat")
     setnames(test.dt, paste0("gain_", strat), "gain_strat")
-    resample::cat0n(strat, ",", sum(test.dt[, strat]), ",", sum(test.dt[, gain_strat]))
+    cat0n(strat, ",", sum(test.dt[, strat]), ",", sum(test.dt[, gain_strat]), verbosity=2)
     setnames(test.dt, "strat", paste0("strat_", strat))
     setnames(test.dt, "gain_strat", paste0("gain_", strat))
   }
-  resample::cat0n("strategy,stake,gain")
+  cat0n("strategy,stake,gain", verbosity=2)
   for(strat in strats) cat_strat(strat)
 }
 

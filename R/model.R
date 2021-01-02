@@ -10,7 +10,6 @@
 #' @param interaction.depth gbm parameter. Depth of each tree in model. Defaults to 2
 #' @param cv.folds gbm parameter. Number of cross validation folds in training data. Defaults to 3
 #' @param plot.it Create output plot. Defaults to FALSE
-#' @param log.it Create output log and print to stdout. Defaults to FALSE
 #' @return gbm model object
 #' @family model
 #' @examples
@@ -30,8 +29,7 @@ build.sodd.model <- function(
   shrinkage=0.01,
   interaction.depth=2,
   cv.folds=3,
-  plot.it=FALSE,
-  log.it=FALSE
+  plot.it=FALSE
   ) {
   logfile <- ip <- a.dt <- train.a.dt <- train.b.dt <- test.dt <-
   upcoming.dt <- train.dt <- pdffile <- model <- a.date <- NULL

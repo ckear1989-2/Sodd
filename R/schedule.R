@@ -52,9 +52,9 @@ create.scheduled.model.script <- function(leagues, years, f, address) {
     "dload.upcoming(check=TRUE, quiet=TRUE))\n")
   code <- paste0(code, "print(check.status)\nprint(any(check.status))\nif(any(check.status)) {\n  ")
   code <- paste0(code,
-    "create.sodd.modeling.data(c(\"", paste(leagues, collapse="\", \""), "\"), ", years, ", log.it=TRUE)\n  ")
+    "create.sodd.modeling.data(c(\"", paste(leagues, collapse="\", \""), "\"), ", years, ")\n  ")
   code <- paste0(code,
-    "build.all.sodd.models.one.date(format((Sys.Date()-7), \"%Y-%m-%d\"), log.it=TRUE, plot.it=TRUE)\n")
+    "build.all.sodd.models.one.date(format((Sys.Date()-7), \"%Y-%m-%d\"), plot.it=TRUE)\n")
   if(!is.null(address)) {
     code <- paste0(code, "  ",
       "email.sodd.model.results(format((Sys.Date()-7), \"%Y-%m-%d\"), \"", address, "\")\n")

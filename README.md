@@ -1,7 +1,7 @@
 sodd
 ================
 Conor Kearney
-2021-01-01
+2021-01-02
 
 # Install
 
@@ -26,9 +26,10 @@ suppressPackageStartupMessages(library("sodd"))
 
 ``` r
 set.sodd.options(
-  data.dir="~/sodd.data/",
-  output.dir="~/sodd.output/",
-  force.upcoming=TRUE
+  data.dir="~/sodd.data/", # where to save csv and rds files
+  output.dir="~/sodd.output/", # where to save logs, pdfs etc.
+  force.upcoming=TRUE, # simulate upcoming fixtures from test data if none available
+  verbosity=2 # how much is output to logs 0=no output, 1=minimal, 2=all
 )
 ```
 
@@ -54,7 +55,7 @@ todays.model <- build.sodd.model(format((Sys.Date()-7), '%Y-%m-%d'), "act", n.tr
 document.sodd.model(todays.model)
 ```
 
-    ## [1] "see model documentation in /home/bort/sodd.output/model_2020-12-25_act.pdf"
+    ## [1] "see model documentation in /home/bort/sodd.output/model_2020-12-26_act.pdf"
 
 ``` r
 strat <- upcoming.strategy.sodd.model(todays.model)

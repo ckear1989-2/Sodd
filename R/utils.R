@@ -19,6 +19,13 @@ if(!is.package.available("gmailr")) {
   message("email sending not available. Try install.packages(\"gmailr\")")
 }
 
+cat0n <- function(..., verbosity=1) {
+  # stolen from resample, modified for verbosity
+  # cat(), but with sep = "" and a final newline.
+  # cat0n("a", "b") is equivalent to cat("a", "b", "\n", sep = "")
+  if(get.sodd.verbosity() >= verbosity) cat(..., sep = "", "\n")
+}
+
 weight_from_season <- function(s) {
   o <- rep(1, length(s))
   o[s =="1011"] <- 0.1
@@ -35,7 +42,7 @@ weight_from_season <- function(s) {
   o
 }
 
-pprint <- function(a.dt, caption="") {
+pprint <- function(a.dt, caption="", verbosity=1) {
   if(!"data.table" %in% class(a.dt)) a.dt <- data.table(a.dt)
   all_na <- sapply(a.dt, function(x) all(is.na(x)) | all(x == ""))
   for(x in names(all_na)) {
@@ -62,8 +69,10 @@ pprint <- function(a.dt, caption="") {
     p.dt <- huxtable::set_outer_padding(p.dt, 0)
     p.dt <- huxtable::set_caption(p.dt, caption)
     p.dt <- huxtable::set_caption_pos(p.dt, "topleft")
-    huxtable::print_screen(p.dt, min_width=0, max_width=Inf, colnames=FALSE)
-    resample::cat0n()
+    if(get.sodd.verbosity() >= verbosity) {
+      huxtable::print_screen(p.dt, min_width=0, max_width=Inf, colnames=FALSE)
+      cat0n(verbosity=0)
+    }
   } else {print(a.dt)}
   invisible()
 }
@@ -140,29 +149,37 @@ rebase.y.sum <- function(y1, y2) {
 #' @import gbm
 model.summary <- quote({
   # model summary
-  resample::cat0n(rep("#", 30), "\nModel Summary")
+  cat0n(rep("#", 30), "\nModel Summary", verbosity=2)
   best.trees.test <- gbm.perf(model, plot.it=FALSE, method="test")
   best.trees.cv <- gbm.perf(model, plot.it=FALSE, method="cv")
   suppressMessages(best.trees.oob <- gbm.perf(model, plot.it=FALSE, method="OOB"))
-  resample::cat0n("gbm perf best.trees.test=", best.trees.test)
-  resample::cat0n("gbm perf best.trees.cv=", best.trees.cv)
-  resample::cat0n("gbm perf best.trees.oob=", best.trees.oob)
-  resample::cat0n("gbm summary")
+  cat0n("gbm perf best.trees.test=", best.trees.test, verbosity=2)
+  cat0n("gbm perf best.trees.cv=", best.trees.cv, verbosity=2)
+  cat0n("gbm perf best.trees.oob=", best.trees.oob, verbosity=2)
+  cat0n("gbm summary", verbosity=2)
 })
+
+#' @import gbm
+score.a.model <- function(dt, model, name="gbmp") {
+  best.trees.test <- gbm::gbm.perf(model, plot.it=FALSE, method="test")
+  suppressWarnings({
+    dt[, model.pred := gbm::predict.gbm(model, dt, best.trees.test, type="link") * weight]
+  })
+  setnames(dt, "model.pred", name)
+  dt
+}
 
 #' @import gbm
 score.model <- quote({
   # score
   # multiply predictions by weight.  not necessary because balanced by season but still good practice
   # e.g. if weights or balancing technique changes?
-  suppressWarnings({
-    train.dt[, gbmp := predict(model, train.dt, best.trees.cv, type="link") * weight]
-    test.dt[, gbmp := predict(model, test.dt, best.trees.cv, type="link") * weight]
-    upcoming.dt[, gbmp := predict(model, upcoming.dt, best.trees.cv, type="link") * weight]
-  })
-  pprint(train.dt[, list(act=sum(y), pred=sum(gbmp))], "train raw score act, pred")
-  pprint(test.dt[, list(act=sum(y), pred=sum(gbmp))], "test raw score  act, pred")
-  pprint(upcoming.dt[, list(act=sum(y), pred=sum(gbmp))], "upcoming raw score  act, pred")
+  train.dt <- score.a.model(train.dt, model)
+  test.dt <- score.a.model(test.dt, model)
+  upcoming.dt <- score.a.model(upcoming.dt, model)
+  pprint(train.dt[, list(act=sum(y), pred=sum(gbmp))], "train raw score act, pred", verbosity=2)
+  pprint(test.dt[, list(act=sum(y), pred=sum(gbmp))], "test raw score  act, pred", verbosity=2)
+  pprint(upcoming.dt[, list(act=sum(y), pred=sum(gbmp))], "upcoming raw score  act, pred", verbosity=2)
   if(family=="bernoulli") {
     train.dt[, gbmp := gbmp + offset]
     test.dt[, gbmp := gbmp + offset]
@@ -182,12 +199,12 @@ score.model <- quote({
 
 rebalance.model <- quote({
   # rebalance
-  resample::cat0n(rep("#", 30), "\nRebalance")
-  pprint(summary(train.dt[, list(y, gbmp)]), "train pre-balance act, pred")
-  pprint(summary(test.dt[, list(y, gbmp)]), "test pre-balance act, pred")
-  pprint(summary(upcoming.dt[, list(y, gbmp)]), "upcoming pre-balance act, pred")
+  cat0n(rep("#", 30), "\nRebalance", verbosity=2)
+  pprint(summary(train.dt[, list(y, gbmp)]), "train pre-balance act, pred", verbosity=2)
+  pprint(summary(test.dt[, list(y, gbmp)]), "test pre-balance act, pred", verbosity=2)
+  pprint(summary(upcoming.dt[, list(y, gbmp)]), "upcoming pre-balance act, pred", verbosity=2)
   season.dt <- train.dt[, list(balance_factor=(sum(y) / sum(gbmp))), season]
-  pprint(season.dt, "balance factor by season")
+  pprint(season.dt, "balance factor by season", verbosity=2)
   setkey(train.dt, season)
   setkey(test.dt, season)
   setkey(upcoming.dt, season)
@@ -200,9 +217,9 @@ rebalance.model <- quote({
   upcoming.dt <- merge(upcoming.dt, season.dt, all.x=TRUE, all.y=FALSE)
   upcoming.dt[is.na(balance_factor), balance_factor := season.dt[season.dt[!is.na(balance_factor), .N], balance_factor]]
   upcoming.dt[, gbmp := gbmp * balance_factor]
-  pprint(summary(train.dt[, list(y, gbmp)]), "train post-balance act, pred")
-  pprint(summary(test.dt[, list(y, gbmp)]), "test post-balance act, pred")
-  pprint(summary(upcoming.dt[, list(y, gbmp)]), "upcoming post-balance act, pred")
+  pprint(summary(train.dt[, list(y, gbmp)]), "train post-balance act, pred", verbosity=2)
+  pprint(summary(test.dt[, list(y, gbmp)]), "test post-balance act, pred", verbosity=2)
+  pprint(summary(upcoming.dt[, list(y, gbmp)]), "upcoming post-balance act, pred", verbosity=2)
   # normalise probabilities by match
   if(yvar == "act") {
     train.dt[, pred_prob := gbmp]
@@ -238,7 +255,7 @@ calc.deviances <- quote({
   # deviances
   # gausiann SSE
   # bernoulli :
-  resample::cat0n(rep("#", 30), "\nDeviances")
+  cat0n(rep("#", 30), "\nDeviances", verbosity=2)
   train.a.rows <- floor(train.dt[, .N] *train.fraction)
   train.mean <- mean(train.dt[, y])
   train.dt[, mean_pred := train.mean]
@@ -265,72 +282,72 @@ calc.deviances <- quote({
   }
   train.a.dt <- train.dt[1:train.a.rows, ]
   train.b.dt <- train.dt[train.a.rows:train.dt[, .N], ]
-  resample::cat0n("train.a mean null dev=", sum(train.a.dt[, null_dev]) / sum(train.a.dt[, weight]))
-  resample::cat0n("train.a mean offset dev=", sum(train.a.dt[, offset_dev]) / sum(train.a.dt[, weight]))
-  resample::cat0n("train.a mean model dev=", sum(train.a.dt[, model_dev]) / sum(train.a.dt[, weight]))
-  resample::cat0n("train.b mean null dev=", sum(train.b.dt[, null_dev]) / sum(train.b.dt[, weight]))
-  resample::cat0n("train.b mean offset dev=", sum(train.b.dt[, offset_dev]) / sum(train.b.dt[, weight]))
-  resample::cat0n("train.b mean model dev=", sum(train.b.dt[, model_dev]) / sum(train.b.dt[, weight]))
-  resample::cat0n("test mean null dev=", sum(test.dt[, null_dev]) / sum(test.dt[, weight]))
-  resample::cat0n("test mean offset dev=", sum(test.dt[, offset_dev]) / sum(test.dt[, weight]))
-  resample::cat0n("test mean model dev=", sum(test.dt[, model_dev]) / sum(test.dt[, weight]))
+  cat0n("train.a mean null dev=", sum(train.a.dt[, null_dev]) / sum(train.a.dt[, weight]), verbosity=2)
+  cat0n("train.a mean offset dev=", sum(train.a.dt[, offset_dev]) / sum(train.a.dt[, weight]), verbosity=2)
+  cat0n("train.a mean model dev=", sum(train.a.dt[, model_dev]) / sum(train.a.dt[, weight]), verbosity=2)
+  cat0n("train.b mean null dev=", sum(train.b.dt[, null_dev]) / sum(train.b.dt[, weight]), verbosity=2)
+  cat0n("train.b mean offset dev=", sum(train.b.dt[, offset_dev]) / sum(train.b.dt[, weight]), verbosity=2)
+  cat0n("train.b mean model dev=", sum(train.b.dt[, model_dev]) / sum(train.b.dt[, weight]), verbosity=2)
+  cat0n("test mean null dev=", sum(test.dt[, null_dev]) / sum(test.dt[, weight]), verbosity=2)
+  cat0n("test mean offset dev=", sum(test.dt[, offset_dev]) / sum(test.dt[, weight]), verbosity=2)
+  cat0n("test mean model dev=", sum(test.dt[, model_dev]) / sum(test.dt[, weight]), verbosity=2)
   # how does initF work with offset?
-  resample::cat0n("initF=", model$initF)
+  cat0n("initF=", model$initF, verbosity=2)
 })
 
 act.pred.summary <- quote({
   # act pred summary
-  resample::cat0n(rep("#", 30), "\nActual and Predicted Summary")
-  resample::cat0n("summary train act, pred")
+  cat0n(rep("#", 30), "\nActual and Predicted Summary", verbosity=2)
+  cat0n("summary train act, pred", verbosity=2)
   summary(train.dt[, list(act=spread, pred=pred_spread)])
-  resample::cat0n("summary test act, pred")
+  cat0n("summary test act, pred", verbosity=2)
   summary(test.dt[, list(act=spread, pred=pred_spread)])
-  resample::cat0n("summary test act, pred")
+  cat0n("summary test act, pred", verbosity=2)
   summary(upcoming.dt[, list(act=spread, pred=pred_spread)])
 })
 
 positive.model.predictions <- quote({
   # positive model prediciton
-  resample::cat0n(rep("#", 30), "\nPositive Model Predictions")
+  cat0n(rep("#", 30), "\nPositive Model Predictions", verbosity=2)
   train.ppc <- train.dt[pred_spread > 0, .N]
-  resample::cat0n("train positive prediction count ", train.ppc)
+  cat0n("train positive prediction count ", train.ppc, verbosity=2)
   if(train.ppc > 0) {
-    resample::cat0n("train positive prediction")
-    resample::cat0n("train gain", sum(train.dt[pred_spread > 0, gain]))
+    cat0n("train positive prediction", verbosity=2)
+    cat0n("train gain", sum(train.dt[pred_spread > 0, gain]), verbosity=2)
     positive.train.dt <- train.dt[pred_spread > 0, list(
       match_id, ftr, actr, ip, pred_odds, pred_spread, gain)][order(-pred_spread)]
     if(positive.train.dt[, .N] > 10) {
       positive.train.dt <- rbind(positive.train.dt[1:10, ], data.table(match_id="..."), fill=TRUE)
     }
-    pprint(positive.train.dt, "train positive prediction")
+    pprint(positive.train.dt, "train positive prediction", verbosity=2)
   }
   test.ppc <- test.dt[pred_spread > 0, .N]
-  resample::cat0n("test positive prediction count ", test.ppc)
+  cat0n("test positive prediction count ", test.ppc, verbosity=2)
   if(test.ppc > 0) {
-    resample::cat0n("test positive prediction")
-    resample::cat0n("test gain", sum(test.dt[pred_spread > 0, gain]))
+    cat0n("test positive prediction", verbosity=2)
+    cat0n("test gain", sum(test.dt[pred_spread > 0, gain]), verbosity=2)
     positive.test.dt <- test.dt[pred_spread > 0, list(
       match_id, ftr, actr, ip, pred_odds, pred_spread, gain)][order(-pred_spread)]
     if(positive.test.dt[, .N] > 10) {
       positive.test.dt <- rbind(positive.test.dt[1:10, ], data.table(match_id="..."), fill=TRUE)
     }
-    pprint(positive.test.dt, "test positive prediction")
+    pprint(positive.test.dt, "test positive prediction", verbosity=2)
   }
   upcoming.ppc <- upcoming.dt[pred_spread > 0, .N]
-  resample::cat0n("upcoming positive prediction count ", upcoming.ppc)
+  cat0n("upcoming positive prediction count ", upcoming.ppc, verbosity=2)
   if(upcoming.ppc > 0) {
     positive.upcoming.dt <- upcoming.dt[pred_spread > 0, list(
       match_id, ftr, ip, pred_odds, pred_spread)][order(-pred_spread)]
     if(positive.upcoming.dt[, .N] > 10) {
       positive.upcoming.dt <- rbind(positive.upcoming.dt[1:10, ], data.table(match_id="..."), fill=TRUE)
     }
-    pprint(positive.upcoming.dt, "upcoming positive prediction")
+    pprint(positive.upcoming.dt, "upcoming positive prediction", verbosity=2)
   }
 })
 
 #' @import gbm
 build.model <- quote({
-  resample::cat0n(rep("#", 30), "\nBuild Model")
+  cat0n(rep("#", 30), "\nBuild Model", verbosity=2)
   model <- gbm(
     formula=formula,
     data=train.dt,
@@ -342,23 +359,43 @@ build.model <- quote({
     interaction.depth=interaction.depth,
     cv.folds=cv.folds,
     keep.data=FALSE,
-    verbose=TRUE
+    verbose=ifelse(get.sodd.verbosity() >= 2, TRUE, FALSE)
   )
+  model.output.dir <- paste0(get.sodd.output.dir(), "models/")
+  if(!file.exists(output.dir)) dir.create(output.dir)
+  if(!file.exists(model.output.dir)) dir.create(model.output.dir)
+  saveRDS(model, modelfile)
 })
 
 model.params <- quote({
   # model params
-  resample::cat0n(rep("#", 30), "\nModel Parameters")
-  resample::cat0n(
+  cat0n(rep("#", 30), "\nModel Parameters", verbosity=2)
+  cat0n(
     "yvar:", yvar, "\n",
     "train.fraction:", train.fraction, "\n",
     "cv.folds:", cv.folds, "\n",
     "n.trees:", n.trees, "\n",
     "shrinkage:", shrinkage, "\n",
     "interaction.depth:", interaction.depth, "\n",
-    "family:", family
+    "family:", family,
+    verbosity=2
   )
 })
+
+get.prev.model <- function(model.file, adate) {
+  prev.model <- NULL
+  model.dir <- paste0(get.sodd.output.dir(), "models/")
+  if(file.exists(model.dir)) {
+    mfs <- list.files(model.dir)
+    for(i in seq(1, 100, 1)){
+      prev.date <- format(as.Date(adate, "%Y-%m-%d") - i, "%Y-%m-%d")
+      print(c(adate, prev.date))
+      prev.model.file <- gsub(adate, prev.date, model.file)[[1]]
+      if(exists(prev.model.file)) return(readRDS(prev.model.file))
+    }
+  }
+  prev.model
+}
 
 read.model.data <- quote({
   a.dt <- readRDS(file.path(get.sodd.data.dir(), "a.dt.rds"))
@@ -372,7 +409,8 @@ read.model.data <- quote({
   } 
   logfile <- paste0(output.dir, output.prefix, ".log")
   pdffile <- paste0(output.dir, output.prefix, ".pdf")
-  if(isTRUE(log.it)) {
+  modelfile <- paste0(output.dir, "models/", output.prefix, ".rds")
+  if(get.sodd.verbosity() >= 1) {
     if(!file.exists(output.dir)) dir.create(output.dir)
     sink(logfile, split=TRUE)
   } else {
@@ -385,12 +423,21 @@ read.model.data <- quote({
   a.dt[, odds := round(1 / ip, 2)]
   a.dt[, gain := (weight * odds * act) - weight]
   a.dt[, spread := act-ip]
+  # use previous model as offset
+  prev.model <- get.prev.model(modelfile, adate)
+  if(!is.null(prev.model)) {
+    a.dt <- score.a.model(a.dt, prev.model, "offset")
+  } else {
+    if(yvar == "act") {
+      a.dt[, offset := log(ip)]
+    } else if(yvar=="spread") {
+      a.dt[, offset := log(rep(1, a.dt[, .N]))]
+    }
+  }
   if(yvar == "act") {
     family <- "bernoulli"
-    a.dt[, offset := log(ip)]
   } else if(yvar=="spread") {
     family <- "gaussian"
-    a.dt[, offset := log(rep(1, a.dt[, .N]))]
   }
   a.dt[["y"]] <- a.dt[[yvar]]
   train.dt <- a.dt[actr != "NA" & date < as.Date(adate, "%Y-%m-%d"), ]
@@ -403,7 +450,7 @@ read.model.data <- quote({
       test.dt <- test.dt[date < max(test.dt[, date]), ]
       upcoming.dt[, actr := NULL]
       upcoming.dt[, actr := "NA"]
-      resample::cat0n("forcing upcoming matches from test.dt")
+      cat0n("forcing upcoming matches from test.dt", verbosity=1)
     }
     else {
       stop("no upcoming matches")
@@ -412,7 +459,7 @@ read.model.data <- quote({
   if(any(train.dt[, match_id] %in% test.dt[, match_id])) stop("matches in train and test")
   if(any(train.dt[, match_id] %in% upcoming.dt[, match_id])) stop("matches in train and upcoming")
   if(any(test.dt[, match_id] %in% upcoming.dt[, match_id])) stop("matches in test and upcoming")
-  resample::cat0n("setting test.dt to one set of fixtures")
+  cat0n("setting test.dt to one set of fixtures", verbosity=2)
   test.matches.dt <- test.dt[, list(
     count=.N,
     distinct_matches=length(unique(hometeam)),
@@ -431,7 +478,7 @@ read.model.data <- quote({
   setkey(test.matches.one.match.dt, date)
   setkey(test.dt, date)
   test.dt <- merge(test.matches.one.match.dt, test.dt, all.x=TRUE, all.y=FALSE)
-  resample::cat0n("test.dt complete")
+  cat0n("test.dt complete", verbosity=2)
 })
 
 #' @import data.table
