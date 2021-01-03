@@ -16,6 +16,10 @@ email.sodd.model.results <- function(
   ) {
   if(!is.package.available("gmailr")) {
     message("email sending not available. Try install.packages(\"gmailr\")")
+  } else if(!file.exists(Sys.getenv("GMAILR_APP"))) {
+    message("email sending not available. Please set environment variable GMAILR_APP")
+  } else if(!file.exists("~/.secret")) {
+    message("email sending not available. Please create email key cache ~/.secret")
   } else {
     output.dir <- get.sodd.output.dir()
     fs <- c(

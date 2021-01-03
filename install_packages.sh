@@ -1,6 +1,15 @@
 #!/bin/bash
 
+# amazon linux requirements
+# sudo yum install texlive -y
+
+# ubuntu requirements
 # sudo apt-get install r-base-core
+# sudo apt-get install libxml2-dev
+# sudo apt-get install libssl-dev
+# sudo apt-get install libgit2-dev
+# sudo apt-get install texlive
+# sudo apt-get install texlive-fonts-extra
 
 CRAN=https://cran.r-project.org/src/contrib/
 LIB=~/data/R/packages/
@@ -10,13 +19,6 @@ function install_package {
 }
 # R CMD INSTALL --help
 mkdir -p $LIB
-
-# ubuntu requirements
-# sudo apt-get install libxml2-dev
-# sudo apt-get install libssl-dev
-# sudo apt-get install libgit2-dev
-# sudo apt-get install texlive
-# sudo apt-get install texlive-fonts-extra
 
 # install_package data.table_1.13.2
 # install_package gbm_2.1.8

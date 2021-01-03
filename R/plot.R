@@ -671,7 +671,7 @@ plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, 
       plot.decile.perf(train.a.dt, train.b.dt, test.dt)
     )
     eval(grid.square)
-    plot.detailed.strategy(test.dt, upcoming.dt)
+    plot.detailed.strategy(test.dt, upcoming.dt, unique(train.dt[, div]))
     plot.response.vars(train.dt, test.dt, yvar)
     # test parallelizing univar plots
     # seems to be no gain on my system

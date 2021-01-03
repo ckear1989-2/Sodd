@@ -30,7 +30,7 @@ set.sodd.options <- function(
     shrinkage=0.1,
     interaction.depth=2,
     cv.folds=3
-  )
+  ),
   verbosity=0
   ) {
   options(list(

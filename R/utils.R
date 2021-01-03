@@ -161,6 +161,7 @@ model.summary <- quote({
 
 #' @import gbm
 score.a.model <- function(dt, model, name="gbmp") {
+  model.pred <- weight <- NULL
   best.trees.test <- gbm::gbm.perf(model, plot.it=FALSE, method="test")
   suppressWarnings({
     dt[, model.pred := gbm::predict.gbm(model, dt, best.trees.test, type="link") * weight]
