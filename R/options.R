@@ -5,6 +5,9 @@
 #' @param output.dir path to store model output. Defaults to "logs/"
 #' @param force.upcoming Get upcoming matches from already played matches if
 #' none found. Defaults to FALSE
+#' @param model.params Named list of model hyperparameters. Defaults to list(
+#' train.fraction=0.7, n.trees=500, shrinkage=0.1, interaction.depth=2,
+#' cv.folds=3)
 #' @param verbosity Level at which to cat output 0=no output, 1=minimal,
 #' 2=all. Defaults to 0
 #' @family data_prep
@@ -21,6 +24,13 @@ set.sodd.options <- function(
   data.dir="~/data/",
   output.dir="logs/",
   force.upcoming=FALSE,
+  model.params=list(
+    train.fraction=0.7,
+    n.trees=500,
+    shrinkage=0.1,
+    interaction.depth=2,
+    cv.folds=3
+  )
   verbosity=0
   ) {
   options(list(

@@ -83,7 +83,7 @@ transpose.rows <- quote({
   season <- hometeam <- awayteam <- ftr <- fthg <- ftag <- b365h <- b365d <-
   b365a <- match_id <- match_ip <- count <- act <- actr <- NULL
   # check teams in leagues
-  for (l in all.leagues) {
+  for (l in leagues) {
     pprint(a.dt[div== l, list(count=.N), hometeam][order(-count)][1:5, ],
       paste(l, "teams"), verbosity=2)
   }
@@ -223,7 +223,7 @@ result_lag <- function(a.dt, i) {
   cat0n('away count pre unique', a.teams.dt[, .N], verbosity=2)
   setkey(a.teams.dt, date, hometeam, awayteam)
   a.teams.dt <- unique(a.teams.dt)
-  cat0n('away count post unique', a.teams.dt[, .N], verbosity)
+  cat0n('away count post unique', a.teams.dt[, .N], verbosity=2)
 
   cat0n('data count pre merge', a.dt[, .N], verbosity=2)
   a.dt <- merge(a.dt, h.teams.dt)
@@ -309,7 +309,7 @@ prep.modeling.vars <- quote({
   a.dt[, div := as.factor(div)]
   a.dt[, ftr := as.factor(ftr)]
   a.dt[, ip := round(ip, 3)]
-  pprint(summary(a.dt), "summary(a.dt"), verbosity=2)
+  pprint(summary(a.dt), "summary(a.dt)", verbosity=2)
   cat0n('data count with missings', a.dt[, .N], verbosity=2)
   a.dt <- na.omit(a.dt)
   cat0n('data count no missings', a.dt[, .N], verbosity=2)

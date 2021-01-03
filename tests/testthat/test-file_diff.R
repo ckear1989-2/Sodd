@@ -1,4 +1,6 @@
+
 test_that("file diff 2 different files returns TRUE", {
+  set.sodd.options(data.dir="~/sodd.data/")
   expect_equal(
     check.file.diff(
       paste0(get.sodd.data.dir(), "1920/E0.csv"),
@@ -31,3 +33,4 @@ test_that("file diff same file dloaded twice returns FALSE", {
   expect_equal(file.exists(tmpfile1), TRUE)
   expect_equal(check.file.diff(tmpfile0, tmpfile1), FALSE)
 })
+

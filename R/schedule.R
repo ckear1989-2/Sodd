@@ -29,7 +29,8 @@ schedule.model.build <- function(
     create.scheduled.model.script(leagues, years, f, address)
     cmd <- cronR::cron_rscript(f)
     tryCatch({
-      cronR::cron_add(command=cmd, frequency="daily", at="7AM", id="sodd.model.build")
+      cronR::cron_add(command=cmd, frequency="daily", at="7AM",
+        id="sodd.model.build")
     }, error=function(cond) message(paste0("cron task already exists\n", cond)))
   }
   invisible()
@@ -43,28 +44,33 @@ create.scheduled.model.script <- function(leagues, years, f, address) {
     "data.dir=\"", get.sodd.data.dir(), "\",\n  ",
     "output.dir=\"", get.sodd.output.dir(), "\",\n  ",
     "force.upcoming=", get.sodd.force.upcoming(), ",\n  ",
-    "verbosity=", get.sodd.verbosity(), "\n)\n")
-  code <- paste0(code, "check.status <- ", "dload.x.years(c(\"",
-    paste(leagues, collapse="\", \""), "\"), ", years, ", force=FALSE, check=TRUE, quiet=TRUE)\n")
-  code <- paste0(code, "check.status <- c(check.status, ",
-    "dload.current.year(c(\"", paste(leagues, collapse="\", \""), "\"), check=TRUE, quiet=TRUE))\n")
-  code <- paste0(code, "check.status <- c(check.status, ",
-    "dload.upcoming(check=TRUE, quiet=TRUE))\n")
-  code <- paste0(code, "print(check.status)\nprint(any(check.status))\nif(any(check.status)) {\n  ")
+    "verbosity=", get.sodd.verbosity(), "\n)\n"
+  )
+  code <- paste0(code, "check.status <- ", "dload.sodd.modeling.data(c(\"",
+    paste(leagues, collapse="\", \""), "\"), ", years, ", check=TRUE)\n"
+  )
+  code <- paste0(code, "if(any(check.status)) {\n  ")
   code <- paste0(code,
-    "create.sodd.modeling.data(c(\"", paste(leagues, collapse="\", \""), "\"), ", years, ")\n  ")
+    "create.sodd.modeling.data(c(\"",
+    paste(leagues, collapse="\", \""), "\"), ", years, ")\n  "
+  )
   code <- paste0(code,
-    "build.all.sodd.models.one.date(format((Sys.Date()-7), \"%Y-%m-%d\"), plot.it=TRUE)\n")
+    "build.all.sodd.models.one.date(format((Sys.Date()-7), \"%Y-%m-%d\"), ",
+    "plot.it=TRUE)\n"
+  )
   if(!is.null(address)) {
     code <- paste0(code, "  ",
-      "email.sodd.model.results(format((Sys.Date()-7), \"%Y-%m-%d\"), \"", address, "\")\n")
+      "email.sodd.model.results(format((Sys.Date()-7), \"%Y-%m-%d\"), \"",
+      address, "\")\n"
+    )
   }
   code <- paste0(code,
     "} else {\n  message(\"no changes detected in any files\")\n"
   )
   if(!is.null(address)) {
-    code <- paste0(code,
-      "  email.no.data.change(\"", address, "\")\n")
+    code <- paste0(code, "  ",
+      "email.no.data.change(\"", address, "\")\n"
+    )
   }
   code <- paste0(code, "}\n")
   fc <- file(f)
