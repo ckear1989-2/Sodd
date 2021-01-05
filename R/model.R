@@ -139,6 +139,8 @@ upcoming.strategy.sodd.model <- function(model) {
 #' @family model
 #' @examples
 #' \donttest{
+#' set.sodd.options(data.dir="~/sodd.data/")
+#' create.sodd.modeling.data()
 #' build.all.sodd.models.one.date("2020-01-01")
 #' build.all.sodd.models.one.date("2020-01-01", n.trees=50, interaction.depth=3)
 #' }

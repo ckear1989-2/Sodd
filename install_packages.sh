@@ -4,12 +4,17 @@
 # sudo yum install texlive -y
 
 # ubuntu requirements
-# sudo apt-get install r-base-core
-# sudo apt-get install libxml2-dev
+# https://www.digitalocean.com/community/tutorials/how-to-set-up-rstudio-on-an-ubuntu-cloud-server
+# sudo apt-get install r-base
+# sudo apt-get install libapparmor1 gdebi-core
+# wget http://download2.rstudio.org/rstudio-server-0.97.336-amd64.deb -O rstudio.deb
+# sudo apt-get install pandoc
 # sudo apt-get install libssl-dev
+# sudo apt-get install libxml2-dev
 # sudo apt-get install libgit2-dev
 # sudo apt-get install texlive
 # sudo apt-get install texlive-fonts-extra
+# sudo apt-get install texinfo
 
 CRAN=https://cran.r-project.org/src/contrib/
 LIB=~/data/R/packages/
@@ -82,13 +87,17 @@ mkdir -p $LIB
 # sudo apt-get install libcurl4-openssl-dev
 # install_package curl_4.3
 
+
+# Rscript -e "install.packages(c(\"data.table\", \"ggplot2\", \"TeachingDemos\", \"devtools\"))"
+# Rscript -e "install.packages(c(\"gbm\", \"gridExtra\", \"huxtable\"))"
+# Rscript -e "install.packages(c(\"gmailr\", \"cronR\", \"rmarkdown\"))"
 # Rscript -e "devtools::setup(\"./\")"
 # Rscript -e "devtools::load_all()"
-Rscript -e "devtools::test()"
-Rscript -e "devtools::document()"
-Rscript -e "devtools::build_manual()"
-Rscript -e "devtools::check(document=FALSE, manual=FALSE, force_suggests=TRUE)"
+# Rscript -e "devtools::test()"
+# Rscript -e "devtools::document()"
+# Rscript -e "devtools::build_manual()"
+# Rscript -e "devtools::check(document=FALSE, manual=FALSE, force_suggests=TRUE, run_dont_test=FALSE)"
 Rscript -e "devtools::install()"
-Rscript -e "devtools::check(document=TRUE, manual=TRUE, force_suggests=TRUE)"
-Rscript -e "rmarkdown::render(\"README.Rmd\", output_file=\"README.md\")"
+# Rscript -e "devtools::check(document=TRUE, manual=TRUE, force_suggests=TRUE, run_dont_test=FALSE)"
+# Rscript -e "rmarkdown::render(\"README.Rmd\", output_file=\"README.md\")"
 

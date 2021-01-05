@@ -151,7 +151,8 @@ model.summary <- quote({
   # model summary
   cat0n(rep("#", 30), "\nModel Summary", verbosity=2)
   best.trees.test <- gbm.perf(model, plot.it=FALSE, method="test")
-  best.trees.cv <- gbm.perf(model, plot.it=FALSE, method="cv")
+  best.trees.cv <- NA
+  if(cv.folds > 1) best.trees.cv <- gbm.perf(model, plot.it=FALSE, method="cv")
   suppressMessages(best.trees.oob <- gbm.perf(model, plot.it=FALSE, method="OOB"))
   cat0n("gbm perf best.trees.test=", best.trees.test, verbosity=2)
   cat0n("gbm perf best.trees.cv=", best.trees.cv, verbosity=2)
@@ -360,8 +361,10 @@ build.model <- quote({
     interaction.depth=interaction.depth,
     cv.folds=cv.folds,
     keep.data=FALSE,
+    n.cores=1,
     verbose=ifelse(get.sodd.verbosity() >= 2, TRUE, FALSE)
   )
+  if(cv.folds == 1) model$cv.error <- model$valid.error
   model.output.dir <- paste0(get.sodd.output.dir(), "models/")
   if(!file.exists(output.dir)) dir.create(output.dir)
   if(!file.exists(model.output.dir)) dir.create(model.output.dir)

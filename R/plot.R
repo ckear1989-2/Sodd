@@ -663,6 +663,7 @@ plot.response.vars <- function(train.dt, test.dt, yvar) {
 
 #' @importFrom gridExtra grid.arrange
 plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile) {
+  div <- NULL
   grDevices::pdf(pdffile, h=7, w=14)
     grid.arrange(
       plot.model.run(model, train.a.dt, train.b.dt, test.dt, upcoming.dt),
