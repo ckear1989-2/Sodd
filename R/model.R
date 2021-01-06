@@ -9,6 +9,8 @@
 #' @param shrinkage gbm parameter. Rate of change towards prediction. Defaults to 0.01
 #' @param interaction.depth gbm parameter. Depth of each tree in model. Defaults to 2
 #' @param cv.folds gbm parameter. Number of cross validation folds in training data. Defaults to 3
+#' @param n.cores gbm parameter. Number of cores to use in processing. Defaults to 1
+#' @param n.lag Nnumber of previous results to lag for predictor variables. Defaults to 5
 #' @param plot.it Create output plot. Defaults to FALSE
 #' @return gbm model object
 #' @family model
@@ -29,6 +31,8 @@ build.sodd.model <- function(
   shrinkage=0.01,
   interaction.depth=2,
   cv.folds=3,
+  n.cores=1,
+  n.lag=5,
   plot.it=FALSE
   ) {
   logfile <- ip <- a.dt <- train.a.dt <- train.b.dt <- test.dt <-
@@ -41,22 +45,22 @@ build.sodd.model <- function(
     "ip",
     "div",
     "ftr",
-    paste0("hpp", 1:3),
-    paste0("app", 1:3),
-    paste0("hpgf", 1:3),
-    paste0("apgf", 1:3),
-    paste0("hpga", 1:3),
-    paste0("apga", 1:3),
-    paste0("hpd", 1:3),
-    paste0("apd", 1:3),
-    paste0("hphp", 1:3),
-    paste0("apap", 1:3),
-    paste0("hphd", 1:3),
-    paste0("apad", 1:3),
-    paste0("hpp_cum", 2:3),
-    paste0("app_cum", 2:3),
-    paste0("happ", 1:3),
-    paste0("happ_cum", 2:3)
+    paste0("hpp", 1:n.lag),
+    paste0("app", 1:n.lag),
+    paste0("hpgf", 1:n.lag),
+    paste0("apgf", 1:n.lag),
+    paste0("hpga", 1:n.lag),
+    paste0("apga", 1:n.lag),
+    paste0("hpd", 1:n.lag),
+    paste0("apd", 1:n.lag),
+    paste0("hphp", 1:n.lag),
+    paste0("apap", 1:n.lag),
+    paste0("hphd", 1:n.lag),
+    paste0("apad", 1:n.lag),
+    paste0("happ", 1:n.lag),
+    paste0("hpp_cum", 2:n.lag),
+    paste0("app_cum", 2:n.lag),
+    paste0("happ_cum", 2:n.lag)
   )
   uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
   formula <- stats::as.formula(paste("y", paste(xvar, collapse="+"), sep="~offset(offset)+"))
@@ -84,6 +88,11 @@ build.sodd.model <- function(
   model$yvar <- yvar
   model$logfile <- logfile
   model$pdffile <- pdffile
+  model$modelfile <- modelfile
+  model.output.dir <- paste0(get.sodd.output.dir(), "models/")
+  if(!file.exists(output.dir)) dir.create(output.dir)
+  if(!file.exists(model.output.dir)) dir.create(model.output.dir)
+  saveRDS(model, modelfile)
   model
 }
 
@@ -135,7 +144,7 @@ upcoming.strategy.sodd.model <- function(model) {
 #'
 #' @param adate a date in string format "%Y-%m-%d".  Splits train.a and train.b data
 #' @param ... arguments to pass to build.sodd.model
-#' @return list of gbm model objects
+#' @return NULL
 #' @family model
 #' @examples
 #' \donttest{
@@ -146,11 +155,10 @@ upcoming.strategy.sodd.model <- function(model) {
 #' }
 #' @export 
 build.all.sodd.models.one.date <- function(adate, ...) {
-  list(
-    build.sodd.model(adate, "spread", weights=FALSE, ...),
-    build.sodd.model(adate, "spread", weights=TRUE, ...),
-    build.sodd.model(adate, "act", weights=FALSE, ...),
-    build.sodd.model(adate, "act", weights=TRUE, ...)
-  )
+  build.sodd.model(adate, "spread", weights=FALSE, ...)
+  build.sodd.model(adate, "spread", weights=TRUE, ...)
+  build.sodd.model(adate, "act", weights=FALSE, ...)
+  build.sodd.model(adate, "act", weights=TRUE, ...)
+  invisible(NULL)
 }
 

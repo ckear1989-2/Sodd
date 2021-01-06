@@ -21,6 +21,7 @@ Suggests:
     TeachingDemos,
     cronR,
     gmailr,
+    pryr,
     testthat (>= 3.0.0)
 Maintainer:
   Conor Kearney <ckear1989@gmail.com>

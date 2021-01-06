@@ -15,6 +15,7 @@
 # sudo apt-get install texlive
 # sudo apt-get install texlive-fonts-extra
 # sudo apt-get install texinfo
+# sudo apt-get install fail2ban
 
 CRAN=https://cran.r-project.org/src/contrib/
 LIB=~/data/R/packages/
@@ -90,7 +91,7 @@ mkdir -p $LIB
 
 # Rscript -e "install.packages(c(\"data.table\", \"ggplot2\", \"TeachingDemos\", \"devtools\"))"
 # Rscript -e "install.packages(c(\"gbm\", \"gridExtra\", \"huxtable\"))"
-# Rscript -e "install.packages(c(\"gmailr\", \"cronR\", \"rmarkdown\"))"
+# Rscript -e "install.packages(c(\"gmailr\", \"cronR\", \"rmarkdown\", \"pryr\"))"
 # Rscript -e "devtools::setup(\"./\")"
 # Rscript -e "devtools::load_all()"
 # Rscript -e "devtools::test()"

@@ -19,6 +19,10 @@ if(!is.package.available("gmailr")) {
   message("email sending not available. Try install.packages(\"gmailr\")")
 }
 
+if(!is.package.available("pryr")) {
+  message("performance tracking not available. Try install.packages(\"pryr\")")
+}
+
 cat0n <- function(..., verbosity=1) {
   # stolen from resample, modified for verbosity
   # cat(), but with sep = "" and a final newline.
@@ -361,27 +365,28 @@ build.model <- quote({
     interaction.depth=interaction.depth,
     cv.folds=cv.folds,
     keep.data=FALSE,
-    n.cores=1,
+    n.cores=n.cores,
     verbose=ifelse(get.sodd.verbosity() >= 2, TRUE, FALSE)
   )
+  if(is.package.available("pryr")) {
+    cat0n("model size: ", pryr::object_size(model) * 1e-6, "Mb", verbosity=1)
+    cat0n("memory used: ", pryr::mem_used() * 1e-6, "Mb", verbosity=1)
+  }
   if(cv.folds == 1) model$cv.error <- model$valid.error
-  model.output.dir <- paste0(get.sodd.output.dir(), "models/")
-  if(!file.exists(output.dir)) dir.create(output.dir)
-  if(!file.exists(model.output.dir)) dir.create(model.output.dir)
-  saveRDS(model, modelfile)
 })
 
 model.params <- quote({
   # model params
   cat0n(rep("#", 30), "\nModel Parameters", verbosity=2)
   cat0n(
-    "yvar:", yvar, "\n",
-    "train.fraction:", train.fraction, "\n",
-    "cv.folds:", cv.folds, "\n",
-    "n.trees:", n.trees, "\n",
-    "shrinkage:", shrinkage, "\n",
-    "interaction.depth:", interaction.depth, "\n",
-    "family:", family,
+    "yvar: ", yvar, "\n",
+    "train.fraction: ", train.fraction, "\n",
+    "cv.folds: ", cv.folds, "\n",
+    "n.cores: ", n.cores, "\n",
+    "n.trees: ", n.trees, "\n",
+    "shrinkage: ", shrinkage, "\n",
+    "interaction.depth: ", interaction.depth, "\n",
+    "family: ", family,
     verbosity=2
   )
 })
@@ -390,12 +395,12 @@ get.prev.model <- function(model.file, adate) {
   prev.model <- NULL
   model.dir <- paste0(get.sodd.output.dir(), "models/")
   if(file.exists(model.dir)) {
-    mfs <- list.files(model.dir)
     for(i in seq(1, 100, 1)){
       prev.date <- format(as.Date(adate, "%Y-%m-%d") - i, "%Y-%m-%d")
-      print(c(adate, prev.date))
       prev.model.file <- gsub(adate, prev.date, model.file)[[1]]
-      if(exists(prev.model.file)) return(readRDS(prev.model.file))
+      if(file.exists(prev.model.file)) {
+        return(readRDS(prev.model.file))
+       }
     }
   }
   prev.model
@@ -430,11 +435,14 @@ read.model.data <- quote({
   # use previous model as offset
   prev.model <- get.prev.model(modelfile, adate)
   if(!is.null(prev.model)) {
+    cat0n("using model from ", prev.model$adate, " as offset", verbosity=1)
     a.dt <- score.a.model(a.dt, prev.model, "offset")
   } else {
     if(yvar == "act") {
+      cat0n("using ip as offset", verbosity=1)
       a.dt[, offset := log(ip)]
     } else if(yvar=="spread") {
+      cat0n("using no offset", verbosity=1)
       a.dt[, offset := log(rep(1, a.dt[, .N]))]
     }
   }

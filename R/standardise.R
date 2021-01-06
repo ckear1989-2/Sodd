@@ -17,7 +17,7 @@ read.a.file <- function(a.file) {
   a.dt[nchar(date)==10, ddate := as.Date(date, "%d/%m/%Y")]
   a.dt[, date := ddate]
   a.dt[, ddate := NULL]
-  cat0n('na date count:', a.dt[is.na(date), .N], verbosity=2)
+  cat0n('na date count: ', a.dt[is.na(date), .N], verbosity=2)
   a.dt <- a.dt[!is.na(date), ]
   a.dt[, match_id := paste0(date, "|", hometeam, "|", awayteam, collapse="|"), list(date, hometeam, awayteam)]
   a.dt <- a.dt[match_id != "||", ]
@@ -33,7 +33,7 @@ read.all.data <- function(leagues, years) {
     data.dir,
     yl[[1]], "/", yl[[2]], ".csv"
   )
-  cat0n(all.csv, verbosity=1)
+  cat0n(paste(all.csv, collapse="\n"), verbosity=1)
   alist <- lapply(all.csv, read.a.file)
   a.dt <- rbindlist(alist, fill=TRUE)
   setnames(a.dt, colnames(a.dt), tolower(colnames(a.dt)))
@@ -90,11 +90,10 @@ transpose.rows <- quote({
   match.dt <- a.dt[, list(count=.N), match_id][order(-count)]
   match.dt[count > 0, ]
   a.dt <- a.dt[, list(match_id, div, season, hometeam, awayteam, date, ftr, fthg, ftag, b365h, b365d, b365a)]
-  cat0n('data summary', verbosity=2)
   pprint(summary(a.dt), "summary(a.dt)", verbosity=2)
-  cat0n('data count with NA', a.dt[, .N], verbosity=2)
+  cat0n('data count with NA: ', a.dt[, .N], verbosity=2)
   a.dt <- na.omit(a.dt)
-  cat0n('data count without NA', a.dt[, .N], verbosity=2)
+  cat0n('data count without NA: ', a.dt[, .N], verbosity=2)
   a.dt[, b365h := 1 / b365h]
   a.dt[, b365d := 1 / b365d]
   a.dt[, b365a := 1 / b365a]
@@ -121,12 +120,9 @@ transpose.rows <- quote({
     fill=TRUE
   )
   pprint(a.dt[, .N, list(actr, ftr)], "actr, ftr count", verbosity=2)
-  for(var in colnames(a.dt)) {
-    if(any(is.na(a.dt[[var]]))) cat0n(var, verbosity=2)
-  }
-  cat0n('data transposed count with NA', a.dt[, .N], verbosity=2)
+  cat0n('data transposed count with NA: ', a.dt[, .N], verbosity=2)
   a.dt <- na.omit(a.dt)
-  cat0n('data transposed count', a.dt[, .N], verbosity=2)
+  cat0n('data transposed count: ', a.dt[, .N], verbosity=2)
   setkey(a.dt, date)
   a.dt[, rn := seq(a.dt[, .N])]
 })
@@ -138,7 +134,7 @@ result_lag <- function(a.dt, i) {
   hphr <- hph_date <- hphd <- apar <- apa_date <- apad <- hpr <- apr <- hpp <-
   app <- hphp <- apap <- NULL
   all.teams <- unique(c(a.dt[, hometeam], a.dt[, awayteam]))
-  cat0n('team count', length(all.teams), verbosity=2)
+  cat0n('team count: ', length(all.teams), verbosity=2)
   for(ateam in all.teams) {
     team.dt <- a.dt[(act == 1) & ((hometeam == ateam) | (awayteam == ateam)), ]
     team.up.dt <- a.dt[(act == -1) & ((hometeam == ateam) |
@@ -210,29 +206,29 @@ result_lag <- function(a.dt, i) {
       a.teams.dt <- a.team.dt
     }
   }
-  cat0n('data count pre unique', a.dt[, .N], verbosity=2)
+  cat0n('data count pre unique: ', a.dt[, .N], verbosity=2)
   setkey(a.dt, date, hometeam, awayteam)
   a.dt <- unique(a.dt)
-  cat0n('data count post unique', a.dt[, .N], verbosity=2)
+  cat0n('data count post unique: ', a.dt[, .N], verbosity=2)
 
-  cat0n('home count pre unique', a.teams.dt[, .N], verbosity=2)
+  cat0n('home count pre unique: ', a.teams.dt[, .N], verbosity=2)
   setkey(h.teams.dt, date, hometeam, awayteam)
   h.teams.dt <- unique(h.teams.dt)
-  cat0n('home count post unique', a.teams.dt[, .N], verbosity=2)
+  cat0n('home count post unique: ', a.teams.dt[, .N], verbosity=2)
 
-  cat0n('away count pre unique', a.teams.dt[, .N], verbosity=2)
+  cat0n('away count pre unique: ', a.teams.dt[, .N], verbosity=2)
   setkey(a.teams.dt, date, hometeam, awayteam)
   a.teams.dt <- unique(a.teams.dt)
-  cat0n('away count post unique', a.teams.dt[, .N], verbosity=2)
+  cat0n('away count post unique: ', a.teams.dt[, .N], verbosity=2)
 
-  cat0n('data count pre merge', a.dt[, .N], verbosity=2)
+  cat0n('data count pre merge: ', a.dt[, .N], verbosity=2)
   a.dt <- merge(a.dt, h.teams.dt)
   a.dt <- merge(a.dt, a.teams.dt)
-  cat0n('data count post merge', a.dt[, .N], verbosity=2)
-  cat0n('data count missing hpr', a.dt[is.na(hpr), .N], verbosity=2)
-  cat0n('data count missing apr', a.dt[is.na(apr), .N], verbosity=2)
-  cat0n('data count missing hphr', a.dt[is.na(hphr), .N], verbosity=2)
-  cat0n('data count missing apar', a.dt[is.na(apar), .N], verbosity=2)
+  cat0n('data count post merge: ', a.dt[, .N], verbosity=2)
+  cat0n('data count missing hpr: ', a.dt[is.na(hpr), .N], verbosity=2)
+  cat0n('data count missing apr: ', a.dt[is.na(apr), .N], verbosity=2)
+  cat0n('data count missing hphr: ', a.dt[is.na(hphr), .N], verbosity=2)
+  cat0n('data count missing apar: ', a.dt[is.na(apar), .N], verbosity=2)
 
   a.dt[, hpp := -1]
   a.dt[hpr == "L", hpp := 0]
@@ -268,40 +264,52 @@ result_lag <- function(a.dt, i) {
 }
 
 #' @import data.table
-prep.modeling.vars <- quote({
+prep.modeling.vars <- function(a.dt, n.lag) {
   hpr1 <- hpr2 <- hpr3 <- hpr4 <- hpr5 <-
   apr1 <- apr2 <- apr3 <- apr4 <- apr5 <-
   hometeam <- awayteam <- season <- div <-
   ftr <- ip <- NULL
-  lag_result_i <- 1:5
-  for (i in lag_result_i) a.dt <- result_lag(a.dt, i)
-  a.dt[, .N, hpr1]
-  a.dt[, .N, apr1]
-  a.dt[, .N, hpr2]
-  a.dt[, .N, apr2]
-  a.dt[, .N, hpr3]
-  a.dt[, .N, apr3]
-  a.dt[, .N, hpr4]
-  a.dt[, .N, apr4]
-  a.dt[, .N, hpr5]
-  a.dt[, .N, apr5]
-  a.dt[, hpp_cum2 := pmax(hpp1, 0) + pmax(hpp2, 0)]
-  a.dt[, hpp_cum3 := hpp_cum2 + pmax(hpp3, 0)]
-  a.dt[, hpp_cum4 := hpp_cum3 + pmax(hpp4, 0)]
-  a.dt[, hpp_cum5 := hpp_cum4 + pmax(hpp5, 0)]
-  a.dt[, app_cum2 := pmax(app1, 0) + pmax(app2, 0)]
-  a.dt[, app_cum3 := app_cum2 + pmax(app3, 0)]
-  a.dt[, app_cum4 := app_cum3 + pmax(app4, 0)]
-  a.dt[, app_cum5 := app_cum4 + pmax(app5, 0)]
-  a.dt[, happ1 := pmax(hpp1, 0) - pmax(app1)]
-  a.dt[, happ2 := pmax(hpp2, 0) - pmax(app2)]
-  a.dt[, happ3 := pmax(hpp3, 0) - pmax(app3)]
-  a.dt[, happ4 := pmax(hpp4, 0) - pmax(app4)]
-  a.dt[, happ5 := pmax(hpp5, 0) - pmax(app5)]
-  a.dt[, happ_cum2 := hpp_cum2 - app_cum2]
-  a.dt[, happ_cum3 := hpp_cum3 - app_cum3]
-  a.dt[, happ_cum4 := hpp_cum4 - app_cum4]
-  a.dt[, happ_cum5 := hpp_cum5 - app_cum5]
+  lag_result_i <- 1:n.lag
+  for (i in lag_result_i) {
+    a.dt <- result_lag(a.dt, i)
+    setnames(a.dt, paste0("hpp", i), "hpp")
+    setnames(a.dt, paste0("app", i), "app")
+    a.dt[, happ := pmax(hpp, 0) - pmax(app)]
+    setnames(a.dt, "hpp", paste0("hpp", i))
+    setnames(a.dt, "app", paste0("app", i))
+    setnames(a.dt, "happ", paste0("happ", i))
+    if (i > 2) {
+      setnames(a.dt, paste0("hpp_cum", (i-1)), "hpp_cumi0")
+      setnames(a.dt, paste0("hpp", (i)), "hppi")
+      setnames(a.dt, paste0("app_cum", (i-1)), "app_cumi0")
+      setnames(a.dt, paste0("app", (i)), "appi")
+      a.dt[, hpp_cum := pmax(hpp_cumi0, 0) + pmax(hppi, 0)]
+      a.dt[, app_cum := pmax(app_cumi0, 0) + pmax(appi, 0)]
+      a.dt[, happ_cum := hpp_cum - app_cum]
+      setnames(a.dt, "hpp_cumi0", paste0("hpp_cum", (i-1)))
+      setnames(a.dt, "hppi", paste0("hpp", (i)))
+      setnames(a.dt, "app_cumi0", paste0("app_cum", (i-1)))
+      setnames(a.dt, "appi", paste0("app", (i)))
+      setnames(a.dt, "hpp_cum", paste0("hpp_cum", (i)))
+      setnames(a.dt, "app_cum", paste0("app_cum", (i)))
+      setnames(a.dt, "happ_cum", paste0("happ_cum", (i)))
+    } else if(i == 2)  {
+      setnames(a.dt, paste0("hpp", (i-1)), "hppi0")
+      setnames(a.dt, paste0("hpp", (i)), "hppi")
+      setnames(a.dt, paste0("app", (i-1)), "appi0")
+      setnames(a.dt, paste0("app", (i)), "appi")
+      a.dt[, hpp_cum := pmax(hppi0, 0) + pmax(hppi, 0)]
+      a.dt[, app_cum := pmax(appi0, 0) + pmax(appi, 0)]
+      a.dt[, happ_cum := hpp_cum - app_cum]
+      setnames(a.dt, "hppi0", paste0("hpp", (i-1)))
+      setnames(a.dt, "hppi", paste0("hpp", (i)))
+      setnames(a.dt, "appi0", paste0("app", (i-1)))
+      setnames(a.dt, "appi", paste0("app", (i)))
+      setnames(a.dt, "hpp_cum", paste0("hpp_cum", (i)))
+      setnames(a.dt, "app_cum", paste0("app_cum", (i)))
+      setnames(a.dt, "happ_cum", paste0("happ_cum", (i)))
+    }
+  }
   # set character variables to factor for modeling
   a.dt[, hometeam := as.factor(hometeam)]
   a.dt[, awayteam := as.factor(awayteam)]
@@ -310,20 +318,21 @@ prep.modeling.vars <- quote({
   a.dt[, ftr := as.factor(ftr)]
   a.dt[, ip := round(ip, 3)]
   pprint(summary(a.dt), "summary(a.dt)", verbosity=2)
-  cat0n('data count with missings', a.dt[, .N], verbosity=2)
+  cat0n('data count with missings: ', a.dt[, .N], verbosity=2)
   a.dt <- na.omit(a.dt)
-  cat0n('data count no missings', a.dt[, .N], verbosity=2)
+  cat0n('data count no missings: ', a.dt[, .N], verbosity=2)
   cat0n('data summary', verbosity=2)
   pprint(summary(a.dt), "summary(a.dt)", verbosity=2)
   # error with odds
-  cat0n('data count odds error', a.dt[, .N], verbosity=2)
+  cat0n('data count odds error: ', a.dt[, .N], verbosity=2)
   a.dt <- a.dt[ip != -Inf, ]
   a.dt <- a.dt[ip != Inf, ]
   a.dt <- a.dt[(1/ip) != -Inf, ]
   a.dt <- a.dt[(1/ip) != Inf, ]
-  cat0n('data count no odds error', a.dt[, .N], verbosity=2)
+  cat0n('data count no odds error: ', a.dt[, .N], verbosity=2)
   pprint(a.dt[, .N, list(actr, ftr)], "actr, ftr count", verbosity=2)
-})
+  a.dt
+}
 
 #' @import data.table
 save.modeling.data <- quote({
@@ -331,6 +340,11 @@ save.modeling.data <- quote({
   data.dir <- get.sodd.data.dir()
   if(!file.exists(data.dir)) dir.create(data.dir)
   saveRDS(a.dt, file.path(data.dir, 'a.dt.rds'))
+  if(is.package.available("pryr")) {
+    suppressMessages(pryr::object_size(0))
+    cat0n("a.dt size: ", pryr::object_size(a.dt) * 1e-6, "Mb", verbosity=1)
+    cat0n("memory used: ", pryr::mem_used() * 1e-6, "Mb", verbosity=1)
+  }
 })
 
 #' Create sodd modeling data
@@ -344,7 +358,7 @@ save.modeling.data <- quote({
 #' create.sodd.modeling.data(years=5)
 #' }
 #' @export
-create.sodd.modeling.data <- function(leagues=all.leagues, years=10){
+create.sodd.modeling.data <- function(leagues=all.leagues, years=10, n.lag=5){
   output.dir <- get.sodd.output.dir()
   if(!file.exists(output.dir)) dir.create(output.dir)
   if(get.sodd.verbosity() >= 1) {
@@ -354,7 +368,7 @@ create.sodd.modeling.data <- function(leagues=all.leagues, years=10){
   }
   a.dt <- read.all.data(leagues, years)
   eval(transpose.rows)
-  eval(prep.modeling.vars)
+  a.dt <- prep.modeling.vars(a.dt, n.lag)
   eval(save.modeling.data)
   sink()
   invisible()

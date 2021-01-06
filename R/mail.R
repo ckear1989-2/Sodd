@@ -35,16 +35,18 @@ email.sodd.model.results <- function(
       mlogf3=file.path(output.dir, paste0("model_", adate, "_spread", "_wtd", ".log")),
       mpdff3=file.path(output.dir, paste0("model_", adate, "_spread", "_wtd", ".pdf"))
     )
-    gmailr::gm_auth_configure()
-    gmailr::gm_auth(email=TRUE, cache="~/.secret")
-    test_email <- gmailr::gm_mime()
-    test_email <- gmailr::gm_to(test_email, address)
-    test_email <- gmailr::gm_from(test_email, address)
-    test_email <- gmailr::gm_subject(test_email, paste(adate, "model results"))
-    test_email <- gmailr::gm_text_body(test_email, "See attachments")
-    for(f in fs) test_email <- attach.if.available(test_email, f)
-    gmailr::gm_create_draft(test_email)
-    if(!is.null(address)) gmailr::gm_send_message(test_email)
+    suppressMessages({
+      gmailr::gm_auth_configure()
+      gmailr::gm_auth(email=TRUE, cache="~/.secret")
+      test_email <- gmailr::gm_mime()
+      test_email <- gmailr::gm_to(test_email, address)
+      test_email <- gmailr::gm_from(test_email, address)
+      test_email <- gmailr::gm_subject(test_email, paste(adate, "model results"))
+      test_email <- gmailr::gm_text_body(test_email, "See attachments")
+      for(f in fs) test_email <- attach.if.available(test_email, f)
+      gmailr::gm_create_draft(test_email)
+      if(!is.null(address)) gmailr::gm_send_message(test_email)
+    })
   }
   invisible()
 }
