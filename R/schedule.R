@@ -18,7 +18,8 @@
 schedule.model.build <- function(
   leagues=all.leagues,
   years=10,
-  address=NULL
+  address=NULL,
+  email.no.data.change=FALSE
   ) {
   if(!is.package.available("cronR")) {
     message(paste("model build scheduling not available.",
@@ -36,7 +37,7 @@ schedule.model.build <- function(
   invisible()
 }
 
-create.scheduled.model.script <- function(leagues, years, f, address) {
+create.scheduled.model.script <- function(leagues, years, f, address=NULL, email.no.data.change=FALSE) {
   code <- "library(\"sodd\")\n"
   code <- paste0(
     code,
@@ -44,15 +45,24 @@ create.scheduled.model.script <- function(leagues, years, f, address) {
     "data.dir=\"", get.sodd.data.dir(), "\",\n  ",
     "output.dir=\"", get.sodd.output.dir(), "\",\n  ",
     "force.upcoming=", get.sodd.force.upcoming(), ",\n  ",
+    "model.params=list(\n    ",
+    "n.trees=", get.sodd.model.params()$n.trees, ",\n    ",
+    "train.fraction=", get.sodd.model.params()$train.fraction, ",\n    ",
+    "interaction.depth=", get.sodd.model.params()$interaction.depth, ",\n    ",
+    "cv.folds=", get.sodd.model.params()$cv.folds, ",\n    ",
+    "n.cores=", get.sodd.model.params()$n.cores, "\n  ),\n  ",
+    "n.lag=", get.sodd.n.lag(), "\n  ),\n  ",
     "verbosity=", get.sodd.verbosity(), "\n)\n"
   )
-  code <- paste0(code, "check.status <- ", "dload.sodd.modeling.data(c(\"",
-    paste(leagues, collapse="\", \""), "\"), ", years, ", check=TRUE)\n"
+  code <- paste0(code, "leagues <- c(\"", paste(leagues, collapse="\", \""), "\")\n")
+  code <- paste0(code, "years <- ", years, "\n")
+  code <- paste0(code, "address <- \"", address, "\"\n")
+  code <- paste0(code, "date <- format((Sys.Date()-7),  \"%Y-%m-%d\")\n")
+  code <- paste0(code, "check.status <- ", "dload.sodd.modeling.data(leagues, years, check=TRUE)\n"
   )
   code <- paste0(code, "if(any(check.status)) {\n  ")
   code <- paste0(code,
-    "create.sodd.modeling.data(c(\"",
-    paste(leagues, collapse="\", \""), "\"), ", years, ")\n  "
+    "create.sodd.modeling.data(leagues, years)\n  "
   )
   code <- paste0(code,
     "build.all.sodd.models.one.date(format((Sys.Date()-7), \"%Y-%m-%d\"), ",
@@ -60,17 +70,18 @@ create.scheduled.model.script <- function(leagues, years, f, address) {
   )
   if(!is.null(address)) {
     code <- paste0(code, "  ",
-      "email.sodd.model.results(format((Sys.Date()-7), \"%Y-%m-%d\"), \"",
-      address, "\")\n"
+      "email.sodd.model.results(format((Sys.Date()-7), \"%Y-%m-%d\"), address)\n"
     )
   }
   code <- paste0(code,
     "} else {\n  message(\"no changes detected in any files\")\n"
   )
   if(!is.null(address)) {
-    code <- paste0(code, "  ",
-      "email.no.data.change(\"", address, "\")\n"
-    )
+    if(isTRUE(email.no.data.change)) {
+      code <- paste0(code, "  ",
+        "email.no.data.change(address)\n"
+      )
+    }
   }
   code <- paste0(code, "}\n")
   fc <- file(f)

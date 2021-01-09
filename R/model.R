@@ -4,21 +4,14 @@
 #' @param adate a date in string format "%Y-%m-%d".  Splits train.a and train.b data
 #' @param yvar model response variable "act" or "spread"
 #' @param weights include weigthing of observations. Defaults to FALSE
-#' @param train.fraction gbm parameter. Proportion of training data for train.a. Defaults to 0.7
-#' @param n.trees gbm parameter. Number of trees to build in gbm. Defaults to 300
-#' @param shrinkage gbm parameter. Rate of change towards prediction. Defaults to 0.01
-#' @param interaction.depth gbm parameter. Depth of each tree in model. Defaults to 2
-#' @param cv.folds gbm parameter. Number of cross validation folds in training data. Defaults to 3
-#' @param n.cores gbm parameter. Number of cores to use in processing. Defaults to 1
-#' @param n.lag Nnumber of previous results to lag for predictor variables. Defaults to 5
 #' @param plot.it Create output plot. Defaults to FALSE
+#' @param keep.data  Save modeling data with model object. Defaults to FALSE
 #' @return gbm model object
 #' @family model
 #' @examples
 #' \donttest{
 #' build.sodd.model("2020-01-01", "act")
 #' build.sodd.model("2020-01-01", "spread", weights=TRUE)
-#' build.sodd.model("2020-01-01", "spread", n.trees=50)
 #' }
 #' @export
 #' @import data.table
@@ -26,14 +19,8 @@ build.sodd.model <- function(
   adate,
   yvar,
   weights=FALSE,
-  train.fraction=0.7,
-  n.trees=300,
-  shrinkage=0.01,
-  interaction.depth=2,
-  cv.folds=3,
-  n.cores=1,
-  n.lag=5,
-  plot.it=FALSE
+  plot.it=FALSE,
+  keep.data=FALSE
   ) {
   logfile <- ip <- a.dt <- train.a.dt <- train.b.dt <- test.dt <-
   upcoming.dt <- train.dt <- pdffile <- model <- a.date <- NULL
@@ -41,6 +28,7 @@ build.sodd.model <- function(
   eval(read.model.data)
   if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
   # model params
+  n.lag <- get.sodd.n.lag()
   xvar <- c(
     "ip",
     "div",
@@ -79,11 +67,13 @@ build.sodd.model <- function(
   # attr(model, "adate") <- adate
   class(model) <- c("sodd", class(model))
   model$adate <- adate
-  model$train.a.dt <- train.a.dt
-  model$train.b.dt <- train.b.dt
-  model$train.dt <- train.dt
-  model$test.dt <- test.dt
-  model$upcoming.dt <- upcoming.dt
+  if(isTRUE(keep.data)) {
+    model$train.a.dt <- train.a.dt
+    model$train.b.dt <- train.b.dt
+    model$train.dt <- train.dt
+    model$test.dt <- test.dt
+    model$upcoming.dt <- upcoming.dt
+  }
   model$uvar <- uvar
   model$yvar <- yvar
   model$logfile <- logfile
@@ -93,6 +83,7 @@ build.sodd.model <- function(
   if(!file.exists(output.dir)) dir.create(output.dir)
   if(!file.exists(model.output.dir)) dir.create(model.output.dir)
   saveRDS(model, modelfile)
+  report.memory(model)
   model
 }
 
@@ -151,7 +142,6 @@ upcoming.strategy.sodd.model <- function(model) {
 #' set.sodd.options(data.dir="~/sodd.data/")
 #' create.sodd.modeling.data()
 #' build.all.sodd.models.one.date("2020-01-01")
-#' build.all.sodd.models.one.date("2020-01-01", n.trees=50, interaction.depth=3)
 #' }
 #' @export 
 build.all.sodd.models.one.date <- function(adate, ...) {

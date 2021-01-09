@@ -88,17 +88,16 @@ mkdir -p $LIB
 # sudo apt-get install libcurl4-openssl-dev
 # install_package curl_4.3
 
-
 # Rscript -e "install.packages(c(\"data.table\", \"ggplot2\", \"TeachingDemos\", \"devtools\"))"
 # Rscript -e "install.packages(c(\"gbm\", \"gridExtra\", \"huxtable\"))"
 # Rscript -e "install.packages(c(\"gmailr\", \"cronR\", \"rmarkdown\", \"pryr\"))"
 # Rscript -e "devtools::setup(\"./\")"
 # Rscript -e "devtools::load_all()"
-# Rscript -e "devtools::test()"
-# Rscript -e "devtools::document()"
-# Rscript -e "devtools::build_manual()"
-# Rscript -e "devtools::check(document=FALSE, manual=FALSE, force_suggests=TRUE, run_dont_test=FALSE)"
+Rscript -e "devtools::test()"
+Rscript -e "devtools::document()"
+Rscript -e "devtools::build_manual()"
+Rscript -e "devtools::check(document=FALSE, manual=FALSE, force_suggests=TRUE, run_dont_test=FALSE)"
 Rscript -e "devtools::install()"
-# Rscript -e "devtools::check(document=TRUE, manual=TRUE, force_suggests=TRUE, run_dont_test=FALSE)"
-# Rscript -e "rmarkdown::render(\"README.Rmd\", output_file=\"README.md\")"
+Rscript -e "devtools::check(document=TRUE, manual=TRUE, force_suggests=TRUE, run_dont_test=FALSE)"
+Rscript -e "rmarkdown::render(\"README.Rmd\", output_file=\"README.md\")"
 

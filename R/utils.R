@@ -156,7 +156,7 @@ model.summary <- quote({
   cat0n(rep("#", 30), "\nModel Summary", verbosity=2)
   best.trees.test <- gbm.perf(model, plot.it=FALSE, method="test")
   best.trees.cv <- NA
-  if(cv.folds > 1) best.trees.cv <- gbm.perf(model, plot.it=FALSE, method="cv")
+  if(get.sodd.model.params()$cv.folds > 1) best.trees.cv <- gbm.perf(model, plot.it=FALSE, method="cv")
   suppressMessages(best.trees.oob <- gbm.perf(model, plot.it=FALSE, method="OOB"))
   cat0n("gbm perf best.trees.test=", best.trees.test, verbosity=2)
   cat0n("gbm perf best.trees.cv=", best.trees.cv, verbosity=2)
@@ -165,12 +165,34 @@ model.summary <- quote({
 })
 
 #' @import gbm
-score.a.model <- function(dt, model, name="gbmp") {
-  model.pred <- weight <- NULL
+score.a.model <- function(dt, model, family, name="gbmp", update.offset=FALSE) {
+  model.pred <- weight <- offset <- ip <- NULL
+  if(isTRUE(update.offset)) {
+    if(model$offset_var == "ip") {
+      dt[, offset := log(ip)]
+    } else if(model$offset_var == "None") {
+      dt[, offset := log(rep(1, dt[, .N]))]
+    } else {
+      prev.model <- get.prev.model(model$modelfile, model$adate)
+      cat0n("scoring model ", prev.model$modelfile, " using ", prev.model$offset_var, " as offset", verbosity=1)
+      dt <- score.a.model(dt, prev.model, family, "offset", update.offset=TRUE)
+    }
+  }
   best.trees.test <- gbm::gbm.perf(model, plot.it=FALSE, method="test")
   suppressWarnings({
     dt[, model.pred := gbm::predict.gbm(model, dt, best.trees.test, type="link") * weight]
   })
+  dt[, model.pred := model.pred + offset]
+  if(family=="bernoulli") {
+    dt[, model.pred := 1/(1+exp(-model.pred))]
+  } else if(family=="gaussian") {
+    dt[, model.pred := exp(model.pred)]
+  }
+  if(any(is.nan(dt[, model.pred]))) {
+    print(summary(dt[, model.pred]))
+    stop()
+  }
+  if(name %in% colnames(dt)) dt[[name]] <- NULL
   setnames(dt, "model.pred", name)
   dt
 }
@@ -180,27 +202,12 @@ score.model <- quote({
   # score
   # multiply predictions by weight.  not necessary because balanced by season but still good practice
   # e.g. if weights or balancing technique changes?
-  train.dt <- score.a.model(train.dt, model)
-  test.dt <- score.a.model(test.dt, model)
-  upcoming.dt <- score.a.model(upcoming.dt, model)
+  train.dt <- score.a.model(train.dt, model, family)
+  test.dt <- score.a.model(test.dt, model, family)
+  upcoming.dt <- score.a.model(upcoming.dt, model, family)
   pprint(train.dt[, list(act=sum(y), pred=sum(gbmp))], "train raw score act, pred", verbosity=2)
   pprint(test.dt[, list(act=sum(y), pred=sum(gbmp))], "test raw score  act, pred", verbosity=2)
   pprint(upcoming.dt[, list(act=sum(y), pred=sum(gbmp))], "upcoming raw score  act, pred", verbosity=2)
-  if(family=="bernoulli") {
-    train.dt[, gbmp := gbmp + offset]
-    test.dt[, gbmp := gbmp + offset]
-    upcoming.dt[, gbmp := gbmp + offset]
-    train.dt[, gbmp := 1/(1+exp(-gbmp))]
-    test.dt[, gbmp := 1/(1+exp(-gbmp))]
-    upcoming.dt[, gbmp := 1/(1+exp(-gbmp))]
-  } else if(family=="gaussian") {
-    train.dt[, gbmp := gbmp + offset]
-    test.dt[, gbmp := gbmp + offset]
-    upcoming.dt[, gbmp := gbmp + offset]
-    train.dt[, gbmp := exp(gbmp)]
-    test.dt[, gbmp := exp(gbmp)]
-    upcoming.dt[, gbmp := exp(gbmp)]
-  }
 })
 
 rebalance.model <- quote({
@@ -259,22 +266,28 @@ rebalance.model <- quote({
 
 calc.deviances <- quote({
   # deviances
-  # gausiann SSE
-  # bernoulli :
   cat0n(rep("#", 30), "\nDeviances", verbosity=2)
-  train.a.rows <- floor(train.dt[, .N] *train.fraction)
+  train.a.rows <- floor(train.dt[, .N] * get.sodd.model.params()$train.fraction)
   train.mean <- mean(train.dt[, y])
   train.dt[, mean_pred := train.mean]
   test.dt[, mean_pred := train.mean]
   calc.bernoulli.dev <- function(act, pred, weight=1) {
     pred_l <- -log((1/pred) -1)
+    if(any(is.nan(pred_l))) {
+      print(summary(gbm::predict.gbm(model, train.dt, best.trees.test, type="link")))
+      print(summary(gbm::predict.gbm(model, train.dt, best.trees.test, type="link")*weight))
+      print(summary(gbm::predict.gbm(model, train.dt, best.trees.test, type="link")*weight + train.dt[, offset]))
+      print(summary(pred))
+      print(summary(pred_l))
+      stop()
+    }
     -2 * weight * ((act * pred_l) - log(1.0 + exp(pred_l)))
   }
   if(family == "bernoulli") {
     train.dt[, null_dev:= calc.bernoulli.dev(y, mean_pred, weight)]
     test.dt[, null_dev:= calc.bernoulli.dev(y, mean_pred, weight)]
-    train.dt[, offset_dev:= calc.bernoulli.dev(y, exp(offset), weight)]
-    test.dt[, offset_dev:= calc.bernoulli.dev(y, exp(offset), weight)]
+    train.dt[, offset_dev:= calc.bernoulli.dev(y, 1/(1+exp(-offset)), weight)]
+    test.dt[, offset_dev:= calc.bernoulli.dev(y, 1/(1+exp(-offset)), weight)]
     train.dt[, model_dev:= calc.bernoulli.dev(y, gbmp, weight)]
     test.dt[, model_dev:= calc.bernoulli.dev(y, gbmp, weight)]
   }
@@ -359,20 +372,20 @@ build.model <- quote({
     data=train.dt,
     weights=train.dt[, weight],
     distribution=family,
-    train.fraction=train.fraction,
-    n.trees=n.trees,
-    shrinkage=shrinkage,
-    interaction.depth=interaction.depth,
-    cv.folds=cv.folds,
+    train.fraction=get.sodd.model.params()$train.fraction,
+    n.trees=get.sodd.model.params()$n.trees,
+    shrinkage=get.sodd.model.params()$shrinkage,
+    interaction.depth=get.sodd.model.params()$interaction.depth,
+    cv.folds=get.sodd.model.params()$cv.folds,
     keep.data=FALSE,
-    n.cores=n.cores,
+    n.cores=get.sodd.model.params()$n.cores,
     verbose=ifelse(get.sodd.verbosity() >= 2, TRUE, FALSE)
   )
-  if(is.package.available("pryr")) {
-    cat0n("model size: ", pryr::object_size(model) * 1e-6, "Mb", verbosity=1)
-    cat0n("memory used: ", pryr::mem_used() * 1e-6, "Mb", verbosity=1)
-  }
-  if(cv.folds == 1) model$cv.error <- model$valid.error
+  model$adate <- adate
+  model$modelfile <- modelfile
+  model$offset_var <- offset_var
+  report.memory(model)
+  if(get.sodd.model.params()$cv.folds == 1) model$cv.error <- model$valid.error
 })
 
 model.params <- quote({
@@ -380,12 +393,12 @@ model.params <- quote({
   cat0n(rep("#", 30), "\nModel Parameters", verbosity=2)
   cat0n(
     "yvar: ", yvar, "\n",
-    "train.fraction: ", train.fraction, "\n",
-    "cv.folds: ", cv.folds, "\n",
-    "n.cores: ", n.cores, "\n",
-    "n.trees: ", n.trees, "\n",
-    "shrinkage: ", shrinkage, "\n",
-    "interaction.depth: ", interaction.depth, "\n",
+    "train.fraction: ", get.sodd.model.params()$train.fraction, "\n",
+    "cv.folds: ", get.sodd.model.params()$cv.folds, "\n",
+    "n.cores: ", get.sodd.model.params()$n.cores, "\n",
+    "n.trees: ", get.sodd.model.params()$n.trees, "\n",
+    "shrinkage: ", get.sodd.model.params()$shrinkage, "\n",
+    "interaction.depth: ", get.sodd.model.params()$interaction.depth, "\n",
     "family: ", family,
     verbosity=2
   )
@@ -432,25 +445,29 @@ read.model.data <- quote({
   a.dt[, odds := round(1 / ip, 2)]
   a.dt[, gain := (weight * odds * act) - weight]
   a.dt[, spread := act-ip]
-  # use previous model as offset
-  prev.model <- get.prev.model(modelfile, adate)
-  if(!is.null(prev.model)) {
-    cat0n("using model from ", prev.model$adate, " as offset", verbosity=1)
-    a.dt <- score.a.model(a.dt, prev.model, "offset")
-  } else {
-    if(yvar == "act") {
-      cat0n("using ip as offset", verbosity=1)
-      a.dt[, offset := log(ip)]
-    } else if(yvar=="spread") {
-      cat0n("using no offset", verbosity=1)
-      a.dt[, offset := log(rep(1, a.dt[, .N]))]
-    }
-  }
   if(yvar == "act") {
     family <- "bernoulli"
   } else if(yvar=="spread") {
     family <- "gaussian"
   }
+  # use previous model as offset
+  offset_var <- NULL
+  prev.model <- get.prev.model(modelfile, adate)
+  if(!is.null(prev.model)) {
+    # need to have same offset as prev.model
+    cat0n("using model from ", prev.model$adate, " as offset", verbosity=1)
+    offset_var <- prev.model$modelfile
+    a.dt <- score.a.model(a.dt, prev.model, family, "offset", update.offset=TRUE)
+  } else {
+    if(yvar == "act") {
+      offset_var <- "ip"
+      a.dt[, offset := log(ip)]
+    } else if(yvar=="spread") {
+      offset_var <- "None"
+      a.dt[, offset := log(rep(1, a.dt[, .N]))]
+    }
+  }
+  cat0n("using ", offset_var, " as offset", verbosity=1)
   a.dt[["y"]] <- a.dt[[yvar]]
   train.dt <- a.dt[actr != "NA" & date < as.Date(adate, "%Y-%m-%d"), ]
   test.dt <- a.dt[actr != "NA" & date >= as.Date(adate, "%Y-%m-%d"), ]

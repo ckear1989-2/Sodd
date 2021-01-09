@@ -79,6 +79,7 @@ read.all.data <- function(leagues, years) {
 }
 
 #' @import data.table
+#' @importFrom stats na.omit
 transpose.rows <- quote({
   season <- hometeam <- awayteam <- ftr <- fthg <- ftag <- b365h <- b365d <-
   b365a <- match_id <- match_ip <- count <- act <- actr <- NULL
@@ -264,6 +265,7 @@ result_lag <- function(a.dt, i) {
 }
 
 #' @import data.table
+#' @importFrom stats na.omit
 prep.modeling.vars <- function(a.dt, n.lag) {
   hpr1 <- hpr2 <- hpr3 <- hpr4 <- hpr5 <-
   apr1 <- apr2 <- apr3 <- apr4 <- apr5 <-
@@ -334,17 +336,28 @@ prep.modeling.vars <- function(a.dt, n.lag) {
   a.dt
 }
 
+report.memory <- function(obj=NULL) {
+  if(is.package.available("pryr")) {
+    suppressMessages(pryr::object_size(0))
+    if(!is.null(obj)) {
+      cat0n(deparse(substitute(obj)), " size: ", pryr::object_size(obj) * 1e-6, "Mb", verbosity=1)
+    }
+    gc()
+    cat0n("R memory used: ", pryr::mem_used() * 1e-6, "Mb", verbosity=1)
+    # cat0n("system memory free: ", as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo", intern=TRUE)) * 1e-3, "Mb", verbosity=1)
+    # cat0n("system memory available: ", as.numeric(system("awk '/MemAvailable/ {print $2}' /proc/meminfo", intern=TRUE)) * 1e-3, "Mb", verbosity=1)
+    # cat0n("system memory total: ", as.numeric(system("awk '/MemTotal/ {print $2}' /proc/meminfo", intern=TRUE)) * 1e-3, "Mb", verbosity=1)
+    # cat0n("system processes running: ", length(system("ps -x", intern=TRUE)), verbosity=1)
+  }
+}
+
 #' @import data.table
 save.modeling.data <- quote({
   setkey(a.dt, rn)
   data.dir <- get.sodd.data.dir()
   if(!file.exists(data.dir)) dir.create(data.dir)
   saveRDS(a.dt, file.path(data.dir, 'a.dt.rds'))
-  if(is.package.available("pryr")) {
-    suppressMessages(pryr::object_size(0))
-    cat0n("a.dt size: ", pryr::object_size(a.dt) * 1e-6, "Mb", verbosity=1)
-    cat0n("memory used: ", pryr::mem_used() * 1e-6, "Mb", verbosity=1)
-  }
+  report.memory(a.dt)
 })
 
 #' Create sodd modeling data
@@ -358,7 +371,7 @@ save.modeling.data <- quote({
 #' create.sodd.modeling.data(years=5)
 #' }
 #' @export
-create.sodd.modeling.data <- function(leagues=all.leagues, years=10, n.lag=5){
+create.sodd.modeling.data <- function(leagues=all.leagues, years=10){
   output.dir <- get.sodd.output.dir()
   if(!file.exists(output.dir)) dir.create(output.dir)
   if(get.sodd.verbosity() >= 1) {
@@ -368,6 +381,7 @@ create.sodd.modeling.data <- function(leagues=all.leagues, years=10, n.lag=5){
   }
   a.dt <- read.all.data(leagues, years)
   eval(transpose.rows)
+  n.lag <- get.sodd.n.lag()
   a.dt <- prep.modeling.vars(a.dt, n.lag)
   eval(save.modeling.data)
   sink()
