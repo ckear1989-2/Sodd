@@ -51,7 +51,7 @@ create.scheduled.model.script <- function(leagues, years, f, address=NULL, email
     "interaction.depth=", get.sodd.model.params()$interaction.depth, ",\n    ",
     "cv.folds=", get.sodd.model.params()$cv.folds, ",\n    ",
     "n.cores=", get.sodd.model.params()$n.cores, "\n  ),\n  ",
-    "n.lag=", get.sodd.n.lag(), "\n  ),\n  ",
+    "n.lag=", get.sodd.n.lag(), ",\n  ",
     "verbosity=", get.sodd.verbosity(), "\n)\n"
   )
   code <- paste0(code, "leagues <- c(\"", paste(leagues, collapse="\", \""), "\")\n")
