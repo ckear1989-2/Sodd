@@ -180,13 +180,27 @@ score.a.model <- function(dt, model, family, name="gbmp", update.offset=FALSE) {
   }
   best.trees.test <- gbm::gbm.perf(model, plot.it=FALSE, method="test")
   suppressWarnings({
-    dt[, model.pred := gbm::predict.gbm(model, dt, best.trees.test, type="link") * weight]
+    dt[, model.pred := gbm::predict.gbm(model, dt, best.trees.test, type="link")]
+    # print(summary(dt[, model.pred]))
+    # gaussian predictions come out at response not link scale?
+    # if(family=="gaussian") dt[, model.pred := log(model.pred)]
+    # print(summary(dt[, model.pred]))
+    dt[, model.pred := model.pred * weight]
+    # print(summary(dt[, model.pred]))
+    # q()
   })
   dt[, model.pred := model.pred + offset]
   if(family=="bernoulli") {
     dt[, model.pred := 1/(1+exp(-model.pred))]
   } else if(family=="gaussian") {
-    dt[, model.pred := exp(model.pred)]
+    cat0n("not applying link function to gaussian pred", 1)
+    # print(summary(dt[, spread]))
+    # print(summary(dt[, offset]))
+    # print(summary(dt[, weight]))
+    # print(summary(dt[, model.pred]))
+    # dt[, model.pred := exp(model.pred)]
+    # print(summary(dt[, model.pred]))
+    # q()
   }
   if(any(is.nan(dt[, model.pred]))) {
     print(summary(dt[, model.pred]))

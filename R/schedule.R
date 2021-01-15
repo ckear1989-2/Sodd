@@ -7,6 +7,8 @@
 #' ts to 10
 #' @param address character. email address to send model results to. Deaults to
 #' NULL
+#' @param email.no.data.change logical. send an email if no data change is found
+#' hence no model ran
 #' @return NULL
 #' @family model
 #' @examples

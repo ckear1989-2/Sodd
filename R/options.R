@@ -8,6 +8,8 @@
 #' @param model.params Named list of model hyperparameters. Defaults to list(
 #' train.fraction=0.7, n.trees=500, shrinkage=0.1, interaction.depth=2,
 #' cv.folds=3)
+#' @param n.lag number of previous results to create predictor variables from. 
+#' Defaults t0 5
 #' @param verbosity Level at which to cat output 0=no output, 1=minimal,
 #' 2=all. Defaults to 0
 #' @family data_prep

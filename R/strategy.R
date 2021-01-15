@@ -69,30 +69,45 @@ calc.strategies <- function(a.dt) {
   a.dt[, pct_grp_10 := -1]
   a.dt[, pct_grp_5 := -1]
   a.dt[, pct_grp_1 := -1]
+  q10 <- unlist(quantile(a.dt[max_match_flag == 1, rn], probs=seq(0, 1, by=0.1)))
+  q5 <- unlist(quantile(a.dt[max_match_flag == 1, rn], probs=seq(0, 1, by=0.05)))
+  q1 <- unlist(quantile(a.dt[max_match_flag == 1, rn], probs=seq(0, 1, by=0.01)))
+  is.unique <- function(x) {
+    length(x) == length(unique(x))
+  }
+  if(!is.unique(q10)) q10 <- seq(1, a.dt[, .N])
+  if(!is.unique(q5)) q5 <- seq(1, a.dt[, .N])
+  if(!is.unique(q1)) q1 <- seq(1, a.dt[, .N])
+  names(q10) <- NULL
+  names(q5) <- NULL
+  names(q1) <- NULL
+  pprint(a.dt[, .N, max_match_flag], verbosity=2)
+  pprint(q10, verbosity=2)
+  # pprint(q5, verbosity=2)
+  # pprint(q1, verbosity=2)
+  cat0n(1:length(q10))
+  cat0n(1:(length(q10)-1))
+  # q()
   a.dt[max_match_flag == 1,
     pct_grp_10 := as.numeric(as.character(cut(
     a.dt[max_match_flag == 1, rn],
-    breaks=quantile(a.dt[max_match_flag == 1, rn],
-    probs=seq(0, 1, by=0.1)),
+    breaks=q10,
     include.lowest=TRUE,
-    labels=1:10)))
+    labels=1:(length(q10)-1))))
   ]
   a.dt[max_match_flag == 1,
     pct_grp_5 := as.numeric(as.character(cut(
       a.dt[max_match_flag == 1, rn],
-      breaks=quantile(a.dt[max_match_flag == 1, rn],
-      probs=seq(0, 1, by=0.05)),
+      breaks=q5,
       include.lowest=TRUE,
-      labels=1:20)))
+      labels=1:(length(q5)-1))))
   ]
   a.dt[max_match_flag == 1,
     pct_grp_1 := as.numeric(as.character(cut(
       a.dt[max_match_flag == 1, rn],
-      breaks=quantile(a.dt[max_match_flag == 1, rn],
-      probs=seq(0, 1, by=0.01)),
+      breaks=q1,
       include.lowest=TRUE,
-      labels=1:100
-    )))
+      labels=1:(length(q1)-1))))
   ]
   a.dt[, strat_top_pct_10 := 0]
   a.dt[, strat_top_pct_5 := 0]

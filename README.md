@@ -1,7 +1,7 @@
 sodd
 ================
 Conor Kearney
-2021-01-09
+2021-01-15
 
 # Install
 
@@ -55,7 +55,7 @@ todays.model <- build.sodd.model(format((Sys.Date()-7), '%Y-%m-%d'), "act", keep
 document.sodd.model(todays.model)
 ```
 
-    ## [1] "see model documentation in /root/sodd.output/model_2021-01-02_act.pdf"
+    ## [1] "see model documentation in /root/sodd.output/model_2021-01-08_act.pdf"
 
 ``` r
 strat <- upcoming.strategy.sodd.model(todays.model)

@@ -22,8 +22,8 @@ build.sodd.model <- function(
   plot.it=FALSE,
   keep.data=FALSE
   ) {
-  logfile <- ip <- a.dt <- train.a.dt <- train.b.dt <- test.dt <-
-  upcoming.dt <- train.dt <- pdffile <- model <- a.date <- NULL
+  logfile <- ip <- a.dt <- train.a.dt <- train.b.dt <- test.dt <- output.dir <-
+  upcoming.dt <- train.dt <- pdffile <- modelfile <- model <- a.date <- NULL
   set.seed(123)
   eval(read.model.data)
   if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
