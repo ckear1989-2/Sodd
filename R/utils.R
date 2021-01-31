@@ -201,6 +201,8 @@ score.a.model <- function(dt, model, family, name="gbmp", update.offset=FALSE) {
     # dt[, model.pred := exp(model.pred)]
     # print(summary(dt[, model.pred]))
     # q()
+  } else if(family=="poisson") {
+    dt[, model.pred := exp(model.pred)]
   }
   if(any(is.nan(dt[, model.pred]))) {
     print(summary(dt[, model.pred]))
@@ -261,6 +263,11 @@ rebalance.model <- quote({
     test.dt[, pred_prob := gbmp + ip]
     upcoming.dt[, pred_prob := gbmp + ip]
   }
+  if(yvar %in% c("fthg", "ftag")) {
+    train.dt[, pred_prob := ip]
+    test.dt[, pred_prob := ip]
+    upcoming.dt[, pred_prob := ip]
+  }
   train.dt[, match_pred_prob := sum(pred_prob), match_id]
   test.dt[, match_pred_prob := sum(pred_prob), match_id]
   upcoming.dt[, match_pred_prob := sum(pred_prob), match_id]
@@ -297,6 +304,9 @@ calc.deviances <- quote({
     }
     -2 * weight * ((act * pred_l) - log(1.0 + exp(pred_l)))
   }
+  calc.poisson.dev <- function(act, pred, weight=1) {
+    2 * (act * log(act/pred) - (act - pred)) * weight
+  }
   if(family == "bernoulli") {
     train.dt[, null_dev:= calc.bernoulli.dev(y, mean_pred, weight)]
     test.dt[, null_dev:= calc.bernoulli.dev(y, mean_pred, weight)]
@@ -312,6 +322,14 @@ calc.deviances <- quote({
     test.dt[, offset_dev:= ((y - exp(offset)) ** 2) * weight]
     train.dt[, model_dev:= ((y - gbmp) ** 2) * weight]
     test.dt[, model_dev:= ((y - gbmp) ** 2) * weight]
+  }
+  else if(family == "poisson") {
+    train.dt[, null_dev:= calc.poisson.dev(y, mean_pred, weight)]
+    test.dt[, null_dev:= calc.poisson.dev(y, mean_pred, weight)]
+    train.dt[, offset_dev:= calc.poisson.dev(y, exp(offset), weight)]
+    test.dt[, offset_dev:= calc.poisson.dev(y, exp(offset), weight)]
+    train.dt[, model_dev:= calc.poisson.dev(y, gbmp, weight)]
+    test.dt[, model_dev:= calc.poisson.dev(y, gbmp, weight)]
   }
   train.a.dt <- train.dt[1:train.a.rows, ]
   train.b.dt <- train.dt[train.a.rows:train.dt[, .N], ]
@@ -463,6 +481,12 @@ read.model.data <- quote({
     family <- "bernoulli"
   } else if(yvar=="spread") {
     family <- "gaussian"
+  } else if(yvar=="fthg") {
+    family <- "poisson"
+    a.dt <- restandardise.model.dt(a.dt, "fthg")
+  } else if(yvar=="ftag") {
+    family <- "poisson"
+    a.dt <- restandardise.model.dt(a.dt, "ftag")
   }
   # use previous model as offset
   offset_var <- NULL
@@ -477,6 +501,12 @@ read.model.data <- quote({
       offset_var <- "ip"
       a.dt[, offset := log(ip)]
     } else if(yvar=="spread") {
+      offset_var <- "None"
+      a.dt[, offset := log(rep(1, a.dt[, .N]))]
+    } else if(yvar=="fthg") {
+      offset_var <- "None"
+      a.dt[, offset := log(rep(1, a.dt[, .N]))]
+    } else if(yvar=="ftag") {
       offset_var <- "None"
       a.dt[, offset := log(rep(1, a.dt[, .N]))]
     }

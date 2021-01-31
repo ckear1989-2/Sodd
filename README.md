@@ -1,7 +1,7 @@
 sodd
 ================
 Conor Kearney
-2021-01-15
+2021-01-31
 
 # Install
 
@@ -55,7 +55,7 @@ todays.model <- build.sodd.model(format((Sys.Date()-7), '%Y-%m-%d'), "act", keep
 document.sodd.model(todays.model)
 ```
 
-    ## [1] "see model documentation in /root/sodd.output/model_2021-01-08_act.pdf"
+    ## [1] "see model documentation in /root/sodd.output/model_2021-01-24_act.pdf"
 
 ``` r
 strat <- upcoming.strategy.sodd.model(todays.model)
@@ -79,4 +79,4 @@ schedule.model.build(
 ```
 
     ## cron task already exists
-    ## Error in cronR::cron_add(command = cmd, frequency = "daily", at = "7AM", : Can't add this job: a job with id 'sodd.model.build' already exists.
+    ## Warning in cronR::cron_add(command = cmd, frequency = "daily", at = "7AM", : Can't add this job: a job with id 'sodd.model.build' already exists.

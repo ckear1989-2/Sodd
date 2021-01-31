@@ -30,10 +30,18 @@ email.sodd.model.results <- function(
       mpdff0=file.path(output.dir, paste0("model_", adate, "_act", ".pdf")),
       mlogf1=file.path(output.dir, paste0("model_", adate, "_spread", ".log")),
       mpdff1=file.path(output.dir, paste0("model_", adate, "_spread", ".pdf")),
-      mlogf2=file.path(output.dir, paste0("model_", adate, "_act", "_wtd", ".log")),
-      mpdff2=file.path(output.dir, paste0("model_", adate, "_act", "_wtd", ".pdf")),
-      mlogf3=file.path(output.dir, paste0("model_", adate, "_spread", "_wtd", ".log")),
-      mpdff3=file.path(output.dir, paste0("model_", adate, "_spread", "_wtd", ".pdf"))
+      mlogf2=file.path(output.dir, paste0("model_", adate, "_fthg", ".log")),
+      mpdff2=file.path(output.dir, paste0("model_", adate, "_fthg", ".pdf")),
+      mlogf3=file.path(output.dir, paste0("model_", adate, "_ftag", ".log")),
+      mpdff3=file.path(output.dir, paste0("model_", adate, "_ftag", ".pdf")),
+      mlogf4=file.path(output.dir, paste0("model_", adate, "_act", "_wtd", ".log")),
+      mpdff4=file.path(output.dir, paste0("model_", adate, "_act", "_wtd", ".pdf")),
+      mlogf5=file.path(output.dir, paste0("model_", adate, "_spread", "_wtd", ".log")),
+      mpdff5=file.path(output.dir, paste0("model_", adate, "_spread", "_wtd", ".pdf")),
+      mlogf6=file.path(output.dir, paste0("model_", adate, "_fthg", "_wtd", ".log")),
+      mpdff6=file.path(output.dir, paste0("model_", adate, "_fthg", "_wtd", ".pdf")),
+      mlogf7=file.path(output.dir, paste0("model_", adate, "_ftag", "_wtd", ".log")),
+      mpdff7=file.path(output.dir, paste0("model_", adate, "_ftag", "_wtd", ".pdf"))
     )
     suppressMessages({
       gmailr::gm_auth_configure()

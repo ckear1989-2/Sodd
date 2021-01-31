@@ -50,6 +50,10 @@ build.sodd.model <- function(
     paste0("app_cum", 2:n.lag),
     paste0("happ_cum", 2:n.lag)
   )
+  if(yvar %in% c("fthg", "ftag")) {
+    xvar <- xvar[!c("ip", "ftr") %in% xvar]
+    xvar <- c(xvar, "h.ip", "d.ip", "a.ip")
+  }
   uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
   formula <- stats::as.formula(paste("y", paste(xvar, collapse="+"), sep="~offset(offset)+"))
   eval(model.params)
@@ -146,9 +150,11 @@ upcoming.strategy.sodd.model <- function(model) {
 #' @export 
 build.all.sodd.models.one.date <- function(adate, ...) {
   build.sodd.model(adate, "spread", weights=FALSE, ...)
-  build.sodd.model(adate, "spread", weights=TRUE, ...)
+  # build.sodd.model(adate, "spread", weights=TRUE, ...)
   build.sodd.model(adate, "act", weights=FALSE, ...)
-  build.sodd.model(adate, "act", weights=TRUE, ...)
+  # build.sodd.model(adate, "act", weights=TRUE, ...)
+  build.sodd.model(adate, "fthg", weights=FALSE, ...)
+  build.sodd.model(adate, "ftag", weights=FALSE, ...)
   invisible(NULL)
 }
 

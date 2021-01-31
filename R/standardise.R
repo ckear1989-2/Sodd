@@ -360,6 +360,21 @@ save.modeling.data <- quote({
   report.memory(a.dt)
 })
 
+restandardise.model.dt <- function(dt, var) {
+  dt[, h.ip := -1]
+  dt[, d.ip := -1]
+  dt[, a.ip := -1]
+  dt[ftr == "H", h.ip := ip]
+  dt[ftr == "D", d.ip := ip]
+  dt[ftr == "A", a.ip := ip]
+  dt[, h.ip := max(h.ip), match_id]
+  dt[, d.ip := max(d.ip), match_id]
+  dt[, a.ip := max(a.ip), match_id]
+  n.lag <- get.sodd.n.lag()
+  dt <- unique(dt, by="match_id")
+  dt
+}
+
 #' Create sodd modeling data
 #'
 #' @param leagues Character vector of leagues to use. Defaults to all.leagues
