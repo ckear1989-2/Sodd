@@ -34,7 +34,7 @@ schedule.model.build <- function(
     tryCatch({
       cronR::cron_add(command=cmd, frequency="daily", at="7AM",
         id="sodd.model.build")
-    }, error=function(cond) message(paste0("cron task already exists\n", cond)))
+    }, error=function(cond) message(paste0("cron task already exists\n", cond.replace('Error', 'Warning'))))
   }
   invisible()
 }

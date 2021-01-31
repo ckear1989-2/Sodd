@@ -267,10 +267,10 @@ result_lag <- function(a.dt, i) {
 #' @import data.table
 #' @importFrom stats na.omit
 prep.modeling.vars <- function(a.dt, n.lag) {
-  hpr1 <- hpr2 <- hpr3 <- hpr4 <- hpr5 <-
-  apr1 <- apr2 <- apr3 <- apr4 <- apr5 <-
-  hometeam <- awayteam <- season <- div <-
-  ftr <- ip <- NULL
+  hpr1 <- hpr2 <- hpr3 <- hpr4 <- hpr5 <- apr1 <- apr2 <- apr3 <- apr4 <-
+  apr5 <- hometeam <- awayteam <- season <- div <- ftr <- ip <- actr <- app <-
+  app_cum <- app_cumi0 <- appi <- appi0 <- happ <- happ_cum <- hpp <-
+  hpp_cum <- hpp_cumi0 <- hppi <- hppi0 <- NULL
   lag_result_i <- 1:n.lag
   for (i in lag_result_i) {
     a.dt <- result_lag(a.dt, i)
