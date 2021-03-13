@@ -11,7 +11,7 @@ Conor Kearney
 # https://github.com/r-lib/gmailr
 # https://developers.google.com/gmail/api/quickstart/python
 Sys.setenv(GMAILR_APP="~/.gmail_credentials")
-# if using 2fa with github, add access token at https://github.com/settings/tokens and paste in to a new file
+# if using 2fa with github, add access token at https://github.com/# settings/tokens and paste in to a new file
 # Replace the filde below with the name of your access token file
 Sys.setenv(GITHUB_PAT=readLines("~/.github_access_token", warn=FALSE)))
 install.packages("devtools")
