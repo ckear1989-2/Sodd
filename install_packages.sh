@@ -17,6 +17,11 @@
 # sudo apt-get install texinfo
 # sudo apt-get install fail2ban
 
+# mac requirements
+# brew install r
+# brew install pandoc
+# brew install fail2ban
+
 CRAN=https://cran.r-project.org/src/contrib/
 LIB=~/data/R/packages/
 function install_package {
