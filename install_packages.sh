@@ -103,8 +103,8 @@ Rscript -e "devtools::document()"
 Rscript -e "devtools::build_manual()"
 Rscript -e "devtools::check(document=FALSE, manual=FALSE, force_suggests=TRUE, run_dont_test=FALSE)"
 Rscript -e "devtools::install()"
-Rscript -e "devtools::check(document=TRUE, manual=TRUE, force_suggests=TRUE, run_dont_test=FALSE)"
-Rscript -e "rmarkdown::render(\"README.Rmd\", output_file=\"README.md\")"
+# Rscript -e "devtools::check(document=TRUE, manual=TRUE, force_suggests=TRUE, run_dont_test=FALSE)"
+# Rscript -e "rmarkdown::render(\"README.Rmd\", output_file=\"README.md\")"
 
 # python
 # curl https://files.pythonhosted.org/packages/0e/d9/09cce3dad7895c59786fe359787e65f5e3bf242dc941033a1b09afdf9d64/sports.py-2.0.10-py3-none-any.whl > sports.py-2.0.10-py3-none-any.whl

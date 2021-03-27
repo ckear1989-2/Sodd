@@ -491,7 +491,7 @@ read.model.data <- quote({
   # use previous model as offset
   offset_var <- NULL
   prev.model <- get.prev.model(modelfile, adate)
-  if(!is.null(prev.model)) {
+  if(!is.null(prev.model) & isTRUE(previous.model.as.offset)) {
     # need to have same offset as prev.model
     cat0n("using model from ", prev.model$adate, " as offset", verbosity=1)
     offset_var <- prev.model$modelfile

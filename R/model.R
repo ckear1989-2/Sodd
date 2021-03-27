@@ -6,6 +6,7 @@
 #' @param weights include weigthing of observations. Defaults to FALSE
 #' @param plot.it Create output plot. Defaults to FALSE
 #' @param keep.data  Save modeling data with model object. Defaults to FALSE
+#' @param previous.model.as.offset  Use model from most recent date found as offset. Defaults to FALSE
 #' @return gbm model object
 #' @family model
 #' @examples
@@ -20,7 +21,8 @@ build.sodd.model <- function(
   yvar,
   weights=FALSE,
   plot.it=FALSE,
-  keep.data=FALSE
+  keep.data=FALSE,
+  previous.model.as.offset=FALSE
   ) {
   logfile <- ip <- a.dt <- train.a.dt <- train.b.dt <- test.dt <- output.dir <-
   upcoming.dt <- train.dt <- pdffile <- modelfile <- model <- a.date <- NULL
@@ -151,10 +153,10 @@ upcoming.strategy.sodd.model <- function(model) {
 build.all.sodd.models.one.date <- function(adate, ...) {
   build.sodd.model(adate, "spread", weights=FALSE, ...)
   # build.sodd.model(adate, "spread", weights=TRUE, ...)
-  build.sodd.model(adate, "act", weights=FALSE, ...)
+  # build.sodd.model(adate, "act", weights=FALSE, ...)
   # build.sodd.model(adate, "act", weights=TRUE, ...)
-  build.sodd.model(adate, "fthg", weights=FALSE, ...)
-  build.sodd.model(adate, "ftag", weights=FALSE, ...)
+  # build.sodd.model(adate, "fthg", weights=FALSE, ...)
+  # build.sodd.model(adate, "ftag", weights=FALSE, ...)
   invisible(NULL)
 }
 

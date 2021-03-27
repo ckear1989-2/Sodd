@@ -25,7 +25,7 @@ read.a.file <- function(a.file) {
 }
 
 #' @import data.table
-read.all.data <- function(leagues, years) {
+read.all.data <- function(leagues, years, warn.removal.of.dups=FALSE) {
   season <- ftr <- div <- hometeam <- awayteam <- date <- match_id <- NULL
   data.dir <- get.sodd.data.dir()
   yl <- expand.grid(all.years[1:years], leagues)
@@ -59,10 +59,10 @@ read.all.data <- function(leagues, years) {
   }
   upcoming.dt <- upcoming.dt[div %in% leagues, ]
   if(any(a.dt[, match_id] %in% upcoming.dt[, match_id])) {
-    if(!isTRUE(get.sodd.force.upcoming())) {
+    if(!isTRUE(warn.removal.of.dups)) {
       warning("matches in historic and upcoming")
     }
-    upcoming.dt <-upcoming.dt[!match_id %in% a.dt[, match_id]]
+    upcoming.dt <- upcoming.dt[!match_id %in% a.dt[, match_id]]
   }
   if(upcoming.dt[, .N] == 0) {
     if(isTRUE(get.sodd.force.upcoming())) {
@@ -361,6 +361,7 @@ save.modeling.data <- quote({
 })
 
 restandardise.model.dt <- function(dt, var) {
+  a.ip <- d.ip <- ftr <- h.ip <- ip <- match_id <- NULL
   dt[, h.ip := -1]
   dt[, d.ip := -1]
   dt[, a.ip := -1]
