@@ -451,7 +451,10 @@ get.prev.model <- function(model.file, adate) {
   prev.model
 }
 
-read.model.data <- quote({
+read.model.data <- function(adate, yvar, previous.model.as.offset, weights) {
+  act <- actr <- awayteam <- contains_team_prev_played <- gain <- hometeam <-
+  ip <- match_id <- odds <- offset <- season <- spread <- teams <- weight <-
+  NULL
   a.dt <- readRDS(file.path(get.sodd.data.dir(), "a.dt.rds"))
   output.dir <- get.sodd.output.dir()
   if(isTRUE(weights)) {
@@ -516,7 +519,10 @@ read.model.data <- quote({
   train.dt <- a.dt[actr != "NA" & date < as.Date(adate, "%Y-%m-%d"), ]
   test.dt <- a.dt[actr != "NA" & date >= as.Date(adate, "%Y-%m-%d"), ]
   upcoming.dt <- a.dt[actr == "NA", ]
-  if(test.dt[, .N] == 0) stop("no test matches")
+  if(test.dt[, .N] == 0) {
+    warning("no test matches")
+    return(FALSE)
+  }
   if(upcoming.dt[, .N] == 0) {
     if(isTRUE(get.sodd.force.upcoming())) {
       upcoming.dt <- test.dt[date == max(test.dt[, date]), ]
@@ -526,7 +532,8 @@ read.model.data <- quote({
       cat0n("forcing upcoming matches from test.dt", verbosity=1)
     }
     else {
-      stop("no upcoming matches")
+      warning("no upcoming matches")
+      return(FALSE)
     }
   }
   if(any(train.dt[, match_id] %in% test.dt[, match_id])) stop("matches in train and test")
@@ -552,7 +559,8 @@ read.model.data <- quote({
   setkey(test.dt, date)
   test.dt <- merge(test.matches.one.match.dt, test.dt, all.x=TRUE, all.y=FALSE)
   cat0n("test.dt complete", verbosity=2)
-})
+  TRUE
+}
 
 #' @import data.table
 get.recent.dt <- function(leagues=all.leagues){

@@ -1,8 +1,8 @@
 
 test_that("file diff 2 different files returns TRUE", {
-  # dload.league.season("E0", "1920")
-  # dload.league.season("E0", "2021")
   set.sodd.options(data.dir="~/sodd.data/")
+  dload.league.season("E0", "1920")
+  dload.league.season("E0", "2021")
   expect_equal(
     check.file.diff(
       paste0(get.sodd.data.dir(), "1920/E0.csv"),

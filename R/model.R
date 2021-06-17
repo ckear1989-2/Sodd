@@ -27,7 +27,12 @@ build.sodd.model <- function(
   logfile <- ip <- a.dt <- train.a.dt <- train.b.dt <- test.dt <- output.dir <-
   upcoming.dt <- train.dt <- pdffile <- modelfile <- model <- a.date <- NULL
   set.seed(123)
-  eval(read.model.data)
+  data.success <- read.model.data(adate, yvar, previous.model.as.offset, weights)
+  if(!data.success) {
+    sink()
+    return()
+  }
+  print("debug1")
   if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
   # model params
   n.lag <- get.sodd.n.lag()

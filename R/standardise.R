@@ -3,12 +3,17 @@
 read.a.file <- function(a.file) {
   season <- match_id <- hometeam <- awayteam <- date <- ddate <- NULL
   s <- strsplit(a.file, "/") [[1]]
-  l <- s[[(length(s)-2)]]
+  l <- s[[(length(s))]]
   s <- s[[(length(s)-1)]]
+  l <- strsplit(l, ".csv")[[1]]
   if(!file.exists(a.file)) {
-    dload.league.season(l, s)
-    warning(paste("input file", a.file, "not found.",
-    "Downloading", l, s))
+    if(l == "fixtures") {
+      dload.upcoming()
+    } else {
+      dload.league.season(l, s)
+      warning(paste("input file", a.file, "not found.",
+      "Downloading", l, s))
+    }
   }
   a.dt <- fread(a.file)
   a.dt[, season := s]

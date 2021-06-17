@@ -16,21 +16,20 @@
 # sudo apt-get install texlive-fonts-extra
 # sudo apt-get install texinfo
 # sudo apt-get install fail2ban
+# sudo apt-get install libcurl4-openssl-dev
 
 # mac requirements
 # brew install r
 # brew install pandoc
 # brew install fail2ban
 
-CRAN=https://cran.r-project.org/src/contrib/
-LIB=~/data/R/packages/
-function install_package {
-  curl ${CRAN}${1}.tar.gz > ${LIB}${1}.tar.gz
-  R CMD INSTALL ${LIB}${1}.tar.gz -l ${LIB}
-}
-# R CMD INSTALL --help
-mkdir -p $LIB
-
+# CRAN=https://cran.r-project.org/src/contrib/
+# LIB=~/data/R/packages/
+# function install_package {
+#   mkdir -p $LIB
+#   curl ${CRAN}${1}.tar.gz > ${LIB}${1}.tar.gz
+#   R CMD INSTALL ${LIB}${1}.tar.gz -l ${LIB}
+# }
 # install_package data.table_1.13.2
 # install_package gbm_2.1.8
 # install_package digest_0.6.27
@@ -93,20 +92,15 @@ mkdir -p $LIB
 # sudo apt-get install libcurl4-openssl-dev
 # install_package curl_4.3
 
-# Rscript -e "install.packages(c(\"data.table\", \"ggplot2\", \"TeachingDemos\", \"devtools\"))"
-# Rscript -e "install.packages(c(\"gbm\", \"gridExtra\", \"huxtable\"))"
-# Rscript -e "install.packages(c(\"gmailr\", \"cronR\", \"rmarkdown\", \"pryr\"))"
+# Rscript -e "install.packages(c(\"data.table\", \"ggplot2\", \"TeachingDemos\", \"devtools\", \
+#     \"gbm\", \"gridExtra\", \"huxtable\, \"gmailr\", \"cronR\", \"rmarkdown\", \"pryr\"))"
+
 # Rscript -e "devtools::setup(\"./\")"
 # Rscript -e "devtools::load_all()"
 Rscript -e "devtools::test()"
 Rscript -e "devtools::document()"
 Rscript -e "devtools::build_manual()"
-Rscript -e "devtools::check(document=FALSE, manual=FALSE, force_suggests=TRUE, run_dont_test=FALSE)"
+Rscript -e "devtools::check(document=TRUE, manual=TRUE, force_suggests=TRUE, run_dont_test=FALSE)"
 Rscript -e "devtools::install()"
-# Rscript -e "devtools::check(document=TRUE, manual=TRUE, force_suggests=TRUE, run_dont_test=FALSE)"
 # Rscript -e "rmarkdown::render(\"README.Rmd\", output_file=\"README.md\")"
-
-# python
-# curl https://files.pythonhosted.org/packages/0e/d9/09cce3dad7895c59786fe359787e65f5e3bf242dc941033a1b09afdf9d64/sports.py-2.0.10-py3-none-any.whl > sports.py-2.0.10-py3-none-any.whl
-# curl https://files.pythonhosted.org/packages/91/5c/a77dde53f5dbde27b683a1437df9dc19a367e1bdb89f015ac93f599f5940/sports.py-2.0.10.tar.gz > sports.py-2.0.10.tar.gz
 
