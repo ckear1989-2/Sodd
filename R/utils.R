@@ -563,9 +563,12 @@ read.model.data <- function(adate, yvar, previous.model.as.offset, weights) {
 }
 
 #' @import data.table
-get.recent.dt <- function(leagues=all.leagues){
+get.recent.dt <- function(leagues=all.leagues) {
   date <- match_id <- hometeam <- awayteam <- actr_new <- ftr <- NULL
+  print("debug2")
+  print(leagues)
   recent.csv <- paste0(get.sodd.data.dir(), all.years[[1]], "/", leagues, ".csv")
+  print(recent.csv)
   recent.dt <- rbindlist(lapply(recent.csv, fread), fill=TRUE)
   setnames(recent.dt, colnames(recent.dt), tolower(colnames(recent.dt)))
   recent.dt[, date := as.Date(date, '%d/%m/%y')]

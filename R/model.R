@@ -32,7 +32,6 @@ build.sodd.model <- function(
     sink()
     return()
   }
-  print("debug1")
   if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
   # model params
   n.lag <- get.sodd.n.lag()
@@ -137,6 +136,10 @@ document.sodd.model <- function(model) {
 #' @export 
 upcoming.strategy.sodd.model <- function(model) {
   div <- NULL
+  if(is.null(model)) {
+    warning("attempting strategy table with null model")
+    return(NULL)
+  }
   leagues <- unique(as.character(model$train.dt[, div]))
   recent.dt <- get.recent.dt(leagues)
   detailed.strat.gtable(model$upcoming.dt, recent.dt, "upcoming")
