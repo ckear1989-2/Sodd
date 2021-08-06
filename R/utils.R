@@ -455,7 +455,7 @@ read.model.data <- function(adate, yvar, previous.model.as.offset, weights) {
   act <- actr <- awayteam <- contains_team_prev_played <- gain <- hometeam <-
   ip <- match_id <- odds <- offset <- season <- spread <- teams <- weight <-
   NULL
-  fail.return <- list(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE)
+  fail.return <- list(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE)
   a.dt <- readRDS(file.path(get.sodd.data.dir(), "a.dt.rds"))
   output.dir <- get.sodd.output.dir()
   if(isTRUE(weights)) {
@@ -560,7 +560,7 @@ read.model.data <- function(adate, yvar, previous.model.as.offset, weights) {
   setkey(test.dt, date)
   test.dt <- merge(test.matches.one.match.dt, test.dt, all.x=TRUE, all.y=FALSE)
   cat0n("test.dt complete", verbosity=2)
-  list(a.dt, train.dt, test.dt, upcoming.dt, family, offset_var, output.dir, modelfile)
+  list(a.dt, train.dt, test.dt, upcoming.dt, family, offset_var, output.dir, modelfile, pdffile)
 }
 
 #' @import data.table

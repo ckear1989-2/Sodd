@@ -37,6 +37,7 @@ build.sodd.model <- function(
   offset_var <- model.dt.list[[6]]
   output.dir <- model.dt.list[[7]]
   modelfile <- model.dt.list[[8]]
+  pdffile <- model.dt.list[[9]]
   if("data.table" %in% class(a.dt)) data.success <- TRUE
   if(!data.success) {
     sink()
