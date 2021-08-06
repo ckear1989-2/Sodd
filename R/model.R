@@ -24,10 +24,20 @@ build.sodd.model <- function(
   keep.data=FALSE,
   previous.model.as.offset=FALSE
   ) {
-  logfile <- ip <- a.dt <- train.a.dt <- train.b.dt <- test.dt <- output.dir <-
+  logfile <- ip <- train.a.dt <- train.b.dt <- test.dt <- output.dir <-
   upcoming.dt <- train.dt <- pdffile <- modelfile <- model <- a.date <- NULL
   set.seed(123)
-  data.success <- read.model.data(adate, yvar, previous.model.as.offset, weights)
+  data.success <- FALSE
+  model.dt.list <- read.model.data(adate, yvar, previous.model.as.offset, weights)
+  a.dt <- model.dt.list[[1]]
+  train.dt <- model.dt.list[[2]]
+  test.dt <- model.dt.list[[3]]
+  upcoming.dt <- model.dt.list[[4]]
+  family <- model.dt.list[[5]]
+  offset_var <- model.dt.list[[6]]
+  output.dir <- model.dt.list[[7]]
+  modelfile <- model.dt.list[[8]]
+  if("data.table" %in% class(a.dt)) data.success <- TRUE
   if(!data.success) {
     sink()
     return()
