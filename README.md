@@ -5,7 +5,8 @@ Install
     # see instructions to create gmail credentials
     # https://github.com/r-lib/gmailr
     # https://developers.google.com/gmail/api/quickstart/python
-    Sys.setenv(GMAILR_APP="~/.gmail_credentials")
+    Sys.setenv(GMAILR_APP="~/.gmail_credentials.json")
+    Sys.setenv(GMAILR_SECRET="~/.secret")
     # if using 2fa with github, add access token at https://github.com/settings/tokens and paste in to a new file
     # Replace the file below with the name of your newly created access token file
     Sys.setenv(GITHUB_PAT=readLines("~/.github_access_token", warn=FALSE))
@@ -61,10 +62,6 @@ Get model output
 
     email.sodd.model.results(format(Sys.Date()-7, "%Y-%m-%d"), "ckear1989@gmail.com")
 
-    ## Error: Can't get Google credentials.
-    ## Are you running gmailr in a non-interactive session? Consider:
-    ##   * Call `gm_auth()` directly with all necessary specifics.
-
 Schedule daily model build
 ==========================
 
@@ -74,5 +71,11 @@ Schedule daily model build
       address="ckear1989@gmail.com"
     )
 
-    ## cron task already exists
-    ## Warning in cronR::cron_add(command = cmd, frequency = "daily", at = "7AM", : Can't add this job: a job with id 'sodd.model.build' already exists.
+    ## Adding cronjob:
+    ## ---------------
+    ## 
+    ## ## cronR job
+    ## ## id:   sodd.model.build
+    ## ## tags: 
+    ## ## desc: 
+    ## 0 7 * * * /usr/lib/R/bin/Rscript '/home/conor/sodd.output//scheduled.model.R'  >> '/home/conor/sodd.output//scheduled.model.log' 2>&1

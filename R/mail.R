@@ -18,8 +18,8 @@ email.sodd.model.results <- function(
     message("email sending not available. Try install.packages(\"gmailr\")")
   } else if(!file.exists(Sys.getenv("GMAILR_APP"))) {
     message("email sending not available. Please set environment variable GMAILR_APP")
-  } else if(!file.exists("~/.secret")) {
-    message("email sending not available. Please create email key cache ~/.secret")
+  } else if(!file.exists(Sys.getenv("GMAILR_SECRET"))) {
+    message("email sending not available. Please set environment variable GMAILR_SECRET")
   } else {
     output.dir <- get.sodd.output.dir()
     fs <- c(
@@ -44,8 +44,8 @@ email.sodd.model.results <- function(
       mpdff7=file.path(output.dir, paste0("model_", adate, "_ftag", "_wtd", ".pdf"))
     )
     suppressMessages({
-      gmailr::gm_auth_configure()
-      gmailr::gm_auth(email=TRUE, cache="~/.secret")
+      gmailr::gm_auth_configure(path=Sys.getenv("GMAILR_APP"))
+      gmailr::gm_auth(email=TRUE, cache=Sys.getenv("GMAILR_SECRET"))
       test_email <- gmailr::gm_mime()
       test_email <- gmailr::gm_to(test_email, address)
       test_email <- gmailr::gm_from(test_email, paste0(Sys.info()[["user"]], "@", Sys.info()[["nodename"]], ".com"))
@@ -78,15 +78,14 @@ email.no.data.change <- function(address) {
       dlogf=file.path(output.dir, paste0("download.log")),
       sclogf=file.path(output.dir, paste0("scheduled.model.log"))
     )
-    gmailr::gm_auth_configure()
-    gmailr::gm_auth(email=TRUE, cache="~/.secret")
+    gmailr::gm_auth_configure(path=Sys.getenv("GMAILR_APP"))
+    gmailr::gm_auth(email=TRUE, cache=Sys.getenv("GMAILR_SECRET"))
     test_email <- gmailr::gm_mime()
     test_email <- gmailr::gm_to(test_email, address)
     test_email <- gmailr::gm_from(test_email, paste0(Sys.info()[["user"]], "@", Sys.info()[["nodename"]], ".com"))
     test_email <- gmailr::gm_subject(test_email, "no data change")
     test_email <- gmailr::gm_text_body(test_email, "models not run due to no change in data")
     for(f in fs) test_email <- attach.if.available(test_email, f)
-    # gmailr::gm_create_draft(test_email)
     if(!is.null(address)) gmailr::gm_send_message(test_email)
   }
   invisible()
