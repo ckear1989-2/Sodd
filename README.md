@@ -65,6 +65,8 @@ Get model output
 Schedule daily model build
 ==========================
 
+    # remove existing cronjob
+    system("crontab -r")
     schedule.model.build(
       leagues=c("E0", "E1", "E2", "SP1", "D1", "I1", "F1"),
       years=5,
