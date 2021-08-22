@@ -2,7 +2,7 @@
 #' Build gbm sodd model
 #'
 #' @param adate a date in string format "%Y-%m-%d".  Splits train.a and train.b data
-#' @param yvar model response variable "act" or "spread"
+#' @param yvar model response variable "act", "spread" or "fthg"
 #' @param weights include weigthing of observations. Defaults to FALSE
 #' @param plot.it Create output plot. Defaults to FALSE
 #' @param keep.data  Save modeling data with model object. Defaults to FALSE

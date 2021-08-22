@@ -513,27 +513,21 @@ grid.square <- quote({
   grid.rect(x=0.75, y=0.75, width=0.50, height=0.50, gp=gpar(lwd=5, col="black", fill=NA))
 })
 
-#' @importFrom gridExtra tableGrob
-#' @importFrom gtable gtable_add_grob
-#' @importFrom grid gpar grobTree rectGrob textGrob
-detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
-  match_id <- ftr <- actr <- ip <- pred_prob <- odds <- pred_odds <-
-  spread <- pred_spread <- actr_new <- strat_top_per_match <-
-  gain_top_per_match <- strat_top_per_match_wtd <- gain_top_per_match_wtd <- NULL
+detailed.strat.data.table <- function(a.dt, recent.dt) {
+  match_id <- ftr <- actr <- ip <- odds <- pred_odds <-
+  actr_new <- strat_top_per_match <- pred_spread <-
+  gain_top_per_match <- NULL
   a.thin.dt <- a.dt[strat_top_per_match > 0, list(
     match_id,
+    div,
     ftr,
     actr,
     ip,
-    pred_prob=round(pred_prob, 3),
     odds=round(odds, 3),
     pred_odds=round(pred_odds, 3),
-    spread=round(spread, 3),
     pred_spread=round(pred_spread, 3),
     strat_top_per_match,
-    gain_top_per_match=round(gain_top_per_match, 3),
-    strat_top_per_match_wtd,
-    gain_top_per_match_wtd=round(gain_top_per_match_wtd, 3)
+    gain_top_per_match=round(gain_top_per_match, 3)
     )][order(-pred_spread)]
   if(a.thin.dt[, .N] > 16) a.thin.dt <- a.thin.dt[1:16, ]
   # check if updated recent fixtures has full time scores
@@ -543,18 +537,24 @@ detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
     a.thin.dt <- merge(a.thin.dt, recent.dt, all.x=TRUE, all.y=FALSE, by="match_id")[order(-pred_spread)]
     a.thin.dt[, actr := actr_new]
     a.thin.dt[, actr_new := NULL]
-    a.thin.dt[, spread := as.numeric(NA)]
   }
   a.thin.dt <- rbind(
     a.thin.dt,
     data.table(
       match_id="total",
       strat_top_per_match=sum(a.thin.dt[, strat_top_per_match]),
-      strat_top_per_match_wtd=sum(a.thin.dt[, strat_top_per_match_wtd]),
-      gain_top_per_match=sum(a.thin.dt[, gain_top_per_match]),
-      gain_top_per_match_wtd=sum(a.thin.dt[, gain_top_per_match_wtd])
+      gain_top_per_match=sum(a.thin.dt[, gain_top_per_match])
    ), fill=TRUE)
   setnames(a.thin.dt, colnames(a.thin.dt), gsub("_", "\n", colnames(a.thin.dt)))
+  a.thin.dt
+}
+
+#' @importFrom gridExtra tableGrob
+#' @importFrom gtable gtable_add_grob
+#' @importFrom grid gpar grobTree rectGrob textGrob
+detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
+  actr <- NULL
+  a.thin.dt <- detailed.strat.data.table(a.dt, recent.dt)
   p.obj <- tableGrob(a.thin.dt, theme=table.theme(16), rows=NULL)
   p.obj <- colorise.tableGrob(p.obj, a.thin.dt, "grey90", "grey95", 16)
 

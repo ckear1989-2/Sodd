@@ -4,10 +4,10 @@ test_that("build goals model", {
     data.dir="~/sodd.data/",
     verbosity=1
   )
-  model <- build.sodd.model(format(Sys.Date()-7, "%Y-%m-%d"), "fthg", weights=FALSE, plot.it=TRUE)
+  date <- format(Sys.Date()-7, "%Y-%m-%d")
+  expect_output(model <- build.sodd.model(date, "fthg", weights=FALSE, plot.it=TRUE))
   if (!is.null(model)) {
-    print(model)
-    expect_output(build.sodd.model(format(Sys.Date()-7, "%Y-%m-%d"), "fthg", weights=FALSE))
+    expect_output(build.sodd.model(date, "fthg", weights=FALSE))
     set.sodd.options(
       data.dir="~/sodd.data/",
       verbosity=0

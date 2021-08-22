@@ -1,8 +1,11 @@
 
 test_that("file diff 2 different files returns TRUE", {
-  set.sodd.options(data.dir="~/sodd.data/")
-  dload.league.season("E0", "1920")
-  dload.league.season("E0", "2021")
+  set.sodd.options(
+    data.dir="~/sodd.data/",
+    verbosity=0
+  )
+  expect_silent(dload.league.season("E0", "1920", quiet=TRUE))
+  expect_silent(dload.league.season("E0", "2021", quiet=TRUE))
   expect_equal(
     check.file.diff(
       paste0(get.sodd.data.dir(), "1920/E0.csv"),
@@ -21,10 +24,10 @@ test_that("file diff same file returns FALSE", {
   )
 })
 test_that("file diff same file dloaded twice returns FALSE", {
-  dload.league.season("E0", "2021", quiet=TRUE)
+  expect_silent(dload.league.season("E0", "2021", quiet=TRUE))
   tmpfile0 <-tempfile()
   file.copy(paste0(get.sodd.data.dir(), "2021/E0.csv"), tmpfile0)
-  dload.league.season("E0", "2021", quiet=TRUE)
+  expect_silent(dload.league.season("E0", "2021", quiet=TRUE))
   tmpfile1 <-tempfile()
   file.copy(paste0(get.sodd.data.dir(), "2021/E0.csv"), tmpfile1)
   expect_equal(

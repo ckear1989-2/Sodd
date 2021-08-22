@@ -11,6 +11,7 @@ historic_subdir <- "mmz4281"
 upcoming_fixtures <- "fixtures.csv"
 all.leagues <- c("E0", "E1", "E2", "E3", "SP1", "SP2", "D1", "D2", "I1", "I2", "F1", "F2")
 all.years <- c(
+  "2122",
   "2021",
   "1920",
   "1819",

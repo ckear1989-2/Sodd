@@ -43,6 +43,7 @@ weight_from_season <- function(s) {
   o[s =="1819"] <- 0.9
   o[s =="1920"] <- 1.0
   o[s =="2021"] <- 1.1
+  o[s =="2122"] <- 1.2
   o
 }
 
@@ -566,9 +567,9 @@ read.model.data <- function(adate, yvar, previous.model.as.offset, weights) {
 #' @import data.table
 get.recent.dt <- function(leagues=all.leagues) {
   date <- match_id <- hometeam <- awayteam <- actr_new <- ftr <- NULL
-  print(leagues)
+  pprint(leagues)
   recent.csv <- paste0(get.sodd.data.dir(), all.years[[1]], "/", leagues, ".csv")
-  print(recent.csv)
+  pprint(recent.csv)
   recent.dt <- rbindlist(lapply(recent.csv, fread), fill=TRUE)
   setnames(recent.dt, colnames(recent.dt), tolower(colnames(recent.dt)))
   recent.dt[, date := as.Date(date, '%d/%m/%y')]
