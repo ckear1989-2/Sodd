@@ -67,12 +67,12 @@ create.scheduled.model.script <- function(leagues, years, f, address=NULL, email
     "create.sodd.modeling.data(leagues, years)\n  "
   )
   code <- paste0(code,
-    "build.all.sodd.models.one.date(format((Sys.Date()-7), \"%Y-%m-%d\"), ",
+    "build.all.sodd.models.one.date(date, ",
     "plot.it=TRUE)\n"
   )
   if(!is.null(address)) {
     code <- paste0(code, "  ",
-      "email.sodd.model.results(format((Sys.Date()-7), \"%Y-%m-%d\"), address)\n"
+      "email.sodd.model.results(date, address)\n"
     )
   }
   code <- paste0(code,
