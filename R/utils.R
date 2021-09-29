@@ -521,6 +521,8 @@ read.model.data <- function(adate, yvar, previous.model.as.offset, weights) {
   train.dt <- a.dt[actr != "NA" & date < as.Date(adate, "%Y-%m-%d"), ]
   test.dt <- a.dt[actr != "NA" & date >= as.Date(adate, "%Y-%m-%d"), ]
   upcoming.dt <- a.dt[actr == "NA", ]
+  # remove matches before today
+  upcoming.dt <- upcoming.dt[date >= Sys.Date(), ]
   if(test.dt[, .N] == 0) {
     warning("no test matches")
     return(fail.return)

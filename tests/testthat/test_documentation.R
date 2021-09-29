@@ -2,6 +2,7 @@
 test_that("test strategy page", {
   set.sodd.options(
     data.dir="~/sodd.data/",
+    force.upcoming=TRUE,
     verbosity=0
   )
   expect_silent(model <- build.sodd.model(format(Sys.Date()-7, "%Y-%m-%d"), "spread", weights=FALSE, plot.it=FALSE, keep.data=TRUE))
