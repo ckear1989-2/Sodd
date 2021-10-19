@@ -5,6 +5,9 @@ test_that("variables in data", {
   expect_true("ip" %in% colnames(dt))
   expect_true("fthg" %in% colnames(dt))
   expect_true("ftag" %in% colnames(dt))
+  expect_true("mweek" %in% colnames(dt))
+  expect_equal(min(dt[, mweek]), 1)
+  expect_equal(max(dt[, mweek]), length(unique(dt[, mweek])))
 })
 
 test_that("no previous dates in upcoming", {

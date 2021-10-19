@@ -1,4 +1,4 @@
 suppressPackageStartupMessages(library("testthat"))
-suppressPackagesStartupMessages(library("sodd"))
+suppressPackageStartupMessages(library("sodd"))
 
 test_check("sodd")

@@ -338,6 +338,13 @@ prep.modeling.vars <- function(a.dt, n.lag) {
   a.dt <- a.dt[(1/ip) != Inf, ]
   cat0n('data count no odds error: ', a.dt[, .N], verbosity=2)
   pprint(a.dt[, .N, list(actr, ftr)], "actr, ftr count", verbosity=2)
+  a.dt[, sweek := paste0(season, "_", strftime(date, format="%V"))]
+  sweek.dt <- a.dt[, .N, sweek][order(sweek)][, mweek := seq(.N)]
+  pprint(sweek.dt[, .N, list(mweek, sweek)], verbosity=2)
+  setkey(a.dt, sweek)
+  setkey(sweek.dt, sweek)
+  a.dt <- merge(a.dt, sweek.dt)
+  pprint(a.dt[, .N, list(mweek, sweek)], verbosity=2)
   a.dt
 }
 
