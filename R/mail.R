@@ -28,20 +28,28 @@ email.sodd.model.results <- function(
       sclogf=file.path(output.dir, paste0("scheduled.model.log")),
       mlogf0=file.path(output.dir, paste0("model_", adate, "_act", ".log")),
       mpdff0=file.path(output.dir, paste0("model_", adate, "_act", ".pdf")),
+      mpngf0=file.path(output.dir, paste0("model_", adate, "_act", "_strategy", ".png")),
       mlogf1=file.path(output.dir, paste0("model_", adate, "_spread", ".log")),
       mpdff1=file.path(output.dir, paste0("model_", adate, "_spread", ".pdf")),
+      mpngf1=file.path(output.dir, paste0("model_", adate, "_spread", "_strategy", ".png")),
       mlogf2=file.path(output.dir, paste0("model_", adate, "_fthg", ".log")),
       mpdff2=file.path(output.dir, paste0("model_", adate, "_fthg", ".pdf")),
+      mpngf2=file.path(output.dir, paste0("model_", adate, "_fthg", "_strategy", ".png")),
       mlogf3=file.path(output.dir, paste0("model_", adate, "_ftag", ".log")),
       mpdff3=file.path(output.dir, paste0("model_", adate, "_ftag", ".pdf")),
+      mpngf3=file.path(output.dir, paste0("model_", adate, "_ftag", "_strategy", ".png")),
       mlogf4=file.path(output.dir, paste0("model_", adate, "_act", "_wtd", ".log")),
       mpdff4=file.path(output.dir, paste0("model_", adate, "_act", "_wtd", ".pdf")),
+      mpngf4=file.path(output.dir, paste0("model_", adate, "_act", "_wtd", "_strategy", ".png")),
       mlogf5=file.path(output.dir, paste0("model_", adate, "_spread", "_wtd", ".log")),
       mpdff5=file.path(output.dir, paste0("model_", adate, "_spread", "_wtd", ".pdf")),
+      mpngf5=file.path(output.dir, paste0("model_", adate, "_spread", "_wtd", "_strategy", ".png")),
       mlogf6=file.path(output.dir, paste0("model_", adate, "_fthg", "_wtd", ".log")),
       mpdff6=file.path(output.dir, paste0("model_", adate, "_fthg", "_wtd", ".pdf")),
+      mpngf6=file.path(output.dir, paste0("model_", adate, "_fthg", "_wtd", "_strategy", ".png")),
       mlogf7=file.path(output.dir, paste0("model_", adate, "_ftag", "_wtd", ".log")),
-      mpdff7=file.path(output.dir, paste0("model_", adate, "_ftag", "_wtd", ".pdf"))
+      mpdff7=file.path(output.dir, paste0("model_", adate, "_ftag", "_wtd", ".pdf")),
+      mpngf7=file.path(output.dir, paste0("model_", adate, "_ftag", "_wtd", "_strategy", ".png"))
     )
     suppressMessages({
       gmailr::gm_auth_configure(path=Sys.getenv("GMAILR_APP"))

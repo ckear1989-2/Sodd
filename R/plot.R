@@ -128,10 +128,14 @@ partial.plot <- function(model, x, a.dt) {
 }
 
 #' @importFrom gridExtra arrangeGrob
-plot.model.run <- function(model, train.a.dt, train.b.dt, test.dt, upcoming.dt) {
+plot.model.run <- function(model) {
   model.param.p.obj <- plot.model.param(model)
-  model.perf.p.obj <- plot.data.perf(train.a.dt, train.b.dt, test.dt, upcoming.dt)
-  strat.p.obj <- plot.strategies(test.dt)
+  model.perf.p.obj <- plot.data.perf(model$train.a.dt, model$train.b.dt, model$test.dt, model$upcoming.dt)
+  strat.p.obj <- plot.strategies(model$test.dt)
+  pngf <- file.path(gsub(".pdf", "_strategy.png", model$pdffile))
+  grDevices::png(pngf)
+    grid.arrange(strat.p.obj)
+  grDevices::dev.off()
   gs <- list(model.param.p.obj[[1]], model.param.p.obj[[2]], model.perf.p.obj, strat.p.obj)
   lay <- rbind(
     c(1,3),
@@ -670,7 +674,7 @@ plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, 
   }
   grDevices::pdf(pdffile, h=7, w=14)
     grid.arrange(
-      plot.model.run(model, train.a.dt, train.b.dt, test.dt, upcoming.dt),
+      plot.model.run(model),
       plot.model.perf(model, train.a.dt, train.b.dt),
       plot.var.importance(model),
       plot.decile.perf(train.a.dt, train.b.dt, test.dt)
