@@ -6,14 +6,12 @@ read.a.file <- function(a.file) {
   l <- s[[(length(s))]]
   s <- s[[(length(s)-1)]]
   l <- strsplit(l, ".csv")[[1]]
-  if(!file.exists(a.file)) {
-    if(l == "fixtures") {
+  if(l == "fixtures") {
       dload.upcoming()
-    } else {
+  } else if (!file.exists(a.file)) {
       dload.league.season(l, s)
       warning(paste("input file", a.file, "not found.",
       "Downloading", l, s))
-    }
   }
   a.dt <- fread(a.file)
   a.dt[, season := s]

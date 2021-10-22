@@ -8,7 +8,7 @@ test_that("test strategy page", {
   adate <- format(Sys.Date()-7, "%Y-%m-%d")
   output.dir <- get.sodd.output.dir()
   mpngf1 <- file.path(output.dir, paste0("model_", adate, "_spread", "_strategy", ".png"))
-  expect_silent(model <- build.sodd.model(adate, "spread", weights=FALSE, plot.it=FALSE, keep.data=TRUE))
+  expect_silent(model <- build.sodd.model(adate, "spread", weights=FALSE, plot.it=TRUE))
   if (!is.null(model)) {
     test.dt <- model$test.dt
     leagues <- unique(as.character(model$train.dt[, div]))

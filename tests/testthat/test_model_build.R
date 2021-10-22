@@ -12,8 +12,8 @@ test_that("build goals model", {
       data.dir="~/sodd.data/",
       verbosity=0
     )
-    expect_silent(build.sodd.model(format(Sys.Date()-7, "%Y-%m-%d"), "fthg", weights=FALSE))
-    expect_silent(build.sodd.model(format(Sys.Date()-7, "%Y-%m-%d"), "ftag", weights=FALSE))
+    expect_silent(build.sodd.model(date, "fthg", weights=FALSE))
+    expect_silent(build.sodd.model(date, "ftag", weights=FALSE))
   }
 })
 

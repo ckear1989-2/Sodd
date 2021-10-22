@@ -132,10 +132,6 @@ plot.model.run <- function(model) {
   model.param.p.obj <- plot.model.param(model)
   model.perf.p.obj <- plot.data.perf(model$train.a.dt, model$train.b.dt, model$test.dt, model$upcoming.dt)
   strat.p.obj <- plot.strategies(model$test.dt)
-  pngf <- file.path(gsub(".pdf", "_strategy.png", model$pdffile))
-  grDevices::png(pngf)
-    grid.arrange(strat.p.obj)
-  grDevices::dev.off()
   gs <- list(model.param.p.obj[[1]], model.param.p.obj[[2]], model.perf.p.obj, strat.p.obj)
   lay <- rbind(
     c(1,3),
@@ -591,11 +587,14 @@ detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
 }
 
 #' @importFrom grid grid.newpage grid.draw
-plot.detailed.strategy <- function(test.dt, upcoming.dt, leagues=all.leagues) {
+plot.detailed.strategy <- function(test.dt, upcoming.dt, pngf, leagues=all.leagues) {
   # dload.current.year(quiet=TRUE)
   recent.dt <- get.recent.dt(leagues)
   p.obj.test <- detailed.strat.gtable(test.dt, recent.dt, "test")
   p.obj.upcoming <- detailed.strat.gtable(upcoming.dt, recent.dt, "upcoming")
+  grDevices::png(pngf)
+    grid.arrange(p.obj.upcoming)
+  grDevices::dev.off()
   grid.newpage(); grid.draw(p.obj.test)
   grid.newpage(); grid.draw(p.obj.upcoming)
 }
@@ -680,7 +679,8 @@ plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, 
       plot.decile.perf(train.a.dt, train.b.dt, test.dt)
     )
     eval(grid.square)
-    plot.detailed.strategy(test.dt, upcoming.dt, unique(train.dt[, div]))
+    pngf <- file.path(gsub(".pdf", "_strategy.png", pdffile))
+    plot.detailed.strategy(test.dt, upcoming.dt, pngf, unique(train.dt[, div]))
     plot.response.vars(train.dt, test.dt, yvar)
     # test parallelizing univar plots
     # seems to be no gain on my system

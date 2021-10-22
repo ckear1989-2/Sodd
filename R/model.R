@@ -5,7 +5,6 @@
 #' @param yvar model response variable "act", "spread" or "fthg"
 #' @param weights include weigthing of observations. Defaults to FALSE
 #' @param plot.it Create output plot. Defaults to FALSE
-#' @param keep.data  Save modeling data with model object. Defaults to FALSE
 #' @param previous.model.as.offset  Use model from most recent date found as offset. Defaults to FALSE
 #' @return gbm model object
 #' @family model
@@ -21,7 +20,6 @@ build.sodd.model <- function(
   yvar,
   weights=FALSE,
   plot.it=FALSE,
-  keep.data=FALSE,
   previous.model.as.offset=FALSE
   ) {
   logfile <- ip <- train.a.dt <- train.b.dt <- test.dt <- output.dir <-
@@ -83,24 +81,22 @@ build.sodd.model <- function(
   eval(positive.model.predictions)
   run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
   sink()
-  if(isTRUE(plot.it)) plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile)
-  # dunno why attr(model, x) <- x doesn't work
-  # attr(model, "adate") <- adate
-  class(model) <- c("sodd", class(model))
   model$adate <- adate
-  if(isTRUE(keep.data)) {
-    model$train.a.dt <- train.a.dt
-    model$train.b.dt <- train.b.dt
-    model$train.dt <- train.dt
-    model$test.dt <- test.dt
-    model$upcoming.dt <- upcoming.dt
-  }
+  model$train.a.dt <- train.a.dt
+  model$train.b.dt <- train.b.dt
+  model$train.dt <- train.dt
+  model$test.dt <- test.dt
+  model$upcoming.dt <- upcoming.dt
   model$uvar <- uvar
   model$yvar <- yvar
   model$logfile <- logfile
   model$pdffile <- pdffile
   model$modelfile <- modelfile
   model.output.dir <- paste0(get.sodd.output.dir(), "models/")
+  if(isTRUE(plot.it)) plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile)
+  # dunno why attr(model, x) <- x doesn't work
+  # attr(model, "adate") <- adate
+  class(model) <- c("sodd", class(model))
   if(!file.exists(output.dir)) dir.create(output.dir)
   if(!file.exists(model.output.dir)) dir.create(model.output.dir)
   saveRDS(model, modelfile)

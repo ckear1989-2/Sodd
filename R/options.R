@@ -54,13 +54,15 @@ set.sodd.options <- function(
 
 get.sodd.data.dir <- function() {
   d <- getOption("sodd.data.dir", "~/data/")
-  d <- gsub("~", Sys.getenv("HOME"), d)[[1]]
+  d <- file.path(gsub("~", Sys.getenv("HOME"), d)[[1]])
+  dir.create(d, showWarnings=FALSE)
   d
 }
 
 get.sodd.output.dir <- function() {
   d <- getOption("sodd.output.dir", "logs/")
-  d <- gsub("~", Sys.getenv("HOME"), d)[[1]]
+  d <- file.path(gsub("~", Sys.getenv("HOME"), d)[[1]])
+  dir.create(d, showWarnings=FALSE)
   d
 }
 

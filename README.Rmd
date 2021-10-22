@@ -47,7 +47,7 @@ create.sodd.modeling.data(leagues, 3)
 
 # Run model
 ```{r run-model}
-todays.model <- build.sodd.model(format((Sys.Date()-7), '%Y-%m-%d'), "act", keep.data=TRUE)
+todays.model <- build.sodd.model(format((Sys.Date()-7), '%Y-%m-%d'), "act")
 ```
 
 # Get model output
