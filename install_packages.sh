@@ -93,7 +93,7 @@
 # install_package curl_4.3
 
 # Rscript -e "install.packages(c(\"data.table\", \"ggplot2\", \"TeachingDemos\", \"devtools\", \
-#     \"gbm\", \"gridExtra\", \"huxtable\, \"gmailr\", \"cronR\", \"rmarkdown\", \"pryr\"))"
+#     \"gbm\", \"gridExtra\", \"huxtable\", \"gmailr\", \"cronR\", \"rmarkdown\", \"pryr\", \"png\"))"
 
 # Rscript -e "devtools::setup(\"./\")"
 # Rscript -e "devtools::load_all()"

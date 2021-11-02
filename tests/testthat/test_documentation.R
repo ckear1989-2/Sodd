@@ -17,5 +17,6 @@ test_that("test strategy page", {
     expect("div" %in% colnames(test.table), "div not in strategy table")
     expect_silent(plot.model.run(model))
     expect(file.exists(mpngf1), "strategy png not created")
+    expect_equal(dim(png::readPNG(mpngf1)), c(600, 800, 3))
   }
 })

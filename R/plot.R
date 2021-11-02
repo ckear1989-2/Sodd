@@ -592,7 +592,7 @@ plot.detailed.strategy <- function(test.dt, upcoming.dt, pngf, leagues=all.leagu
   recent.dt <- get.recent.dt(leagues)
   p.obj.test <- detailed.strat.gtable(test.dt, recent.dt, "test")
   p.obj.upcoming <- detailed.strat.gtable(upcoming.dt, recent.dt, "upcoming")
-  grDevices::png(pngf)
+  grDevices::png(pngf, width=800, height=600)
     grid.arrange(p.obj.upcoming)
   grDevices::dev.off()
   grid.newpage(); grid.draw(p.obj.test)
