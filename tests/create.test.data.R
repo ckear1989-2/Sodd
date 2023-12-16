@@ -19,8 +19,16 @@ random_by_char <- function(cvar) {
 # create data for testing a.dt
 all.years <- c("2021", "2122", "2223", "2324")
 set.sodd.options(data.dir="~/sodd.data/test.data/", verbosity=0)
-create.sodd.modeling.data(c("E0", "E1"), 4)
+create.sodd.modeling.data(c("E0", "E1", "E2"), 4)
 a.dt <- readRDS(file.path(get.sodd.data.dir(), "a.dt.rds"))
+# force upcoming matches
+upcoming.dt <- a.dt[date == max(a.dt[, date]), ]
+a.dt <- a.dt[date < max(a.dt[, date]), ]
+upcoming.dt[, ftr := NULL]
+upcoming.dt[, ftr := "NA"]
+a.dt <- rbind(a.dt, upcoming.dt, fill=TRUE)
+data.dir <- get.sodd.data.dir()
+saveRDS(a.dt, file.path(data.dir, "a.dt.rds"))
 adate <- "2023-09-01"
 
 create.test.dataset.spread <- quote({    
@@ -172,7 +180,7 @@ create.test.model.doc.spread <- quote({
   eval(act.pred.summary)
   eval(positive.model.predictions)
   run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
-  plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, logfile)
+  plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile)
   sink()
 })
 
@@ -182,9 +190,7 @@ create.test.dataset.act <- quote({
   eval(read.model.data)
   test.a.dt <- copy(a.dt)
   test.a.dt[, rvar := random_by_char(match_id), match_id]
-  print(test.a.dt[, list(count=.N, match_count=length(unique(match_id)))])
   test.a.dt <- test.a.dt[rvar <= 0.4, ]
-  print(test.a.dt[, list(count=.N, match_count=length(unique(match_id)))])
   test.a.dt[, rvar := NULL]
   data.dir <- get.sodd.data.dir()
   saveRDS(test.a.dt, file.path(data.dir, "test.a.dt.act.rds"))
@@ -244,7 +250,6 @@ read.test.model.data.act <- quote({
 })
 
 create.test.model.act <- quote({
-  adate <- "2020-12-11"
   yvar <- "act"
   model.dt.list <- read.model.data(adate, yvar, FALSE, FALSE)
   a.dt <- model.dt.list[[1]]
@@ -337,7 +342,7 @@ create.test.model.doc.act <- quote({
   eval(act.pred.summary)
   eval(positive.model.predictions)
   run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
-  plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, logfile)
+  plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile)
   sink()
 })
 
