@@ -1,13 +1,14 @@
 
 test_that("test strategy page", {
   set.sodd.options(
-    data.dir="~/sodd.data/",
+    data.dir="~/sodd.data/test.data/",
     force.upcoming=TRUE,
     verbosity=0
   )
-  adate <- format(Sys.Date()-7, "%Y-%m-%d")
+  adate <- "2023-09-01"
   output.dir <- get.sodd.output.dir()
   mpngf1 <- file.path(output.dir, paste0("model_", adate, "_spread", "_strategy", ".png"))
+  model <- build.sodd.model(adate, "spread", weights=FALSE, plot.it=TRUE)
   expect_silent(model <- build.sodd.model(adate, "spread", weights=FALSE, plot.it=TRUE))
   if (!is.null(model)) {
     test.dt <- model$test.dt

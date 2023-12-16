@@ -4,7 +4,7 @@ test_that("build goals model", {
     data.dir="~/sodd.data/",
     verbosity=1
   )
-  date <- format(Sys.Date()-7, "%Y-%m-%d")
+  date <- "2023-09-01"
   expect_output(model <- build.sodd.model(date, "fthg", weights=FALSE, plot.it=TRUE))
   if (!is.null(model)) {
     expect_output(build.sodd.model(date, "fthg", weights=FALSE))
