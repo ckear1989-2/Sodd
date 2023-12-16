@@ -1,24 +1,43 @@
+library("sodd")
 
-create_test_dataset_spread <- quote({
+# library("data.table")
+# library("gbm")
+source("R/constants.R")
+source("R/options.R")
+source("R/utils.R")
+# source("R/download.R")
+source("R/standardise.R")
+source("R/strategy.R")
+source("R/plot.R")
+
+random_by_char <- function(cvar) {
+  # subsampling helper function
+  suppressWarnings(TeachingDemos::char2seed(cvar))
+  runif(1)
+}
+
+# create data for testing a.dt
+all.years <- c("2021", "2122", "2223", "2324")
+set.sodd.options(data.dir="~/sodd.data/test.data/", verbosity=0)
+create.sodd.modeling.data(c("E0", "E1"), 4)
+a.dt <- readRDS(file.path(get.sodd.data.dir(), "a.dt.rds"))
+adate <- "2023-09-01"
+
+create.test.dataset.spread <- quote({    
   # 10% sample of existing dataset
-  adate <- "2020-12-11"
   yvar <- "spread"
-  eval(read.model.data)
-  random_by_char <- function(cvar) {
-    suppressWarnings(TeachingDemos::char2seed(cvar))
-    runif(1)
-  }
+  # eval(read.model.data)
   test.a.dt <- copy(a.dt)
   test.a.dt[, rvar := random_by_char(match_id), match_id]
-  print(test.a.dt[, list(count=.N, match_count=length(unique(match_id)))])
-  test.a.dt <- test.a.dt[rvar <= 0.1, ]
-  print(test.a.dt[, list(count=.N, match_count=length(unique(match_id)))])
+  test.a.dt <- test.a.dt[rvar <= 0.4, ]
   test.a.dt[, rvar := NULL]
-  saveRDS(test.a.dt, "~/data/R/rds/test.a.dt.spread.rds")
+  data.dir <- get.sodd.data.dir()
+  saveRDS(test.a.dt, file.path(data.dir, "test.a.dt.spread.rds"))
 })
 
 read.test.model.data.spread <- quote({
-  a.dt <- readRDS("~/data/R/rds/test.a.dt.spread.rds")
+  data.dir <- get.sodd.data.dir()
+  a.dt <- readRDS(file.path(data.dir, "test.a.dt.spread.rds"))
   if(isTRUE(weights)) {
     logfile <- paste0("logs/model_", adate, "_", yvar, "_wtd", ".log")
     a.dt[, weight := weight_from_season(season)]
@@ -69,9 +88,18 @@ read.test.model.data.spread <- quote({
   test.dt <- merge(test.matches.one.match.dt, test.dt, all.x=TRUE, all.y=FALSE)
 })
 
-create_test_model_spread <- quote({
-  adate <- "2020-12-11"
+create.test.model.spread <- quote({
   yvar <- "spread"
+  model.dt.list <- read.model.data(adate, yvar, FALSE, FALSE)
+  a.dt <- model.dt.list[[1]]
+  train.dt <- model.dt.list[[2]]
+  test.dt <- model.dt.list[[3]]
+  upcoming.dt <- model.dt.list[[4]]
+  family <- model.dt.list[[5]]
+  offset_var <- model.dt.list[[6]]
+  output.dir <- model.dt.list[[7]]
+  modelfile <- model.dt.list[[8]]
+  pdffile <- model.dt.list[[9]]
   eval(read.test.model.data.spread)
   if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
   # model params
@@ -88,16 +116,36 @@ create_test_model_spread <- quote({
   )
   uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
   formula <- as.formula(paste("y", paste(xvar, collapse="+"), sep="~offset(offset)+"))
+  eval(model.params)
   eval(build.model)
-  saveRDS(model, "~/data/R/rds/test.model.spread.rds")
+  eval(model.summary)
+  eval(score.model)
+  eval(rebalance.model)
+  eval(calc.deviances)
+  eval(act.pred.summary)
+  eval(positive.model.predictions)
+  model$adate <- adate
+  model$train.a.dt <- train.a.dt
+  model$train.b.dt <- train.b.dt
+  model$train.dt <- train.dt
+  model$test.dt <- test.dt
+  model$upcoming.dt <- upcoming.dt
+  model$uvar <- uvar
+  model$yvar <- yvar
+  model$logfile <- logfile
+  model$pdffile <- pdffile
+  model$modelfile <- modelfile
+  model.output.dir <- paste0(get.sodd.output.dir(), "models/")
+  data.dir <- get.sodd.data.dir()
+  saveRDS(model, file.path(data.dir, "test.model.spread.rds"))
 })
 
 read.test.model.spread <-quote({
-  model <- readRDS("~/data/R/rds/test.model.spread.rds")
+  data.dir <- get.sodd.data.dir()
+  model <- readRDS(file.path(data.dir, "test.model.spread.rds"))
 })
 
-create_test_model_doc_spread <- quote({
-  adate <- "2020-12-11"
+create.test.model.doc.spread <- quote({
   yvar <- "spread"
   eval(read.test.model.data.spread)
   if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
@@ -128,26 +176,23 @@ create_test_model_doc_spread <- quote({
   sink()
 })
 
-create_test_dataset_act <- quote({
+create.test.dataset.act <- quote({
   # 10% sample of existing dataset
-  adate <- "2020-12-11"
   yvar <- "act"
   eval(read.model.data)
-  random_by_char <- function(cvar) {
-    suppressWarnings(TeachingDemos::char2seed(cvar))
-    runif(1)
-  }
   test.a.dt <- copy(a.dt)
   test.a.dt[, rvar := random_by_char(match_id), match_id]
   print(test.a.dt[, list(count=.N, match_count=length(unique(match_id)))])
-  test.a.dt <- test.a.dt[rvar <= 0.1, ]
+  test.a.dt <- test.a.dt[rvar <= 0.4, ]
   print(test.a.dt[, list(count=.N, match_count=length(unique(match_id)))])
   test.a.dt[, rvar := NULL]
-  saveRDS(test.a.dt, "~/data/R/rds/test.a.dt.act.rds")
+  data.dir <- get.sodd.data.dir()
+  saveRDS(test.a.dt, file.path(data.dir, "test.a.dt.act.rds"))
 })
 
 read.test.model.data.act <- quote({
-  a.dt <- readRDS("~/data/R/rds/test.a.dt.act.rds")
+  data.dir <- get.sodd.data.dir()
+  a.dt <- readRDS(file.path(data.dir, "test.a.dt.act.rds"))
   if(isTRUE(weights)) {
     logfile <- paste0("logs/model_", adate, "_", yvar, "_wtd", ".log")
     a.dt[, weight := weight_from_season(season)]
@@ -198,9 +243,19 @@ read.test.model.data.act <- quote({
   test.dt <- merge(test.matches.one.match.dt, test.dt, all.x=TRUE, all.y=FALSE)
 })
 
-create_test_model_act <- quote({
+create.test.model.act <- quote({
   adate <- "2020-12-11"
   yvar <- "act"
+  model.dt.list <- read.model.data(adate, yvar, FALSE, FALSE)
+  a.dt <- model.dt.list[[1]]
+  train.dt <- model.dt.list[[2]]
+  test.dt <- model.dt.list[[3]]
+  upcoming.dt <- model.dt.list[[4]]
+  family <- model.dt.list[[5]]
+  offset_var <- model.dt.list[[6]]
+  output.dir <- model.dt.list[[7]]
+  modelfile <- model.dt.list[[8]]
+  pdffile <- model.dt.list[[9]]
   eval(read.test.model.data.act)
   if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
   # model params
@@ -217,17 +272,46 @@ create_test_model_act <- quote({
   )
   uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
   formula <- as.formula(paste("y", paste(xvar, collapse="+"), sep="~offset(offset)+"))
+  eval(model.params)
   eval(build.model)
-  saveRDS(model, "~/data/R/rds/test.model.act.rds")
+  eval(model.summary)
+  eval(score.model)
+  eval(rebalance.model)
+  eval(calc.deviances)
+  eval(act.pred.summary)
+  eval(positive.model.predictions)
+  model$adate <- adate
+  model$train.a.dt <- train.a.dt
+  model$train.b.dt <- train.b.dt
+  model$train.dt <- train.dt
+  model$test.dt <- test.dt
+  model$upcoming.dt <- upcoming.dt
+  model$uvar <- uvar
+  model$yvar <- yvar
+  model$logfile <- logfile
+  model$pdffile <- pdffile
+  model$modelfile <- modelfile
+  data.dir <- get.sodd.data.dir()
+  saveRDS(model, file.path(data.dir, "test.model.act.rds"))
 })
 
 read.test.model.act <-quote({
-  model <- readRDS("~/data/R/rds/test.model.act.rds")
+  data.dir <- get.sodd.data.dir()
+  model <- readRDS(file.path(data.dir, "test.model.act.rds"))
 })
 
-create_test_model_doc_act <- quote({
-  adate <- "2020-12-11"
+create.test.model.doc.act <- quote({
   yvar <- "act"
+  model.dt.list <- read.model.data(adate, yvar, FALSE, FALSE)
+  a.dt <- model.dt.list[[1]]
+  train.dt <- model.dt.list[[2]]
+  test.dt <- model.dt.list[[3]]
+  upcoming.dt <- model.dt.list[[4]]
+  family <- model.dt.list[[5]]
+  offset_var <- model.dt.list[[6]]
+  output.dir <- model.dt.list[[7]]
+  modelfile <- model.dt.list[[8]]
+  pdffile <- model.dt.list[[9]]
   eval(read.test.model.data.act)
   if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
   # model params
@@ -257,10 +341,10 @@ create_test_model_doc_act <- quote({
   sink()
 })
 
-# eval(create_test_dataset_spread)
-# eval(create_test_model_spread)
-# eval(create_test_model_doc_spread)
-# eval(create_test_dataset_act)
-# eval(create_test_model_act)
-# eval(create_test_model_doc_act)
+eval(create.test.dataset.spread)
+eval(create.test.model.spread)
+eval(create.test.model.doc.spread)
+eval(create.test.dataset.act)
+eval(create.test.model.act)
+eval(create.test.model.doc.act)
 

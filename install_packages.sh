@@ -101,8 +101,9 @@
 # Rscript -e "devtools::document()"
 # Rscript -e "devtools::build_manual()"
 # Rscript -e "devtools::check(document=TRUE, manual=TRUE, force_suggests=TRUE, run_dont_test=FALSE)"
-Rscript -e "devtools::install()"
-Rscript -e "testthat::test_package(\"sodd\")"
+# Rscript -e "devtools::install()"
+Rscript "tests/create.test.data.R"
 # Rscript -e "testthat::test_file(\"tests/testthat/test_data_creation.R\", package=\"sodd\")"
+# Rscript -e "testthat::test_package(\"sodd\")"
 # Rscript -e "rmarkdown::render(\"README.Rmd\", output_file=\"README.md\")"
 

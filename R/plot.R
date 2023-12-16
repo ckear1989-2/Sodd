@@ -23,17 +23,17 @@ univariate <- function(a.dt, x) {
   range_y <- max_y - min_y
   summary.dt[, act_rs := rebase.y(c(summary.dt[, weight], 0), c(summary.dt[, act], summary.dt[, pred]), nreturn=new_row_count)]
   summary.dt[, pred_rs := rebase.y(c(summary.dt[, weight], 0), c(summary.dt[, pred], summary.dt[, act]), nreturn=new_row_count)]
-  plot.obj <- ggplot(summary.dt)
-  plot.obj <- plot.obj + geom_bar(aes(x=xn, y=weight), stat="identity", fill="yellow", color="yellow", alpha=0.3)
+  plot.obj <- ggplot2::ggplot(summary.dt)
+  plot.obj <- plot.obj + ggplot2::geom_bar(ggplot2::aes(x=xn, y=weight), stat="identity", fill="yellow", color="yellow", alpha=0.3)
   if(row_count > 1) {
-    plot.obj <- plot.obj + geom_line(aes(x=xn, y=act_rs), stat="identity", color="red")
-    plot.obj <- plot.obj + geom_line(aes(x=xn, y=pred_rs), stat="identity", color="blue")
+    plot.obj <- plot.obj + ggplot2::geom_line(ggplot2::aes(x=xn, y=act_rs), stat="identity", color="red")
+    plot.obj <- plot.obj + ggplot2::geom_line(ggplot2::aes(x=xn, y=pred_rs), stat="identity", color="blue")
   }
-  plot.obj <- plot.obj + geom_point(aes(x=xn, y=act_rs), stat="identity", color="red")
-  plot.obj <- plot.obj + geom_point(aes(x=xn, y=pred_rs), stat="identity", color="blue")
-  plot.obj <- plot.obj + scale_y_continuous(
+  plot.obj <- plot.obj + ggplot2::geom_point(ggplot2::aes(x=xn, y=act_rs), stat="identity", color="red")
+  plot.obj <- plot.obj + ggplot2::geom_point(ggplot2::aes(x=xn, y=pred_rs), stat="identity", color="blue")
+  plot.obj <- plot.obj + ggplot2::scale_y_continuous(
     name="weight",
-    sec.axis=sec_axis(~ rebase.y(c(summary.dt[, act], summary.dt[, pred]), .), name="act, pred")
+    sec.axis=ggplot2::sec_axis(~ rebase.y(c(summary.dt[, act], summary.dt[, pred]), .), name="act, pred")
   )
   breaks <- summary.dt[, xn]
   labels <- summary.dt[, x]
@@ -47,15 +47,15 @@ univariate <- function(a.dt, x) {
     print(labels)
     stop("length breaks labels differ")
   }
-  plot.obj <- plot.obj + scale_x_continuous(breaks=breaks, labels=labels)
-  plot.obj <- plot.obj + theme(
-    axis.text.x=element_text(angle=90, vjust=0.5, hjust=0.5),
-    plot.title=element_text(vjust=0.5, hjust=0.5),
-    axis.title.y=element_text(vjust=0.5, hjust=0.5),
-    panel.border=element_rect(colour="black", fill=NA, size=2)
+  plot.obj <- plot.obj + ggplot2::scale_x_continuous(breaks=breaks, labels=labels)
+  plot.obj <- plot.obj + ggplot2::theme(
+    axis.text.x=ggplot2::element_text(angle=90, vjust=0.5, hjust=0.5),
+    plot.title=ggplot2::element_text(vjust=0.5, hjust=0.5),
+    axis.title.y=ggplot2::element_text(vjust=0.5, hjust=0.5),
+    panel.border=ggplot2::element_rect(colour="black", fill=NA, linewidth=2)
   )
-  plot.obj <- plot.obj + ggtitle(paste(deparse(substitute(a.dt)), x))
-  plot.obj <- plot.obj + xlab(x)
+  plot.obj <- plot.obj + ggplot2::ggtitle(paste(deparse(substitute(a.dt)), x))
+  plot.obj <- plot.obj + ggplot2::xlab(x)
   if(row_count > 100) plot.obj <- plot.obj + annotate("text", x=15, y=max(summary.dt[, weight]), size=4, label=message)
   plot.obj
 }
@@ -87,19 +87,19 @@ partial.plot <- function(model, x, a.dt) {
     range_y <- max_y - min_y
     summary.dt[, y_rs := rebase.y(c(summary.dt[, weight], 0), summary.dt[, y])]
     if(range_y == 0) summary.dt[, y_rs := max_weight / 2]
-    plot.obj <- ggplot(summary.dt)
-    plot.obj <- plot.obj + geom_bar(aes(x=xn, y=weight, group=1), stat="identity", fill="yellow", color="yellow", alpha=0.3)
-    if(is.numeric(summary.dt[, x])) plot.obj <- plot.obj + geom_line(aes(x=xn, y=y_rs, group=1), stat="identity", color="green", size=2)
-    if(is.factor(summary.dt[, x])) plot.obj <- plot.obj + geom_point(aes(x=xn, y=y_rs, group=1), stat="identity", color="green", size=8)
+    plot.obj <- ggplot2::ggplot(summary.dt)
+    plot.obj <- plot.obj + ggplot2::geom_bar(ggplot2::aes(x=xn, y=weight, group=1), stat="identity", fill="yellow", color="yellow", alpha=0.3)
+    if(is.numeric(summary.dt[, x])) plot.obj <- plot.obj + ggplot2::geom_line(ggplot2::aes(x=xn, y=y_rs, group=1), stat="identity", color="green", linewidth=2)
+    if(is.factor(summary.dt[, x])) plot.obj <- plot.obj + ggplot2::geom_point(ggplot2::aes(x=xn, y=y_rs, group=1), stat="identity", color="green", size=8)
     if(range_y > 0) {
       plot.obj <- plot.obj + scale_y_continuous(
         name="weight",
-        sec.axis=sec_axis(~ rebase.y(summary.dt[, y], .), name="partial")
+        sec.axis=ggplot2::sec_axis(~ rebase.y(summary.dt[, y], .), name="partial")
       )
     } else {
       plot.obj <- plot.obj + scale_y_continuous(
         name="weight",
-        sec.axis=sec_axis(~ . / max_weight * max_y, name="partial")
+        sec.axis=ggplot2::sec_axis(~ . / max_weight * max_y, name="partial")
       )
     }
     breaks <- summary.dt[, xn]
@@ -111,18 +111,18 @@ partial.plot <- function(model, x, a.dt) {
     if(length(breaks) != length(labels)) {
       stop("length breaks labels differ")
     }
-    plot.obj <- plot.obj + scale_x_continuous(breaks=breaks, labels=labels)
-    plot.obj <- plot.obj + theme(
-      axis.text.x=element_text(angle=90, vjust=0.5, hjust=0.5),
-      plot.title=element_text(hjust=0.5),
-      panel.border=element_rect(colour="black", fill=NA, size=2)
+    plot.obj <- plot.obj + ggplot2::scale_x_continuous(breaks=breaks, labels=labels)
+    plot.obj <- plot.obj + ggplot2::theme(
+      axis.text.x=ggplot2::element_text(angle=90, vjust=0.5, hjust=0.5),
+      plot.title=ggplot2::element_text(hjust=0.5),
+      panel.border=ggplot2::element_rect(colour="black", fill=NA, linewidth=2)
     )
-    plot.obj <- plot.obj + ggtitle(x)
-    plot.obj <- plot.obj + xlab(x)
+    plot.obj <- plot.obj + ggplot2::ggtitle(x)
+    plot.obj <- plot.obj + ggplot2::xlab(x)
   } else {
-    plot.obj <- ggplot() +
+    plot.obj <- ggplot2::ggplot() +
       annotate("text", x=4, y=25, size=4, label=paste("variable", x, "not modeled")) +
-      theme_void() + theme(panel.border=element_rect(colour="black", fill=NA, size=2))
+      ggplot2::theme_void() + ggplot2::theme(panel.border=ggplot2::element_rect(colour="black", fill=NA, linewidth=2))
   }
   plot.obj
 }
@@ -139,7 +139,7 @@ plot.model.run <- function(model) {
     c(4,4),
     c(4,4)
   )
-  arrangeGrob(grobs=gs, layout_matrix=lay)
+  gridExtra::arrangeGrob(grobs=gs, layout_matrix=lay)
 }
 find_cell <- function(table, row, col, name="core-fg") {
   l <- table$layout
@@ -147,11 +147,11 @@ find_cell <- function(table, row, col, name="core-fg") {
 }
 
 #' @importFrom grid unit.c unit
-padding <- function() unit.c(unit(2, "mm"), unit(2, "mm"))
+padding <- function() grid::unit.c(grid::unit(2, "mm"), grid::unit(2, "mm"))
 
 #' @importFrom gridExtra ttheme_default
 table.theme <- function(fs) {
-  ttheme_default(
+    gridExtra::ttheme_default(
     core=list(
       fg_params=list(fontsize=fs, just="left"),
       padding=padding()
@@ -177,7 +177,7 @@ colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
         if(!length(ind) > 0) {
           next
         } else {
-          obj$grobs[ind][[1]][["gp"]] <- gpar(fontsize=fs, just="left")
+          obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs, just="left")
         }
       }
     }
@@ -189,7 +189,7 @@ colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
       if(!length(ind) > 0) {
         next
       } else {
-        obj$grobs[ind][[1]][["gp"]] <- gpar(fontsize=fs, fontface="bold", just="left")
+        obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs, fontface="bold", just="left")
       }
     }
   }
@@ -200,7 +200,7 @@ colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
       if(!length(ind) > 0) {
         next
       } else {
-        obj$grobs[ind][[1]][["gp"]] <- gpar(fontsize=fs, fontface="bold", just="left")
+        obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs, fontface="bold", just="left")
       }
     }
   }
@@ -217,7 +217,7 @@ colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
             } else {
               fill <- col2
             }
-            obj$grobs[ind][[1]][["gp"]] <- gpar(fill=fill, col="white", just="left")
+            obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fill=fill, col="white", just="left")
         }
       }
     }
@@ -255,17 +255,17 @@ plot.model.param <- function(model) {
     round(model$oobag.improve[[best.trees]], 4)
   )
   params.dt.0 <- t(data.frame(parameter=params[1:5], value=vals[1:5]))
-  p.obj.0 <- tableGrob(params.dt.0, theme=table.theme(10), cols=NULL)
+  p.obj.0 <- gridExtra::tableGrob(params.dt.0, theme=table.theme(10), cols=NULL)
   p.obj.0 <- colorise.tableGrob(p.obj.0, params.dt.0, "red1", "red3", 10)
   params.dt.1 <- t(data.frame(parameter=params[6:10], value=vals[6:10]))
-  p.obj.1 <- tableGrob(params.dt.1, theme=table.theme(10), cols=NULL)
+  p.obj.1 <- gridExtra::tableGrob(params.dt.1, theme=table.theme(10), cols=NULL)
   p.obj.1 <- colorise.tableGrob(p.obj.1, params.dt.1, "red1", "red3", 10)
-  p.obj.0 <- grobTree(
-    rectGrob(gp=gpar(fill="red1", lwd=0, col="black", alpha=0.5)),
+  p.obj.0 <- grid::grobTree(
+    grid::rectGrob(gp=grid::gpar(fill="red1", lwd=0, col="black", alpha=0.5)),
     p.obj.0
   )
-  p.obj.1 <- grobTree(
-    rectGrob(gp=gpar(fill="red1", lwd=0, col="black", alpha=0.5)),
+  p.obj.1 <- grid::grobTree(
+    grid::rectGrob(gp=grid::gpar(fill="red1", lwd=0, col="black", alpha=0.5)),
     p.obj.1
   )
   list(p.obj.0, p.obj.1)
@@ -334,10 +334,10 @@ plot.data.perf <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
     model.dev=model.dev
   )
   setnames(devs.dt, colnames(devs.dt), gsub("\\.", "\n", colnames(devs.dt)))
-  p.obj <- tableGrob(devs.dt, theme=table.theme(6), rows=NULL)
+  p.obj <- gridExtra::tableGrob(devs.dt, theme=table.theme(6), rows=NULL)
   p.obj <- colorise.tableGrob(p.obj, devs.dt, "gold", "gold3", 6)
-  p.obj <- grobTree(
-      rectGrob(gp=gpar(fill="gold", lwd=2, col="black", alpha=0.5)),
+  p.obj <- grid::grobTree(
+      grid::rectGrob(gp=grid::gpar(fill="gold", lwd=2, col="black", alpha=0.5)),
       p.obj
   )
   p.obj
@@ -364,10 +364,10 @@ plot.strategies <- function(a.dt) {
   gain_wtd <- sapply(strategy, function(x) round(sum(a.dt[[paste0("gain_", x, "_wtd")]]), 2))
   strategy <- gsub("_", "\n", strategy)
   strat.dt <- t(data.frame(strategy=strategy, stake=stake, gain=gain, stake_wtd=stake_wtd, gain_wtd=gain_wtd))
-  strat.p.obj <- tableGrob(strat.dt, theme=table.theme(10), cols=NULL)
+  strat.p.obj <- gridExtra::tableGrob(strat.dt, theme=table.theme(10), cols=NULL)
   strat.p.obj <- colorise.tableGrob(strat.p.obj, strat.dt, "grey90", "grey95", 10)
-  strat.p.obj <- grobTree(
-    rectGrob(gp=gpar(fill="grey90", lwd=2, col="black", alpha=0.5)),
+  strat.p.obj <- grid::grobTree(
+    grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=2, col="black", alpha=0.5)),
     strat.p.obj
   )
   strat.p.obj
@@ -387,23 +387,23 @@ plot.model.perf <- function(model, train.a, train.b) {
   range_y1 <- max_y1 - min_y1
   p.data[, cv_rs := rebase.y(c(p.data[, train.a], p.data[, train.b]), p.data[, cv])]
   sf <- 0.2
-  plot.obj <- ggplot(p.data)
-  plot.obj <- plot.obj + geom_line(aes(x=trees, y=train.a), color="red", size=2)
-  plot.obj <- plot.obj + geom_line(aes(x=trees, y=train.b), color="blue", size=2)
-  plot.obj <- plot.obj + geom_line(aes(x=trees, y=cv_rs), color="green", size=2)
+  plot.obj <- ggplot2::ggplot(p.data)
+  plot.obj <- plot.obj + ggplot2::geom_line(ggplot2::aes(x=trees, y=train.a), color="red", linewidth=2)
+  plot.obj <- plot.obj + ggplot2::geom_line(ggplot2::aes(x=trees, y=train.b), color="blue", linewidth=2)
+  plot.obj <- plot.obj + ggplot2::geom_line(ggplot2::aes(x=trees, y=cv_rs), color="green", linewidth=2)
   best.y <- min(p.data[, train.b])
   best.x <- p.data[train.b == best.y, trees]
   df <- data.frame(x1=c(1, best.x), x2=c(best.x, best.x), y1=c(best.y, best.y), y2=c(best.y, -Inf))
-  plot.obj <- plot.obj + geom_segment(aes(x=x1, y=y1, xend=x2, yend=y2), data=df, linetype="dashed")
-  plot.obj <- plot.obj + theme(
-    axis.text.x=element_text(angle=90, vjust=0.5, hjust=0.5),
-    plot.title=element_text(hjust=0.5),
-    panel.border=element_rect(colour="black", fill=NA, size=2)
+  plot.obj <- plot.obj + ggplot2::geom_segment(ggplot2::aes(x=x1, y=y1, xend=x2, yend=y2), data=df, linetype="dashed")
+  plot.obj <- plot.obj + ggplot2::theme(
+    axis.text.x=ggplot2::element_text(angle=90, vjust=0.5, hjust=0.5),
+    plot.title=ggplot2::element_text(hjust=0.5),
+    panel.border=ggplot2::element_rect(colour="black", fill=NA, linewidth=2)
   )
-  plot.obj <- plot.obj + ggtitle("mean deviance on train.a, train.b and cv")
-  plot.obj <- plot.obj + scale_y_continuous(
+  plot.obj <- plot.obj + ggplot2::ggtitle("mean deviance on train.a, train.b and cv")
+  plot.obj <- plot.obj + ggplot2::scale_y_continuous(
     name="train.a, train.b mean.deviance",
-    sec.axis=sec_axis(~ rebase.y(p.data[, cv], .), name="cv mean.deviance")
+    sec.axis=ggplot2::sec_axis(~ rebase.y(p.data[, cv], .), name="cv mean.deviance")
   )
   plot.obj
 }
@@ -416,16 +416,16 @@ plot.var.importance <- function(model) {
   p.dt[, sv := - rel.inf]
   setkey(p.dt, sv)
   p.dt[, x := seq(p.dt[, .N])]
-  plot.obj <- ggplot(p.dt)
-  plot.obj <- plot.obj + geom_bar(aes(x=x, y=rel.inf), stat="identity", color="yellow", fill="yellow", alpha=0.3)
-  plot.obj <- plot.obj + theme(
-    axis.text.x=element_text(angle=90, vjust=0.5, hjust=0.5),
-    plot.title=element_text(hjust=0.5),
-    panel.border=element_rect(colour="black", fill=NA, size=2)
+  plot.obj <- ggplot2::ggplot(p.dt)
+  plot.obj <- plot.obj + ggplot2::geom_bar(ggplot2::aes(x=x, y=rel.inf), stat="identity", color="yellow", fill="yellow", alpha=0.3)
+  plot.obj <- plot.obj + ggplot2::theme(
+    axis.text.x=ggplot2::element_text(angle=90, vjust=0.5, hjust=0.5),
+    plot.title=ggplot2::element_text(hjust=0.5),
+    panel.border=ggplot2::element_rect(colour="black", fill=NA, linewidth=2)
   )
-  plot.obj <- plot.obj + ggtitle("modeled variables relative influence")
-  plot.obj <- plot.obj + ylab("relative influence")
-  plot.obj <- plot.obj + xlab("modeled variable")
+  plot.obj <- plot.obj + ggplot2::ggtitle("modeled variables relative influence")
+  plot.obj <- plot.obj + ggplot2::ylab("relative influence")
+  plot.obj <- plot.obj + ggplot2::xlab("modeled variable")
   breaks <- p.dt[, x]
   labels <- p.dt[, var]
   if(length(breaks) != length(labels)) {
@@ -434,7 +434,7 @@ plot.var.importance <- function(model) {
     print(labels)
     stop("length breaks labels differ")
   }
-  plot.obj <- plot.obj + scale_x_continuous(breaks=breaks, labels=labels)
+  plot.obj <- plot.obj + ggplot2::scale_x_continuous(breaks=breaks, labels=labels)
   plot.obj
 }
 
@@ -487,30 +487,30 @@ plot.decile.perf <- function(train.a.dt, train.b.dt, test.dt) {
   row_count <- summary.dt[, .N]
   summary.dt[, gain_rs := rebase.y(summary.dt[, weight], summary.dt[, gain], nreturn=row_count)]
   summary.dt[, gain_wtd_rs := rebase.y(summary.dt[, weight], summary.dt[, gain_wtd], nreturn=row_count)]
-  plot.obj <- ggplot(summary.dt)
-  plot.obj <- plot.obj + geom_bar(aes(x=decile, y=weight, color=dt, fill=dt), stat="identity", position="dodge", alpha=0.3)
-  plot.obj <- plot.obj + geom_line(aes(x=decile, y=gain_rs, group=dt, color=dt), stat="identity")
-  plot.obj <- plot.obj + geom_line(aes(x=decile, y=gain_wtd_rs, group=dt, color=dt), stat="identity", linetype="dotted")
+  plot.obj <- ggplot2::ggplot(summary.dt)
+  plot.obj <- plot.obj + ggplot2::geom_bar(ggplot2::aes(x=decile, y=weight, color=dt, fill=dt), stat="identity", position="dodge", alpha=0.3)
+  plot.obj <- plot.obj + ggplot2::geom_line(ggplot2::aes(x=decile, y=gain_rs, group=dt, color=dt), stat="identity")
+  plot.obj <- plot.obj + ggplot2::geom_line(ggplot2::aes(x=decile, y=gain_wtd_rs, group=dt, color=dt), stat="identity", linetype="dotted")
   # plot.obj <- plot.obj + geom_point(aes(x=decile, y=gain_rs, group=dt, color=dt), stat="identity")
-  plot.obj <- plot.obj + theme(
-    axis.text.x=element_text(angle=90, vjust=0.5, hjust=0.5),
-    plot.title=element_text(hjust=0.5),
-    panel.border=element_rect(colour="black", fill=NA, size=2)
+  plot.obj <- plot.obj + ggplot2::theme(
+    axis.text.x=ggplot2::element_text(angle=90, vjust=0.5, hjust=0.5),
+    plot.title=ggplot2::element_text(hjust=0.5),
+    panel.border=ggplot2::element_rect(colour="black", fill=NA, linewidth=2)
   )
-  plot.obj <- plot.obj + ggtitle("actual and predicted gain by predicted deciles")
-  plot.obj <- plot.obj + scale_y_continuous(
+  plot.obj <- plot.obj + ggplot2::ggtitle("actual and predicted gain by predicted deciles")
+  plot.obj <- plot.obj + ggplot2::scale_y_continuous(
     name="weight",
-    sec.axis=sec_axis(~ rebase.y(c(summary.dt[, gain], summary.dt[, gain_wtd]), .), name="gain, gain_wtd")
+    sec.axis=ggplot2::sec_axis(~ rebase.y(c(summary.dt[, gain], summary.dt[, gain_wtd]), .), name="gain, gain_wtd")
   )
   plot.obj
 }
 
 #' @importFrom grid grid.rect gpar
 grid.square <- quote({
-  grid.rect(x=0.25, y=0.25, width=0.50, height=0.50, gp=gpar(lwd=5, col="black", fill=NA))
-  grid.rect(x=0.25, y=0.75, width=0.50, height=0.50, gp=gpar(lwd=5, col="black", fill=NA))
-  grid.rect(x=0.75, y=0.25, width=0.50, height=0.50, gp=gpar(lwd=5, col="black", fill=NA))
-  grid.rect(x=0.75, y=0.75, width=0.50, height=0.50, gp=gpar(lwd=5, col="black", fill=NA))
+  grid::grid.rect(x=0.25, y=0.25, width=0.50, height=0.50, gp=grid::gpar(lwd=5, col="black", fill=NA))
+  grid::grid.rect(x=0.25, y=0.75, width=0.50, height=0.50, gp=grid::gpar(lwd=5, col="black", fill=NA))
+  grid::grid.rect(x=0.75, y=0.25, width=0.50, height=0.50, gp=grid::gpar(lwd=5, col="black", fill=NA))
+  grid::grid.rect(x=0.75, y=0.75, width=0.50, height=0.50, gp=grid::gpar(lwd=5, col="black", fill=NA))
 })
 
 detailed.strat.data.table <- function(a.dt, recent.dt) {
@@ -555,12 +555,12 @@ detailed.strat.data.table <- function(a.dt, recent.dt) {
 detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
   actr <- NULL
   a.thin.dt <- detailed.strat.data.table(a.dt, recent.dt)
-  p.obj <- tableGrob(a.thin.dt, theme=table.theme(16), rows=NULL)
+  p.obj <- gridExtra::tableGrob(a.thin.dt, theme=table.theme(16), rows=NULL)
   p.obj <- colorise.tableGrob(p.obj, a.thin.dt, "grey90", "grey95", 16)
 
   set_row_border <- function(obj, row, color) {
     # row + 1 because of header
-    gtable_add_grob(obj, grobs=rectGrob(gp=gpar(fill=color, lwd=2, col=color, alpha=0.5)), t=(row+1.02), b=(row+1.98), l=1.02, r=(ncol(obj)+1))
+      gtable::gtable_add_grob(obj, grobs=grid::rectGrob(gp=grid::gpar(fill=color, lwd=2, col=color, alpha=0.5)), t=(row+1.02), b=(row+1.98), l=1.02, r=(ncol(obj)+1))
   }
 
   correct_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, ftr] == a.thin.dt[i, actr]) & (!a.thin.dt[i, actr] == "NA"))
@@ -573,11 +573,11 @@ detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
     if (isTRUE(incorrect_preds[[i]])) p.obj <- set_row_border(p.obj, i, "red")
     if (isTRUE(unknown_preds[[i]])) p.obj <- set_row_border(p.obj, i, "black")
   }
-  p.obj <- grobTree(
-    rectGrob(gp=gpar(fill="grey90", lwd=0, col="black", alpha=0.5)),
-    textGrob(
+  p.obj <- grid::grobTree(
+    grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=0, col="black", alpha=0.5)),
+    grid::textGrob(
       label=paste0(aname, " strategy top per match topn=", (a.thin.dt[, .N] -1)),
-      gp=gpar(fontsize=16, fontface="bold", fill="black", col="black"),
+      gp=grid::gpar(fontsize=16, fontface="bold", fill="black", col="black"),
       x=0.5,
       y=0.92,
     ),
@@ -587,16 +587,17 @@ detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
 }
 
 #' @importFrom grid grid.newpage grid.draw
+#' @importFrom gridExtra grid.arrange
 plot.detailed.strategy <- function(test.dt, upcoming.dt, pngf, leagues=all.leagues) {
   # dload.current.year(quiet=TRUE)
   recent.dt <- get.recent.dt(leagues)
   p.obj.test <- detailed.strat.gtable(test.dt, recent.dt, "test")
   p.obj.upcoming <- detailed.strat.gtable(upcoming.dt, recent.dt, "upcoming")
   grDevices::png(pngf, width=800, height=600)
-    grid.arrange(p.obj.upcoming)
+  gridExtra::grid.arrange(p.obj.upcoming)
   grDevices::dev.off()
-  grid.newpage(); grid.draw(p.obj.test)
-  grid.newpage(); grid.draw(p.obj.upcoming)
+  grid::grid.newpage(); grid::grid.draw(p.obj.test)
+  grid::grid.newpage(); grid::grid.draw(p.obj.upcoming)
 }
 
 get_uvar_list <- function(
@@ -622,7 +623,7 @@ parallel.uvar <- quote({
   foreach(i=1:nrow(m), .combine=rbind)
   uvar_list <- foreach(u=uvar) %dopar% get_uvar_list(u, train.dt, train.a.dt, train.b.dt, test.dt, model)
   for(plist in uvar_list) {
-    grid.arrange(
+      gridExtra::grid.arrange(
       plist[[1]], plist[[2]], plist[[3]], plist[[4]],
       ncol=2
     )
@@ -634,7 +635,7 @@ parallel.uvar <- quote({
 #' @importFrom gridExtra grid.arrange
 series.uvar <- quote({
   for (x in uvar) {
-    grid.arrange(
+      gridExtra::grid.arrange(
       univariate(train.a.dt, x),
       univariate(train.b.dt, x),
       univariate(test.dt, x),
@@ -648,16 +649,16 @@ series.uvar <- quote({
 #' @import ggplot2
 plot.dist <- function(x, xlabel) {
   w <- (max(x) - min(x)) / 100
-  g <- ggplot(data=NULL)
-  g <- g + geom_histogram(aes(x=x), fill="yellow", alpha=0.3, binwidth=w)
-  g <- g + xlab(xlabel) + ggtitle(paste("distribution of", xlabel))
+  g <- ggplot2::ggplot(data=NULL)
+  g <- g + geom_histogram(ggplot2::aes(x=x), fill="yellow", alpha=0.3, binwidth=w)
+  g <- g + xlab(xlabel) + ggplot2::ggtitle(paste("distribution of", xlabel))
   g
 }
 
 #' @importFrom gridExtra grid.arrange
 plot.response.vars <- function(train.dt, test.dt, yvar) {
   y <- gbmp <- NULL
-  grid.arrange(
+  gridExtra::grid.arrange(
     plot.dist(c(train.dt[, y], test.dt[, y]), yvar),
     plot.dist(c(train.dt[, gbmp], test.dt[, gbmp]), "model prediction"),
     nrow=2
@@ -672,22 +673,22 @@ plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, 
     return(NULL)
   }
   grDevices::pdf(pdffile, h=7, w=14)
-    grid.arrange(
-      plot.model.run(model),
-      plot.model.perf(model, train.a.dt, train.b.dt),
-      plot.var.importance(model),
-      plot.decile.perf(train.a.dt, train.b.dt, test.dt)
-    )
-    eval(grid.square)
-    pngf <- file.path(gsub(".pdf", "_strategy.png", pdffile))
-    plot.detailed.strategy(test.dt, upcoming.dt, pngf, unique(train.dt[, div]))
-    plot.response.vars(train.dt, test.dt, yvar)
-    # test parallelizing univar plots
-    # seems to be no gain on my system
-    # z <- Sys.time()
-    # print(z)
-    eval(series.uvar)
-    # print(Sys.time() - z)
+  gridExtra::grid.arrange(
+    plot.model.run(model),
+    plot.model.perf(model, train.a.dt, train.b.dt),
+    plot.var.importance(model),
+    plot.decile.perf(train.a.dt, train.b.dt, test.dt)
+  )
+  eval(grid.square)
+  pngf <- file.path(gsub(".pdf", "_strategy.png", pdffile))
+  plot.detailed.strategy(test.dt, upcoming.dt, pngf, unique(train.dt[, div]))
+  plot.response.vars(train.dt, test.dt, yvar)
+  # test parallelizing univar plots
+  # seems to be no gain on my system
+  # z <- Sys.time()
+  # print(z)
+  eval(series.uvar)
+  # print(Sys.time() - z)
   grDevices::dev.off()
   paste("see model documentation in", pdffile)
 }
