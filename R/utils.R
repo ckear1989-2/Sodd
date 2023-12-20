@@ -284,6 +284,10 @@ rebalance.model <- quote({
   train.dt[, match_pred_prob := sum(pred_prob), match_id]
   test.dt[, match_pred_prob := sum(pred_prob), match_id]
   upcoming.dt[, match_pred_prob := sum(pred_prob), match_id]
+  # expected return is model prediction / implied probability
+  train.dt[, er := pred_prob / ip]
+  test.dt[, er := pred_prob / ip]
+  upcoming.dt[, er := pred_prob / ip]
 })
 
 calc.deviances <- quote({
@@ -354,7 +358,7 @@ act.pred.summary <- quote({
   summary(train.dt[, list(act=spread, pred=pred_spread)])
   cat0n("summary test act, pred", verbosity=2)
   summary(test.dt[, list(act=spread, pred=pred_spread)])
-  cat0n("summary test act, pred", verbosity=2)
+  cat0n("summary upcoming act, pred", verbosity=2)
   summary(upcoming.dt[, list(act=spread, pred=pred_spread)])
 })
 

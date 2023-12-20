@@ -1,35 +1,33 @@
 library("sodd")
 
-# library("data.table")
-# library("gbm")
-source("R/constants.R")
-source("R/options.R")
-source("R/utils.R")
-# source("R/download.R")
-source("R/standardise.R")
-source("R/strategy.R")
-source("R/plot.R")
-
 random_by_char <- function(cvar) {
   # subsampling helper function
   suppressWarnings(TeachingDemos::char2seed(cvar))
   runif(1)
 }
 
-# create data for testing a.dt
-all.years <- c("2021", "2122", "2223", "2324")
-set.sodd.options(data.dir="~/sodd.data/test.data/", verbosity=0)
-create.sodd.modeling.data(c("E0", "E1", "E2"), 4)
-a.dt <- readRDS(file.path(get.sodd.data.dir(), "a.dt.rds"))
-# force upcoming matches
-upcoming.dt <- a.dt[date == max(a.dt[, date]), ]
-a.dt <- a.dt[date < max(a.dt[, date]), ]
-upcoming.dt[, ftr := NULL]
-upcoming.dt[, ftr := "NA"]
-a.dt <- rbind(a.dt, upcoming.dt, fill=TRUE)
-data.dir <- get.sodd.data.dir()
-saveRDS(a.dt, file.path(data.dir, "a.dt.rds"))
-adate <- "2023-09-01"
+create.a.dt <- quote({
+  source("R/constants.R")
+  source("R/options.R")
+  source("R/utils.R")
+  source("R/standardise.R")
+  source("R/strategy.R")
+  source("R/plot.R")
+  # create data for testing a.dt
+  all.years <- c("2021", "2122", "2223", "2324")
+  set.sodd.options(data.dir="~/sodd.data/test.data/", verbosity=0)
+  create.sodd.modeling.data(c("E0", "E1", "E2"), 4)
+  a.dt <- readRDS(file.path(get.sodd.data.dir(), "a.dt.rds"))
+  # force upcoming matches
+  upcoming.dt <- a.dt[date == max(a.dt[, date]), ]
+  a.dt <- a.dt[date < max(a.dt[, date]), ]
+  upcoming.dt[, ftr := NULL]
+  upcoming.dt[, ftr := "NA"]
+  a.dt <- rbind(a.dt, upcoming.dt, fill=TRUE)
+  data.dir <- get.sodd.data.dir()
+  saveRDS(a.dt, file.path(data.dir, "a.dt.rds"))
+  adate <- "2023-09-01"
+})
 
 create.test.dataset.spread <- quote({    
   # 10% sample of existing dataset
@@ -132,6 +130,7 @@ create.test.model.spread <- quote({
   eval(calc.deviances)
   eval(act.pred.summary)
   eval(positive.model.predictions)
+  run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
   model$adate <- adate
   model$train.a.dt <- train.a.dt
   model$train.b.dt <- train.b.dt
@@ -346,10 +345,11 @@ create.test.model.doc.act <- quote({
   sink()
 })
 
-eval(create.test.dataset.spread)
-eval(create.test.model.spread)
-eval(create.test.model.doc.spread)
-eval(create.test.dataset.act)
-eval(create.test.model.act)
-eval(create.test.model.doc.act)
+# eval(create.a.dt)
+# eval(create.test.dataset.spread)
+# eval(create.test.model.spread)
+# eval(create.test.model.doc.spread)
+# eval(create.test.dataset.act)
+# eval(create.test.model.act)
+# eval(create.test.model.doc.act)
 

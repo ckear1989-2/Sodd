@@ -516,7 +516,7 @@ grid.square <- quote({
 detailed.strat.data.table <- function(a.dt, recent.dt) {
   match_id <- ftr <- actr <- ip <- odds <- pred_odds <-
   actr_new <- strat_top_per_match <- pred_spread <-
-  gain_top_per_match <- NULL
+  gain_top_per_match <- expected_return <- NULL
   a.thin.dt <- a.dt[strat_top_per_match > 0, list(
     match_id,
     div,
@@ -527,8 +527,9 @@ detailed.strat.data.table <- function(a.dt, recent.dt) {
     pred_odds=round(pred_odds, 3),
     pred_spread=round(pred_spread, 3),
     strat_top_per_match,
-    gain_top_per_match=round(gain_top_per_match, 3)
-    )][order(-pred_spread)]
+    gain_top_per_match=round(gain_top_per_match, 3),
+    expected_return=round(er, 2)
+    )][order(-expected_return)]
   if(a.thin.dt[, .N] > 16) a.thin.dt <- a.thin.dt[1:16, ]
   # check if updated recent fixtures has full time scores
   if(all((is.na(a.thin.dt[, actr])) | (a.thin.dt[, actr] == "NA"))) {
@@ -543,10 +544,16 @@ detailed.strat.data.table <- function(a.dt, recent.dt) {
     data.table(
       match_id="total",
       strat_top_per_match=sum(a.thin.dt[, strat_top_per_match]),
-      gain_top_per_match=sum(a.thin.dt[, gain_top_per_match])
+      gain_top_per_match=sum(a.thin.dt[, gain_top_per_match]),
+      expected_return=sum(a.thin.dt[, expected_return])
    ), fill=TRUE)
   setnames(a.thin.dt, colnames(a.thin.dt), gsub("_", "\n", colnames(a.thin.dt)))
   a.thin.dt
+}
+
+set_row_border <- function(obj, row, color) {
+  # row + 1 because of header
+    gtable::gtable_add_grob(obj, grobs=grid::rectGrob(gp=grid::gpar(fill=color, lwd=2, col=color, alpha=0.5)), t=(row+1.02), b=(row+1.98), l=1.02, r=(ncol(obj)+1))
 }
 
 #' @importFrom gridExtra tableGrob
@@ -557,16 +564,9 @@ detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
   a.thin.dt <- detailed.strat.data.table(a.dt, recent.dt)
   p.obj <- gridExtra::tableGrob(a.thin.dt, theme=table.theme(16), rows=NULL)
   p.obj <- colorise.tableGrob(p.obj, a.thin.dt, "grey90", "grey95", 16)
-
-  set_row_border <- function(obj, row, color) {
-    # row + 1 because of header
-      gtable::gtable_add_grob(obj, grobs=grid::rectGrob(gp=grid::gpar(fill=color, lwd=2, col=color, alpha=0.5)), t=(row+1.02), b=(row+1.98), l=1.02, r=(ncol(obj)+1))
-  }
-
   correct_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, ftr] == a.thin.dt[i, actr]) & (!a.thin.dt[i, actr] == "NA"))
   incorrect_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, ftr] != a.thin.dt[i, actr]) & (!a.thin.dt[i, actr] == "NA"))
   unknown_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, actr] == "NA") | is.na(a.thin.dt[i, actr]))
-
   set_row_border(p.obj, 0, "black")
   for (i in 1:a.thin.dt[, .N]) {
     if (isTRUE(correct_preds[[i]])) p.obj <- set_row_border(p.obj, i, "green")
@@ -665,6 +665,53 @@ plot.response.vars <- function(train.dt, test.dt, yvar) {
   )
 }
 
+detailed.test.date.data.table <- function(a.dt) {
+  strat_top_per_match<- gain_top_per_match <- expected_return <- NULL
+  a.thin.dt <- a.dt[strat_top_per_match > 0, list(
+    strat_top_per_match=round(sum(strat_top_per_match, 2)),
+    gain_top_per_match=round(sum(gain_top_per_match), 3),
+    expected_return=round(sum(er), 2)
+    ), date][order(date)]
+  if(a.thin.dt[, .N] > 16) a.thin.dt <- a.thin.dt[1:16, ]
+  a.thin.dt[, date := as.character(date)]
+  a.thin.dt <- rbind(
+    a.thin.dt,
+    data.table(
+      date="total",
+      strat_top_per_match=sum(a.thin.dt[, strat_top_per_match]),
+      gain_top_per_match=sum(a.thin.dt[, gain_top_per_match]),
+      expected_return=sum(a.thin.dt[, expected_return])
+   ), fill=TRUE)
+  setnames(a.thin.dt, colnames(a.thin.dt), gsub("_", "\n", colnames(a.thin.dt)))
+  a.thin.dt
+}
+
+detailed.test.date.gtable <- function(a.dt) {
+  actr <- NULL
+  a.thin.dt <- detailed.test.date.data.table(a.dt)
+  p.obj <- gridExtra::tableGrob(a.thin.dt, theme=table.theme(16), rows=NULL)
+  p.obj <- colorise.tableGrob(p.obj, a.thin.dt, "grey90", "grey95", 16)
+
+  set_row_border(p.obj, 0, "black")
+  p.obj <- grid::grobTree(
+    grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=0, col="black", alpha=0.5)),
+    grid::textGrob(
+      label=paste0("test", " strategy top per match for last ", (a.thin.dt[, .N] -1), " dates"),
+      gp=grid::gpar(fontsize=16, fontface="bold", fill="black", col="black"),
+      x=0.5,
+      y=0.92,
+    ),
+    p.obj
+  )
+  p.obj
+}
+
+#' @importFrom grid grid.newpage grid.draw
+test.dt.by.date <- function(test.dt) {
+  p.obj.test <- detailed.test.date.gtable(test.dt)
+  grid::grid.newpage(); grid::grid.draw(p.obj.test)
+}
+
 #' @importFrom gridExtra grid.arrange
 plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile) {
   div <- NULL
@@ -680,6 +727,7 @@ plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, 
     plot.decile.perf(train.a.dt, train.b.dt, test.dt)
   )
   eval(grid.square)
+  eval(test.dt.by.date)
   pngf <- file.path(gsub(".pdf", "_strategy.png", pdffile))
   plot.detailed.strategy(test.dt, upcoming.dt, pngf, unique(train.dt[, div]))
   plot.response.vars(train.dt, test.dt, yvar)
