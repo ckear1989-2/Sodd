@@ -567,7 +567,7 @@ detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
   correct_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, ftr] == a.thin.dt[i, actr]) & (!a.thin.dt[i, actr] == "NA"))
   incorrect_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, ftr] != a.thin.dt[i, actr]) & (!a.thin.dt[i, actr] == "NA"))
   unknown_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, actr] == "NA") | is.na(a.thin.dt[i, actr]))
-  set_row_border(p.obj, 0, "black")
+  p.obj <- set_row_border(p.obj, 0, "black")
   for (i in 1:a.thin.dt[, .N]) {
     if (isTRUE(correct_preds[[i]])) p.obj <- set_row_border(p.obj, i, "green")
     if (isTRUE(incorrect_preds[[i]])) p.obj <- set_row_border(p.obj, i, "red")
@@ -691,8 +691,10 @@ detailed.test.date.gtable <- function(a.dt) {
   a.thin.dt <- detailed.test.date.data.table(a.dt)
   p.obj <- gridExtra::tableGrob(a.thin.dt, theme=table.theme(16), rows=NULL)
   p.obj <- colorise.tableGrob(p.obj, a.thin.dt, "grey90", "grey95", 16)
-
-  set_row_border(p.obj, 0, "black")
+  # p.obj <- set_row_border(p.obj, 0, "black")
+  for (i in 0:a.thin.dt[, .N]) {
+    p.obj <- set_row_border(p.obj, i, "black")
+  }
   p.obj <- grid::grobTree(
     grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=0, col="black", alpha=0.5)),
     grid::textGrob(
@@ -727,7 +729,7 @@ plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, 
     plot.decile.perf(train.a.dt, train.b.dt, test.dt)
   )
   eval(grid.square)
-  eval(test.dt.by.date)
+  test.dt.by.date(test.dt)
   pngf <- file.path(gsub(".pdf", "_strategy.png", pdffile))
   plot.detailed.strategy(test.dt, upcoming.dt, pngf, unique(train.dt[, div]))
   plot.response.vars(train.dt, test.dt, yvar)

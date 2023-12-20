@@ -153,34 +153,17 @@ read.test.model.spread <-quote({
 })
 
 create.test.model.doc.spread <- quote({
-  yvar <- "spread"
-  eval(read.test.model.data.spread)
-  if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
-  # model params
-  train.fraction <- 0.7
-  n.trees <- 50
-  shrinkage <- 0.01
-  interaction.depth <- 2
-  cv.folds <- 3
-  xvar <- c(
-    "ip",
-    "div",
-    "ftr",
-    paste0("hpp", 1:4)
-  )
-  uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
-  formula <- as.formula(paste("y", paste(xvar, collapse="+"), sep="~offset(offset)+"))
   eval(read.test.model.spread)
-  eval(model.params)
-  eval(model.summary)
-  eval(score.model)
-  eval(rebalance.model)
-  eval(calc.deviances)
-  eval(act.pred.summary)
-  eval(positive.model.predictions)
-  run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
+  pdffile <- model$pdffile
+  train.a.dt <- model$train.a.dt
+  train.b.dt <- model$train.b.dt
+  train.dt <- model$train.dt
+  test.dt <- model$test.dt
+  upcoming.dt <- model$upcoming.dt
+  yvar <- "spread"
+  xvar <- c("ip", "div", "ftr", paste0("hpp", 1:4))
+  uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
   plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile)
-  sink()
 })
 
 create.test.dataset.act <- quote({
