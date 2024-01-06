@@ -102,7 +102,7 @@
 # Rscript -e "devtools::build_manual()"
 # Rscript -e "devtools::check(document=TRUE, manual=TRUE, force_suggests=TRUE, run_dont_test=FALSE)"
 Rscript -e "devtools::install()"
-Rscript "tests/create.test.data.R"
+# Rscript "tests/create.test.data.R"
 # Rscript -e "testthat::test_file(\"tests/testthat/test_data_creation.R\", package=\"sodd\")"
 # Rscript -e "testthat::test_file(\"tests/testthat/test_file_diff.R\", package=\"sodd\")"
 # Rscript -e "testthat::test_file(\"tests/testthat/test_model_build.R\", package=\"sodd\")"
