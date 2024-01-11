@@ -573,10 +573,14 @@ detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
     if (isTRUE(incorrect_preds[[i]])) p.obj <- set_row_border(p.obj, i, "red")
     if (isTRUE(unknown_preds[[i]])) p.obj <- set_row_border(p.obj, i, "black")
   }
+  this.label <- paste0(aname, " strategy top per match topn=", (a.thin.dt[, .N] -1))
+  if(aname == "upcoming" & isTRUE(get.sodd.force.upcoming())) {
+    this.label <- paste0(this.label, "\nwarning: upcoming fixtures may be forced.")
+  }
   p.obj <- grid::grobTree(
     grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=0, col="black", alpha=0.5)),
     grid::textGrob(
-      label=paste0(aname, " strategy top per match topn=", (a.thin.dt[, .N] -1)),
+      label=this.label,
       gp=grid::gpar(fontsize=16, fontface="bold", fill="black", col="black"),
       x=0.5,
       y=0.92,

@@ -168,7 +168,7 @@ upcoming.strategy.sodd.model <- function(model) {
 build.all.sodd.models.one.date <- function(adate, ...) {
   build.sodd.model(adate, "spread", weights=FALSE, ...)
   # build.sodd.model(adate, "spread", weights=TRUE, ...)
-  # build.sodd.model(adate, "act", weights=FALSE, ...)
+  build.sodd.model(adate, "act", weights=FALSE, ...)
   # build.sodd.model(adate, "act", weights=TRUE, ...)
   # build.sodd.model(adate, "fthg", weights=FALSE, ...)
   # build.sodd.model(adate, "ftag", weights=FALSE, ...)

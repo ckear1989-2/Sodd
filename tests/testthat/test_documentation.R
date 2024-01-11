@@ -65,6 +65,7 @@ test_that("test strategy page", {
   )
   adate <- "2023-09-01"
   output.dir <- get.sodd.output.dir()
+  mpdff1 <- file.path(output.dir, paste0("model_", adate, "_spread", ".pdf"))
   mpngf1 <- file.path(output.dir, paste0("model_", adate, "_spread", "_strategy", ".png"))
   eval(read.test.model.spread)
   if (!is.null(model)) {
@@ -73,9 +74,23 @@ test_that("test strategy page", {
     expect_silent(recent.dt <- get.recent.dt(leagues))
     test.table <- detailed.strat.data.table(test.dt, recent.dt)
     expect("div" %in% colnames(test.table), "div not in strategy table")
-    expect_silent(plot.model.run(model))
+    yvar <- "act"
+    model.dt.list <- read.model.data(adate, yvar, FALSE, FALSE)
+    a.dt <- model.dt.list[[1]]
+    train.dt <- model$train.dt
+    train.a.dt <- model$train.a.dt
+    train.b.dt <- model$train.b.dt
+    test.dt <- model$test.dt
+    upcoming.dt <- model$upcoming.dt
+    pdffile <- model$pdffile
+    uvar <- model$uvar
+    expect_silent(plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile))
+    expect(file.exists(mpdff1), "model pdf not created")
     expect(file.exists(mpngf1), "strategy png not created")
     expect_equal(dim(png::readPNG(mpngf1)), c(600, 800, 3))
+    # expect png and pdf to be created recently
+    expect(difftime(Sys.time(), file.info(mpngf1)$mtime, units="secs") < 30, "model png not created in last 30 seconds.")
+    expect(difftime(Sys.time(), file.info(mpdff1)$mtime, units="secs") < 10, "model pdf not created in last 10 seconds.")
   } else {
       warning("null sodd model")
   }
