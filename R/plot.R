@@ -574,7 +574,7 @@ detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
     if (isTRUE(unknown_preds[[i]])) p.obj <- set_row_border(p.obj, i, "black")
   }
   this.label <- paste0(aname, " strategy top per match topn=", (a.thin.dt[, .N] -1))
-  if(aname == "upcoming" & isTRUE(get.sodd.force.upcoming())) {
+  if(aname == "upcoming" & isTRUE(get.sodd.force.upcoming()) & (min(a.dt[, date]) < Sys.Date())) {
     this.label <- paste0(this.label, "\nwarning: upcoming fixtures may be forced.")
   }
   p.obj <- grid::grobTree(
