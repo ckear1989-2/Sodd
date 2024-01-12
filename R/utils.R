@@ -83,6 +83,12 @@ pprint <- function(a.dt, caption="", verbosity=1) {
 }
 
 rebase.y <- function(y1, y2, nreturn=length(y2), verbose=FALSE) {
+  if (length(unique(y1)) == 1) {
+    stop("y1 values constant when attempting rebase.")
+  }
+  if (length(unique(y2)) == 1) {
+    stop("y2 values constant when attempting rebase.")
+  }
   # stretch y2 to range of y1
   max_y1 <- max(y1)
   max_y2 <- max(y2)
@@ -151,7 +157,7 @@ rebase.y.sum <- function(y1, y2) {
   new_y2
 }
 
-#' @import gbm
+#' @import gbm3
 model.summary <- quote({
   # model summary
   cat0n(rep("#", 30), "\nModel Summary", verbosity=2)
@@ -165,7 +171,7 @@ model.summary <- quote({
   cat0n("gbm summary", verbosity=2)
 })
 
-#' @import gbm
+#' @import gbm3
 score.a.model <- function(dt, model, family, name="gbmp", update.offset=FALSE) {
   model.pred <- weight <- offset <- ip <- NULL
   if(isTRUE(update.offset)) {
@@ -179,9 +185,9 @@ score.a.model <- function(dt, model, family, name="gbmp", update.offset=FALSE) {
       dt <- score.a.model(dt, prev.model, family, "offset", update.offset=TRUE)
     }
   }
-  best.trees.test <- gbm::gbm.perf(model, plot.it=FALSE, method="test")
+  best.trees.test <- gbm3::gbm.perf(model, plot.it=FALSE, method="test")
   suppressWarnings({
-    dt[, model.pred := gbm::predict.gbm(model, dt, best.trees.test, type="link")]
+    dt[, model.pred := predict(model, dt, best.trees.test, type="link")]
     # print(summary(dt[, model.pred]))
     # gaussian predictions come out at response not link scale?
     # if(family=="gaussian") dt[, model.pred := log(model.pred)]
@@ -214,7 +220,7 @@ score.a.model <- function(dt, model, family, name="gbmp", update.offset=FALSE) {
   dt
 }
 
-#' @import gbm
+#' @import gbm3
 score.model <- quote({
   # score
   # multiply predictions by weight.  not necessary because balanced by season but still good practice
@@ -290,6 +296,7 @@ rebalance.model <- quote({
   upcoming.dt[, er := pred_prob / ip]
 })
 
+#' @import gbm3
 calc.deviances <- quote({
   # deviances
   cat0n(rep("#", 30), "\nDeviances", verbosity=2)
@@ -300,9 +307,9 @@ calc.deviances <- quote({
   calc.bernoulli.dev <- function(act, pred, weight=1) {
     pred_l <- -log((1/pred) -1)
     if(any(is.nan(pred_l))) {
-      print(summary(gbm::predict.gbm(model, train.dt, best.trees.test, type="link")))
-      print(summary(gbm::predict.gbm(model, train.dt, best.trees.test, type="link")*weight))
-      print(summary(gbm::predict.gbm(model, train.dt, best.trees.test, type="link")*weight + train.dt[, offset]))
+      print(summary(predict(model, train.dt, best.trees.test, type="link")))
+      print(summary(predict(model, train.dt, best.trees.test, type="link")*weight))
+      print(summary(predict(model, train.dt, best.trees.test, type="link")*weight + train.dt[, offset]))
       print(summary(pred))
       print(summary(pred_l))
       stop()
@@ -401,7 +408,7 @@ positive.model.predictions <- quote({
   }
 })
 
-#' @import gbm
+#' @import gbm3
 build.model <- quote({
   cat0n(rep("#", 30), "\nBuild Model", verbosity=2)
   model <- gbm(
@@ -415,7 +422,6 @@ build.model <- quote({
     interaction.depth=get.sodd.model.params()$interaction.depth,
     cv.folds=get.sodd.model.params()$cv.folds,
     keep.data=FALSE,
-    n.cores=get.sodd.model.params()$n.cores,
     verbose=ifelse(get.sodd.verbosity() >= 2, TRUE, FALSE)
   )
   model$adate <- adate
@@ -432,7 +438,6 @@ model.params <- quote({
     "yvar: ", yvar, "\n",
     "train.fraction: ", get.sodd.model.params()$train.fraction, "\n",
     "cv.folds: ", get.sodd.model.params()$cv.folds, "\n",
-    "n.cores: ", get.sodd.model.params()$n.cores, "\n",
     "n.trees: ", get.sodd.model.params()$n.trees, "\n",
     "shrinkage: ", get.sodd.model.params()$shrinkage, "\n",
     "interaction.depth: ", get.sodd.model.params()$interaction.depth, "\n",

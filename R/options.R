@@ -35,8 +35,7 @@ set.sodd.options <- function(
     n.trees=500,
     shrinkage=0.1,
     interaction.depth=2,
-    cv.folds=3,
-    n.cores=1
+    cv.folds=3
   ),
   n.lag=5,
   verbosity=0
@@ -76,15 +75,13 @@ get.sodd.model.params <- function() {
     n.trees=500,
     shrinkage=0.1,
     interaction.depth=2,
-    cv.folds=3,
-    n.cores=1
+    cv.folds=3
   ))
   if(is.null(options$train.fraction)) options$train.fraction <- 0.7
   if(is.null(options$n.trees)) options$n.trees <- 500
   if(is.null(options$shrinkage)) options$shrinkage <- 0.1
   if(is.null(options$interaction.depth)) options$interaction.depth <- 2
   if(is.null(options$cv.folds)) options$cv.folds <- 3
-  if(is.null(options$n.cores)) options$n.cores <- 1
   options
 }
 

@@ -23,7 +23,7 @@ Set Options
       data.dir="~/sodd.data/", # where to save csv and rds files
       output.dir="~/sodd.output/", # where to save logs, pdfs etc.
       force.upcoming=TRUE, # simulate upcoming fixtures from test data if none available
-      model.params=list(n.trees=10, train.fraction=0.9, n.cores=1, cv.folds=1), # hyperparameters for model
+      model.params=list(n.trees=10, train.fraction=0.9, cv.folds=1), # hyperparameters for model
       n.lag=3, # how many previous fixtures to look back for predictor variables
       verbosity=0 # how much is output to logs 0=no output, 1=minimal, 2=all
     )

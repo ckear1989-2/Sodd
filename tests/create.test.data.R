@@ -142,6 +142,9 @@ create.test.model.spread <- quote({
   model$logfile <- logfile
   model$pdffile <- pdffile
   model$modelfile <- modelfile
+  model$train.fraction <- train.fraction
+  model$shrinkage <- shrinkage
+  model$interaction.depth <- interaction.depth
   model.output.dir <- paste0(get.sodd.output.dir(), "models/")
   data.dir <- get.sodd.data.dir()
   saveRDS(model, file.path(data.dir, "test.model.spread.rds"))
@@ -278,6 +281,9 @@ create.test.model.act <- quote({
   model$logfile <- logfile
   model$pdffile <- pdffile
   model$modelfile <- modelfile
+  model$train.fraction <- train.fraction
+  model$shrinkage <- shrinkage
+  model$interaction.depth <- interaction.depth
   data.dir <- get.sodd.data.dir()
   saveRDS(model, file.path(data.dir, "test.model.act.rds"))
 })
@@ -328,11 +334,15 @@ create.test.model.doc.act <- quote({
   sink()
 })
 
-# eval(create.a.dt)
-# eval(create.test.dataset.spread)
-# eval(create.test.model.spread)
-# eval(create.test.model.doc.spread)
-# eval(create.test.dataset.act)
-# eval(create.test.model.act)
-# eval(create.test.model.doc.act)
+# runs only when script is run by itself
+if (sys.nframe() == 0) {
+  #  ... do main stuff
+  eval(create.a.dt)
+  eval(create.test.dataset.spread)
+  eval(create.test.model.spread)
+  eval(create.test.model.doc.spread)
+  eval(create.test.dataset.act)
+  eval(create.test.model.act)
+  eval(create.test.model.doc.act)
+}
 

@@ -225,6 +225,7 @@ colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
   obj
 }
 
+#' @importFrom gbm3 iteration_error
 #' @importFrom gridExtra tableGrob
 #' @importFrom grid gpar grobTree rectGrob
 plot.model.param <- function(model) {
@@ -242,6 +243,7 @@ plot.model.param <- function(model) {
   )
   params <- gsub("\\.", "\n", params)
   best.trees <- gbm.perf(model, plot.it=FALSE, method="test")
+  cv.error <- gbm3::iteration_error(model, "cv")[[best.trees]]
   vals <- c(
     round(model$train.fraction, 2),
     model$cv.folds,
@@ -251,7 +253,7 @@ plot.model.param <- function(model) {
     model$distribution$name,
     round(model$train.error[[best.trees]], 4),
     round(model$valid.error[[best.trees]], 4),
-    round(model$cv.error[[best.trees]], 4),
+    round(cv.error, 4),
     round(model$oobag.improve[[best.trees]], 4)
   )
   params.dt.0 <- t(data.frame(parameter=params[1:5], value=vals[1:5]))
@@ -373,13 +375,16 @@ plot.strategies <- function(a.dt) {
   strat.p.obj
 }
 
+#' @importFrom gbm3 iteration_error
 #' @import ggplot2
 plot.model.perf <- function(model, train.a, train.b) {
   trees <- cv_rs <- cv <- x1 <- y1 <- x2 <- y2 <- NULL
+  best.trees <- gbm.perf(model, plot.it=FALSE, method="test")
+  cv.error <- gbm3::iteration_error(model, "cv")
   p.data <- data.table(
     train.a=model$train.error,
     train.b=model$valid.error,
-    cv=model$cv.error
+    cv=cv.error
   )
   p.data[, trees := seq(p.data[, .N])]
   min_y1 <- min(p.data[, train.a])
@@ -411,13 +416,14 @@ plot.model.perf <- function(model, train.a, train.b) {
 #' @import ggplot2
 #' @import data.table
 plot.var.importance <- function(model) {
-  sv <- rel.inf <- x <- var <- NULL
-  p.dt <- data.table(summary(model, plotit=FALSE))
-  p.dt[, sv := - rel.inf]
+  sv <- rel_inf <- x <- var <- NULL
+  best.trees <- gbm.perf(model, plot.it=FALSE, method="test")
+  p.dt <- data.table(summary(model, num_trees=best.trees, plot_it=FALSE))
+  p.dt[, sv := - rel_inf]
   setkey(p.dt, sv)
   p.dt[, x := seq(p.dt[, .N])]
   plot.obj <- ggplot2::ggplot(p.dt)
-  plot.obj <- plot.obj + ggplot2::geom_bar(ggplot2::aes(x=x, y=rel.inf), stat="identity", color="yellow", fill="yellow", alpha=0.3)
+  plot.obj <- plot.obj + ggplot2::geom_bar(ggplot2::aes(x=x, y=rel_inf), stat="identity", color="yellow", fill="yellow", alpha=0.3)
   plot.obj <- plot.obj + ggplot2::theme(
     axis.text.x=ggplot2::element_text(angle=90, vjust=0.5, hjust=0.5),
     plot.title=ggplot2::element_text(hjust=0.5),
@@ -482,6 +488,7 @@ plot.decile.perf <- function(train.a.dt, train.b.dt, test.dt) {
       dt="test", dtc="green", gain=sum(gain), gain_wtd=sum(gain_all_wtd),
       count=.N, weight=sum(weight)), decile]
   )
+  train.a.dt[, rn := seq(train.a.dt[, .N])]
   summary.dt[, gain := gain / weight]
   summary.dt[, gain_wtd := gain_wtd / weight]
   row_count <- summary.dt[, .N]

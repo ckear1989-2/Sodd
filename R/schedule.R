@@ -52,7 +52,6 @@ create.scheduled.model.script <- function(leagues, years, f, address=NULL, email
     "train.fraction=", get.sodd.model.params()$train.fraction, ",\n    ",
     "interaction.depth=", get.sodd.model.params()$interaction.depth, ",\n    ",
     "cv.folds=", get.sodd.model.params()$cv.folds, ",\n    ",
-    "n.cores=", get.sodd.model.params()$n.cores, "\n  ),\n  ",
     "n.lag=", get.sodd.n.lag(), ",\n  ",
     "verbosity=", get.sodd.verbosity(), "\n)\n"
   )
