@@ -63,7 +63,6 @@ univariate <- function(a.dt, x) {
 #' @import ggplot2
 partial.plot <- function(model, x, a.dt) {
   weight <- y <- xn <- y_rs <- NULL
-  # print(attributes(model))
   if (x %in% model$var.names) {
     x.dt <- data.table(plot.gbm(model, x, return.grid=TRUE))
     setnames(x.dt, x, "x")
@@ -242,14 +241,22 @@ plot.model.param <- function(model) {
     "oobag.improve"
   )
   params <- gsub("\\.", "\n", params)
-  best.trees <- gbm.perf(model, plot.it=FALSE, method="test")
-  cv.error <- gbm3::iteration_error(model, "cv")[[best.trees]]
+  if (model$cv_folds > 1) {
+    best.trees <- gbm.perf(model, plot.it=FALSE, method="cv")
+    cv.error <- gbm3::iteration_error(model, "cv")[[best.trees]]
+    if (is.null(cv.error)) {
+      cv.error <- 0
+    }
+  } else {
+    best.trees <- gbm.perf(model, plot.it=FALSE, method="test")
+    cv.error <- 0
+  }
   vals <- c(
-    round(model$train.fraction, 2),
+    round(model$params$train_fraction, 2),
     model$cv.folds,
     model$n.trees,
-    round(model$shrinkage, 3),
-    round(model$interaction.depth),
+    round(model$params$shrinkage, 3),
+    round(model$params$interaction_depth),
     model$distribution$name,
     round(model$train.error[[best.trees]], 4),
     round(model$valid.error[[best.trees]], 4),
@@ -379,18 +386,28 @@ plot.strategies <- function(a.dt) {
 #' @import ggplot2
 plot.model.perf <- function(model, train.a, train.b) {
   trees <- cv_rs <- cv <- x1 <- y1 <- x2 <- y2 <- NULL
-  best.trees <- gbm.perf(model, plot.it=FALSE, method="test")
-  cv.error <- gbm3::iteration_error(model, "cv")
+  train.error <- model$train.error
+  if(model$cv_folds > 1) {
+    best.trees <- gbm.perf(model, plot.it=FALSE, method="cv")
+    cv.error <- gbm3::iteration_error(model, "cv")
+    if (is.null(cv.error)) {
+      cv.error <- train.error
+    }
+  } else {
+    best.trees <- gbm.perf(model, plot.it=FALSE, method="test")
+    cv.error <- train.error
+  }
   p.data <- data.table(
     train.a=model$train.error,
     train.b=model$valid.error,
     cv=cv.error
   )
   p.data[, trees := seq(p.data[, .N])]
-  min_y1 <- min(p.data[, train.a])
-  max_y1 <- max(p.data[, train.a])
-  range_y1 <- max_y1 - min_y1
-  p.data[, cv_rs := rebase.y(c(p.data[, train.a], p.data[, train.b]), p.data[, cv])]
+  if(model$cv_folds > 1) {
+    p.data[, cv_rs := rebase.y(c(p.data[, train.a], p.data[, train.b]), p.data[, cv])]
+  } else {
+    p.data[, cv_rs := 0]
+  }
   sf <- 0.2
   plot.obj <- ggplot2::ggplot(p.data)
   plot.obj <- plot.obj + ggplot2::geom_line(ggplot2::aes(x=trees, y=train.a), color="red", linewidth=2)
@@ -406,9 +423,11 @@ plot.model.perf <- function(model, train.a, train.b) {
     panel.border=ggplot2::element_rect(colour="black", fill=NA, linewidth=2)
   )
   plot.obj <- plot.obj + ggplot2::ggtitle("mean deviance on train.a, train.b and cv")
+  # TODO handle error when cv isn't used
+  # cv.error is copy of train
   plot.obj <- plot.obj + ggplot2::scale_y_continuous(
-    name="train.a, train.b mean.deviance",
-    sec.axis=ggplot2::sec_axis(~ rebase.y(p.data[, cv], .), name="cv mean.deviance")
+      name="train.a, train.b mean.deviance",
+      sec.axis=ggplot2::sec_axis(~ rebase.y(p.data[, cv], .), name="cv mean.deviance")
   )
   plot.obj
 }
