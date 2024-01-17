@@ -745,8 +745,17 @@ test.dt.by.date <- function(test.dt) {
 }
 
 #' @importFrom gridExtra grid.arrange
-plot.model <- function(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile) {
+plot.model <- function(model) {
   div <- NULL
+  adate <- model$adate
+  train.a.dt <- model$train.a.dt
+  train.b.dt <- model$train.b.dt
+  train.dt <- model$train.dt
+  test.dt <- model$test.dt
+  upcoming.dt <- model$upcoming.dt
+  uvar <- model$uvar
+  yvar <- model$yvar
+  pdffile <- model$pdffile
   if(is.null(model)) {
     warning("attempting to plot null model")
     return(NULL)

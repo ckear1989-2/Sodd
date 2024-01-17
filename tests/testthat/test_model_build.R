@@ -2,14 +2,15 @@
 test_that("build goals model", {
   set.sodd.options(
     data.dir="~/sodd.data/",
-    verbosity=1
+    verbosity=0
   )
   date <- "2023-09-01"
-  expect_output(model <- build.sodd.model(date, "fthg", weights=FALSE, plot.it=TRUE))
+  expect_warning(model <- build.sodd.model(date, "fthg", weights=FALSE, plot.it=TRUE), "no upcoming matches")
   if (!is.null(model)) {
-    expect_output(build.sodd.model(date, "fthg", weights=FALSE))
+    expect_warning(build.sodd.model(date, "fthg", weights=FALSE), "no upcoming matches")
     set.sodd.options(
       data.dir="~/sodd.data/",
+      force.upcoming=TRUE,
       verbosity=0
     )
     expect_silent(build.sodd.model(date, "fthg", weights=FALSE))
@@ -20,12 +21,12 @@ test_that("build goals model", {
 test_that("build model no cv", {
   set.sodd.options(
     data.dir="~/sodd.data/",
-    verbosity=1
+    verbosity=0
   )
   date <- "2023-09-01"
-  expect_output(model <- build.sodd.model(date, "fthg", weights=FALSE, plot.it=TRUE))
+  expect_warning(model <- build.sodd.model(date, "fthg", weights=FALSE, plot.it=TRUE), "no upcoming matches")
   if (!is.null(model)) {
-    expect_output(build.sodd.model(date, "fthg", weights=FALSE))
+    expect_warning(build.sodd.model(date, "fthg", weights=FALSE), "no upcoming matches")
     set.sodd.options(
       data.dir="~/sodd.data/",
       model.params=list(
@@ -35,6 +36,7 @@ test_that("build model no cv", {
         interaction.depth=2,
         cv.folds=1
       ),
+      force.upcoming=TRUE,
       verbosity=0
     )
     expect_silent(build.sodd.model(date, "fthg", weights=FALSE))

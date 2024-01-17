@@ -1,61 +1,6 @@
 
 source("../create.test.data.R")
 
-# run from this folder for testing with print messages
-# library("sodd")
-# library("grid")
-# source("../../R/constants.R")
-# source("../../R/options.R")
-# source("../../R/utils.R")
-# source("../../R/plot.R")
-# set.sodd.options(
-#   data.dir="~/sodd.data/test.data/",
-#   force.upcoming=TRUE,
-#   verbosity=0
-# )
-# adate <- "2023-09-01"
-# output.dir <- get.sodd.output.dir()
-# mpngf1 <- file.path(output.dir, paste0("model_", adate, "_spread", "_test_by_date", ".png"))
-# eval(read.test.model.spread)
-# test.dt <- model$test.dt
-# test.table <- detailed.test.date.data.table(test.dt)
-# p.obj <- detailed.test.date.gtable(test.dt)
-# print(test.table)
-# print(p.obj)
-# png(mpngf1)
-# print(p.obj)
-# grid.draw(p.obj)
-# dev.off()
-#   set.sodd.options(
-#     data.dir="~/sodd.data/test.data/",
-#     force.upcoming=TRUE,
-#     verbosity=1
-#   )
-#   adate <- "2023-09-01"
-#   output.dir <- get.sodd.output.dir()
-#   mpdff1 <- file.path(output.dir, paste0("model_", adate, "_act", "_no_cv", ".pdf"))
-#   mpngf1 <- file.path(output.dir, paste0("model_", adate, "_act", "_no_cv", "_strategy", ".png"))
-#   eval(read.test.model.no.cv)
-#   print(colnames(model$train.a.dt))
-#   if (!is.null(model)) {
-#     test.dt <- model$test.dt
-#     leagues <- unique(as.character(model$train.dt[, div]))
-#     recent.dt <- get.recent.dt(leagues)
-#     test.table <- detailed.strat.data.table(test.dt, recent.dt)
-#     print(colnames(test.table))
-#     # expect("div" %in% colnames(test.table), "div not in strategy table")
-#     yvar <- "act"
-#     train.dt <- model$train.dt
-#     train.a.dt <- model$train.a.dt
-#     train.b.dt <- model$train.b.dt
-#     test.dt <- model$test.dt
-#     upcoming.dt <- model$upcoming.dt
-#     pdffile <- mpdff1
-#     uvar <- model$uvar
-#     print(colnames(train.a.dt))
-#     plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile)
-#   }
-
 test_that("test by date page", {
   set.sodd.options(
     data.dir="~/sodd.data/test.data/",
@@ -95,8 +40,8 @@ test_that("test strategy page", {
   )
   adate <- "2023-09-01"
   output.dir <- get.sodd.output.dir()
-  mpdff1 <- file.path(output.dir, paste0("model_", adate, "_act", ".pdf"))
-  mpngf1 <- file.path(output.dir, paste0("model_", adate, "_act", "_strategy", ".png"))
+  mpdff1 <- file.path(output.dir, paste0("model_", adate, "_spread", ".pdf"))
+  mpngf1 <- file.path(output.dir, paste0("model_", adate, "_spread", "_strategy", ".png"))
   eval(read.test.model.spread)
   if (!is.null(model)) {
     test.dt <- model$test.dt
@@ -104,9 +49,7 @@ test_that("test strategy page", {
     expect_silent(recent.dt <- get.recent.dt(leagues))
     test.table <- detailed.strat.data.table(test.dt, recent.dt)
     expect("div" %in% colnames(test.table), "div not in strategy table")
-    yvar <- "act"
-    model.dt.list <- read.model.data(adate, yvar, FALSE, FALSE)
-    a.dt <- model.dt.list[[1]]
+    a.dt <- model$a.dt
     train.dt <- model$train.dt
     train.a.dt <- model$train.a.dt
     train.b.dt <- model$train.b.dt
@@ -114,7 +57,7 @@ test_that("test strategy page", {
     upcoming.dt <- model$upcoming.dt
     pdffile <- mpdff1
     uvar <- model$uvar
-    expect_silent(plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile))
+    expect_silent(plot.model(model))
     expect(file.exists(mpdff1), "model pdf not created")
     expect(file.exists(mpngf1), "strategy png not created")
     expect_equal(dim(png::readPNG(mpngf1)), c(600, 800, 3))
@@ -149,9 +92,9 @@ test_that("test document model no cv", {
     train.b.dt <- model$train.b.dt
     test.dt <- model$test.dt
     upcoming.dt <- model$upcoming.dt
-    pdffile <- mpdff1
+    model$pdffile <- mpdff1
     uvar <- model$uvar
-    expect_silent(plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile))
+    expect_silent(plot.model(model))
     expect(file.exists(mpdff1), "model pdf not created")
     expect(file.exists(mpngf1), "strategy png not created")
     expect_equal(dim(png::readPNG(mpngf1)), c(600, 800, 3))

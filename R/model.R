@@ -93,7 +93,7 @@ build.sodd.model <- function(
   model$pdffile <- pdffile
   model$modelfile <- modelfile
   model.output.dir <- paste0(get.sodd.output.dir(), "models/")
-  if(isTRUE(plot.it)) plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile)
+  if(isTRUE(plot.it)) plot.model(model)
   # dunno why attr(model, x) <- x doesn't work
   # attr(model, "adate") <- adate
   class(model) <- c("sodd", class(model))
@@ -116,18 +116,7 @@ build.sodd.model <- function(
 #' }
 #' @export 
 document.sodd.model <- function(model) {
-  plot.model(
-    model,
-    model$adate,
-    model$train.a.dt,
-    model$train.b.dt,
-    model$train.dt,
-    model$test.dt,
-    model$upcoming.dt,
-    model$uvar,
-    model$yvar,
-    model$pdffile
-  )
+  plot.model(model)
 }
 
 #' Get summary table for upcoming fixture strategy

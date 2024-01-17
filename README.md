@@ -48,7 +48,7 @@ Get model output
 
     document.sodd.model(todays.model)
 
-    ## Warning in plot.model(model, model$adate, model$train.a.dt, model$train.b.dt, :
+    ## Warning in plot.model(model) :
     ## attempting to plot null model
 
     ## NULL

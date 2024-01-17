@@ -12,20 +12,20 @@ test_that("variables in data", {
 })
 
 test_that("no previous dates in upcoming spread", {
-  set.sodd.options(data.dir="~/sodd.data/test.data/", force.upcoming=FALSE, verbosity=0)
+  set.sodd.options(data.dir="~/sodd.data/test.data/", force.upcoming=TRUE, verbosity=0)
   date <- "2023-09-01"
   model.dt.list <- read.model.data(date, "spread", FALSE, FALSE)
   upcoming.dt <- model.dt.list[[4]]
   expect_true("data.table" %in% class(upcoming.dt))
-  expect_true(upcoming.dt[date < Sys.Date(), .N] == 0)
+  expect_true(upcoming.dt[date < "2023-09-01", .N] == 0)
 })
 
 test_that("no previous dates in upcoming act", {
-  set.sodd.options(data.dir="~/sodd.data/test.data/", force.upcoming=FALSE, verbosity=0)
+  set.sodd.options(data.dir="~/sodd.data/test.data/", force.upcoming=TRUE, verbosity=0)
   date <- "2023-09-01"
   model.dt.list <- read.model.data(date, "act", FALSE, FALSE)
   upcoming.dt <- model.dt.list[[4]]
   expect_true("data.table" %in% class(upcoming.dt))
-  expect_true(upcoming.dt[date < Sys.Date(), .N] == 0)
+  expect_true(upcoming.dt[date < "2023-09-01", .N] == 0)
 })
 

@@ -103,6 +103,7 @@
 # Rscript -e "devtools::document()"
 # Rscript -e "devtools::build_manual()"
 # Rscript -e "devtools::check(document=TRUE, manual=TRUE, force_suggests=TRUE, run_dont_test=FALSE)"
+# Rscript -e "rmarkdown::render(\"README.Rmd\", output_file=\"README.md\")"
 Rscript -e "devtools::install()"
 Rscript "tests/create.test.data.R"
 Rscript -e "testthat::test_file(\"tests/testthat/test_utils.R\", package=\"sodd\")"
@@ -111,5 +112,4 @@ Rscript -e "testthat::test_file(\"tests/testthat/test_file_diff.R\", package=\"s
 Rscript -e "testthat::test_file(\"tests/testthat/test_model_build.R\", package=\"sodd\")"
 Rscript -e "testthat::test_file(\"tests/testthat/test_documentation.R\", package=\"sodd\")"
 Rscript -e "testthat::test_package(\"sodd\")"
-# Rscript -e "rmarkdown::render(\"README.Rmd\", output_file=\"README.md\")"
 

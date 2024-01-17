@@ -6,37 +6,52 @@ random_by_char <- function(cvar) {
   runif(1)
 }
 
-create.a.dt <- quote({
+source.files <- quote({
   source("R/constants.R")
   source("R/options.R")
   source("R/utils.R")
   source("R/standardise.R")
   source("R/strategy.R")
   source("R/plot.R")
-  # create data for testing a.dt
+  adate <- "2023-09-01" # test date
+  udate1 <- "2023-09-08" # upcoming date lower
+  udate2 <- "2023-09-15" # upcoming date upper
   all.years <- c("2021", "2122", "2223", "2324")
-  set.sodd.options(data.dir="~/sodd.data/test.data/", verbosity=1)
-  create.sodd.modeling.data(c("E0", "E1", "E2"), 4)
-  a.dt <- readRDS(file.path(get.sodd.data.dir(), "a.dt.rds"))
-  # force upcoming matches
-  upcoming.dt <- a.dt[date == max(a.dt[, date]), ]
-  a.dt <- a.dt[date < max(a.dt[, date]), ]
-  upcoming.dt[, ftr := NULL]
-  upcoming.dt[, ftr := "NA"]
-  a.dt <- rbind(a.dt, upcoming.dt, fill=TRUE)
-  data.dir <- get.sodd.data.dir()
-  saveRDS(a.dt, file.path(data.dir, "a.dt.rds"))
-  adate <- "2023-09-01"
+  set.sodd.options(
+    data.dir="~/sodd.data/test.data/",
+    force.upcoming=TRUE,
+    verbosity=1
+  )
 })
 
-create.test.dataset.spread <- quote({    
-  # 10% sample of existing dataset
+create.a.dt <- quote({
+  # create data for testing a.dt
+  create.sodd.modeling.data(c("E0", "E1", "E2"), 4)
+  # write file as it would have appeared at set adate
+  a.dt <- readRDS(file.path(get.sodd.data.dir(), "a.dt.rds"))
+  a.dt <- a.dt[date <= udate2, ]
+  a.dt[(udate1 <= date) & (date <= udate2), actr := "NA"]
+  # recalculate mweek
+  a.dt[, mweek := NULL]
+  a.dt[, sweek := paste0(season, "_", strftime(date, format="%V"))]
+  sweek.dt <- a.dt[, .N, sweek][order(sweek)][, mweek := seq(.N)]
+  setkey(a.dt, sweek)
+  setkey(sweek.dt, sweek)
+  a.dt <- merge(a.dt, sweek.dt)
+  saveRDS(a.dt, file.path(get.sodd.data.dir(), "a.dt.rds"))
+})
+
+create.test.dataset.spread <- quote({
+  a.dt <- readRDS(file.path(get.sodd.data.dir(), "a.dt.rds"))
+  # 40% sample of existing dataset
   yvar <- "spread"
   # eval(read.model.data)
   test.a.dt <- copy(a.dt)
+  print(test.a.dt[, .N, actr])
   test.a.dt[, rvar := random_by_char(match_id), match_id]
   test.a.dt <- test.a.dt[rvar <= 0.4, ]
   test.a.dt[, rvar := NULL]
+  print(test.a.dt[, .N, actr])
   data.dir <- get.sodd.data.dir()
   saveRDS(test.a.dt, file.path(data.dir, "test.a.dt.spread.rds"))
 })
@@ -154,22 +169,13 @@ read.test.model.spread <-quote({
 
 create.test.model.doc.spread <- quote({
   eval(read.test.model.spread)
-  pdffile <- model$pdffile
-  train.a.dt <- model$train.a.dt
-  train.b.dt <- model$train.b.dt
-  train.dt <- model$train.dt
-  test.dt <- model$test.dt
-  upcoming.dt <- model$upcoming.dt
-  yvar <- "spread"
-  xvar <- c("ip", "div", "ftr", paste0("hpp", 1:4))
-  uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
-  plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile)
+  plot.model(model)
 })
 
 create.test.dataset.act <- quote({
-  # 10% sample of existing dataset
+  a.dt <- readRDS(file.path(get.sodd.data.dir(), "a.dt.rds"))
+  # 40% sample of existing dataset
   yvar <- "act"
-  eval(read.model.data)
   test.a.dt <- copy(a.dt)
   test.a.dt[, rvar := random_by_char(match_id), match_id]
   test.a.dt <- test.a.dt[rvar <= 0.4, ]
@@ -267,6 +273,7 @@ create.test.model.act <- quote({
   eval(calc.deviances)
   eval(act.pred.summary)
   eval(positive.model.predictions)
+  run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
   model$adate <- adate
   model$train.a.dt <- train.a.dt
   model$train.b.dt <- train.b.dt
@@ -288,45 +295,8 @@ read.test.model.act <-quote({
 })
 
 create.test.model.doc.act <- quote({
-  yvar <- "act"
   model.dt.list <- read.model.data(adate, yvar, FALSE, FALSE)
-  a.dt <- model.dt.list[[1]]
-  train.dt <- model.dt.list[[2]]
-  test.dt <- model.dt.list[[3]]
-  upcoming.dt <- model.dt.list[[4]]
-  family <- model.dt.list[[5]]
-  offset_var <- model.dt.list[[6]]
-  output.dir <- model.dt.list[[7]]
-  modelfile <- model.dt.list[[8]]
-  pdffile <- model.dt.list[[9]]
-  eval(read.test.model.data.act)
-  if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
-  # model params
-  train.fraction <- 0.7
-  n.trees <- 50
-  shrinkage <- 0.01
-  interaction.depth <- 2
-  cv.folds <- 3
-  xvar <- c(
-    "ip",
-    "div",
-    "ftr",
-    paste0("hpp", 1:4)
-  )
-  uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
-  formula <- as.formula(paste("y", paste(xvar, collapse="+"), sep="~offset(offset)+"))
-  eval(read.test.model.act)
-  eval(model.params)
-  eval(model.summary)
-  eval(score.model)
-  eval(rebalance.model)
-  eval(calc.deviances)
-  eval(act.pred.summary)
-  eval(positive.model.predictions)
-  run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
-  print(pdffile)
-  plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile)
-  sink()
+  plot.model(model)
 })
 
 create.test.model.no.cv <- quote({
@@ -365,11 +335,7 @@ create.test.model.no.cv <- quote({
   eval(calc.deviances)
   eval(act.pred.summary)
   eval(positive.model.predictions)
-  cat0n(colnames(train.a.dt))
-  print(colnames(train.a.dt))
   run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
-  cat0n(colnames(train.a.dt))
-  print(colnames(train.a.dt))
   model$adate <- adate
   model$train.a.dt <- train.a.dt
   model$train.b.dt <- train.b.dt
@@ -379,7 +345,7 @@ create.test.model.no.cv <- quote({
   model$uvar <- uvar
   model$yvar <- yvar
   model$logfile <- logfile
-  model$pdffile <- pdffile
+  model$pdffile <- file.path(get.sodd.data.dir(), paste0("model_", adate, "_act_no_cv", ".pdf"))
   model$modelfile <- modelfile
   data.dir <- get.sodd.data.dir()
   saveRDS(model, file.path(data.dir, "test.model.no.cv.rds"))
@@ -391,49 +357,14 @@ read.test.model.no.cv <-quote({
 })
 
 create.test.model.doc.no.cv <- quote({
-  yvar <- "act"
-  model.dt.list <- read.model.data(adate, yvar, FALSE, FALSE)
-  a.dt <- model.dt.list[[1]]
-  train.dt <- model.dt.list[[2]]
-  test.dt <- model.dt.list[[3]]
-  upcoming.dt <- model.dt.list[[4]]
-  family <- model.dt.list[[5]]
-  offset_var <- model.dt.list[[6]]
-  output.dir <- model.dt.list[[7]]
-  modelfile <- model.dt.list[[8]]
-  pdffile <- model.dt.list[[9]]
-  eval(read.test.model.data.act)
-  if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
-  # model params
-  train.fraction <- 0.7
-  n.trees <- 50
-  shrinkage <- 0.01
-  interaction.depth <- 2
-  cv.folds <- 1
-  xvar <- c(
-    "ip",
-    "div",
-    "ftr",
-    paste0("hpp", 1:4)
-  )
-  uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
-  formula <- as.formula(paste("y", paste(xvar, collapse="+"), sep="~offset(offset)+"))
   eval(read.test.model.no.cv)
-  eval(model.params)
-  eval(model.summary)
-  eval(score.model)
-  eval(rebalance.model)
-  eval(calc.deviances)
-  eval(act.pred.summary)
-  eval(positive.model.predictions)
-  run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
-  plot.model(model, adate, train.a.dt, train.b.dt, train.dt, test.dt, upcoming.dt, uvar, yvar, pdffile)
-  sink()
+  plot.model(model)
 })
 
 # runs only when script is run by itself
 if (sys.nframe() == 0) {
   #  ... do main stuff
+  eval(source.files)
   eval(create.a.dt)
   eval(create.test.dataset.spread)
   eval(create.test.model.spread)
