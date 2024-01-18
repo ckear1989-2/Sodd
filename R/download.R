@@ -1,8 +1,8 @@
 
 #' Download a csv file for a single league season
 #'
-#' @param l League names in format <country><division> (e.g. English Premier League = "E0")
-#' @param s Season in format <Y1><Y2> (e.g. 2019/2020 = "1920")
+#' @param l League names in format [country][division] (e.g. English Premier League = "E0")
+#' @param s Season in format [Y1][Y2] (e.g. 2019/2020 = "1920")
 #' @param quiet Download quietly. Defaults to FALSE
 #' @param force Overwrite if file exists. Defaults to TRUE
 #' @param check check for change from existing data pull. Defaults to FALSE

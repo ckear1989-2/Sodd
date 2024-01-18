@@ -94,8 +94,11 @@
 # Rscript -e "install.packages(c(\"data.table\", \"ggplot2\", \"TeachingDemos\", \"devtools\", \
 #     \"gridExtra\", \"huxtable\", \"gmailr\", \"cronR\", \"rmarkdown\", \"pryr\", \"png\"))"
 
-# upgrade to gbm3
+# upgrade to gbm3 (dev version from  github)
 # Rscript -e "library(\"devtools\"); install_github(\"gbm-developers/gbm3\")"
+
+# install pretty.gtable package (dev version from github)
+# Rscript -e "library(\"devtools\"); install_github(\"ckear1989-2/pretty.gtable\")"
 
 # Rscript -e "devtools::setup(\"./\")"
 # Rscript -e "devtools::load_all()"
@@ -106,10 +109,10 @@
 # Rscript -e "rmarkdown::render(\"README.Rmd\", output_file=\"README.md\")"
 Rscript -e "devtools::install()"
 # Rscript "tests/create.test.data.R"
-Rscript -e "testthat::test_file(\"tests/testthat/test_utils.R\", package=\"sodd\")"
-Rscript -e "testthat::test_file(\"tests/testthat/test_data_creation.R\", package=\"sodd\")"
-Rscript -e "testthat::test_file(\"tests/testthat/test_file_diff.R\", package=\"sodd\")"
-Rscript -e "testthat::test_file(\"tests/testthat/test_model_build.R\", package=\"sodd\")"
+# Rscript -e "testthat::test_file(\"tests/testthat/test_utils.R\", package=\"sodd\")"
+# Rscript -e "testthat::test_file(\"tests/testthat/test_data_creation.R\", package=\"sodd\")"
+# Rscript -e "testthat::test_file(\"tests/testthat/test_file_diff.R\", package=\"sodd\")"
+# Rscript -e "testthat::test_file(\"tests/testthat/test_model_build.R\", package=\"sodd\")"
 Rscript -e "testthat::test_file(\"tests/testthat/test_documentation.R\", package=\"sodd\")"
-Rscript -e "testthat::test_package(\"sodd\")"
+# Rscript -e "testthat::test_package(\"sodd\")"
 

@@ -224,6 +224,7 @@ colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
   obj
 }
 
+#' @importFrom pretty.gtable pretty_gtable
 #' @importFrom gbm3 iteration_error
 #' @importFrom gridExtra tableGrob
 #' @importFrom grid gpar grobTree rectGrob
@@ -263,11 +264,17 @@ plot.model.param <- function(model) {
     round(cv.error, 4),
     round(model$oobag.improve[[best.trees]], 4)
   )
-  params.dt.0 <- t(data.frame(parameter=params[1:5], value=vals[1:5]))
-  p.obj.0 <- gridExtra::tableGrob(params.dt.0, theme=table.theme(10), cols=NULL)
+  params.dt.0 <- data.frame(t(data.frame(parameter=params[1:5], value=vals[1:5])))
+  p.obj.options <- list(
+    fs=10,
+    rowcs=c("red1", "red3")
+  )
+  p.obj.0 <- pretty.gtable::pretty_gtable(params.dt.0)
+  # p.obj.0 <- gridExtra::tableGrob(params.dt.0, theme=table.theme(10), cols=NULL)
   p.obj.0 <- colorise.tableGrob(p.obj.0, params.dt.0, "red1", "red3", 10)
-  params.dt.1 <- t(data.frame(parameter=params[6:10], value=vals[6:10]))
-  p.obj.1 <- gridExtra::tableGrob(params.dt.1, theme=table.theme(10), cols=NULL)
+  params.dt.1 <- data.frame(t(data.frame(parameter=params[6:10], value=vals[6:10])))
+  p.obj.1 <- pretty.gtable::pretty_gtable(params.dt.1)
+  # p.obj.1 <- gridExtra::tableGrob(params.dt.1, theme=table.theme(10), cols=NULL)
   p.obj.1 <- colorise.tableGrob(p.obj.1, params.dt.1, "red1", "red3", 10)
   p.obj.0 <- grid::grobTree(
     grid::rectGrob(gp=grid::gpar(fill="red1", lwd=0, col="black", alpha=0.5)),
