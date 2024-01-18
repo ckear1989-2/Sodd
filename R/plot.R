@@ -145,85 +145,6 @@ find_cell <- function(table, row, col, name="core-fg") {
   which(l$t==row & l$l==col & l$name==name)
 }
 
-#' @importFrom grid unit.c unit
-padding <- function() grid::unit.c(grid::unit(2, "mm"), grid::unit(2, "mm"))
-
-#' @importFrom gridExtra ttheme_default
-table.theme <- function(fs) {
-    gridExtra::ttheme_default(
-    core=list(
-      fg_params=list(fontsize=fs, just="left"),
-      padding=padding()
-    ),
-    rowhead=list(
-      fg_params=list(fontsize=fs, fontface="bold", just="left"),
-      padding=padding()
-    ),
-    colhead=list(
-      fg_params=list(fontsize=fs, fontface="bold", just="left"),
-      padding=padding()
-    )
-  )
-}
-
-#' @importFrom grid gpar
-colorise.tableGrob <- function(obj, dt, col1, col2, fs=12) {
-  # set all font sizes
-  for(x in 1:(ncol(dt)+1)) {
-    for (y in 1:(nrow(dt)+1)) {
-      for(fg in c("colhead-fg", "rowhead-fg", "core-fg")) {
-        ind <- find_cell(obj, y, x, fg)
-        if(!length(ind) > 0) {
-          next
-        } else {
-          obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs, just="left")
-        }
-      }
-    }
-  }
-  # bold first row
-  for(x in 1:(ncol(dt)+1)) {
-    for(fg in c("core-fg", "colhead-fg")) {
-      ind <- find_cell(obj, 1, x, fg)
-      if(!length(ind) > 0) {
-        next
-      } else {
-        obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs, fontface="bold", just="left")
-      }
-    }
-  }
-  # bold first column
-  for(x in 1:(nrow(dt)+1)) {
-    for(fg in c("core-fg", "rowhead-fg")) {
-      ind <- find_cell(obj, x, 1, fg)
-      if(!length(ind) > 0) {
-        next
-      } else {
-        obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fontsize=fs, fontface="bold", just="left")
-      }
-    }
-  }
-  # alternate colors
-  for(x in 1:(ncol(dt)+1)) {
-    for (y in 1:(nrow(dt)+1)) {
-      for(bg in c("colhead-bg", "rowhead-bg", "core-bg")) {
-        ind <- find_cell(obj, y, x, bg)
-        if(!length(ind) > 0) {
-          next
-        } else {
-            if((y %% 2) == 0) {
-              fill <- col1
-            } else {
-              fill <- col2
-            }
-            obj$grobs[ind][[1]][["gp"]] <- grid::gpar(fill=fill, col="white", just="left")
-        }
-      }
-    }
-  }
-  obj
-}
-
 #' @importFrom pretty.gtable pretty_gtable
 #' @importFrom gbm3 iteration_error
 #' @importFrom gridExtra tableGrob
@@ -269,13 +190,9 @@ plot.model.param <- function(model) {
     fs=10,
     rowcs=c("red1", "red3")
   )
-  p.obj.0 <- pretty.gtable::pretty_gtable(params.dt.0)
-  # p.obj.0 <- gridExtra::tableGrob(params.dt.0, theme=table.theme(10), cols=NULL)
-  p.obj.0 <- colorise.tableGrob(p.obj.0, params.dt.0, "red1", "red3", 10)
+  p.obj.0 <- pretty.gtable::pretty_gtable(params.dt.0, p.obj.options)
   params.dt.1 <- data.frame(t(data.frame(parameter=params[6:10], value=vals[6:10])))
-  p.obj.1 <- pretty.gtable::pretty_gtable(params.dt.1)
-  # p.obj.1 <- gridExtra::tableGrob(params.dt.1, theme=table.theme(10), cols=NULL)
-  p.obj.1 <- colorise.tableGrob(p.obj.1, params.dt.1, "red1", "red3", 10)
+  p.obj.1 <- pretty.gtable::pretty_gtable(params.dt.1, p.obj.options)
   p.obj.0 <- grid::grobTree(
     grid::rectGrob(gp=grid::gpar(fill="red1", lwd=0, col="black", alpha=0.5)),
     p.obj.0
@@ -350,8 +267,12 @@ plot.data.perf <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
     model.dev=model.dev
   )
   setnames(devs.dt, colnames(devs.dt), gsub("\\.", "\n", colnames(devs.dt)))
-  p.obj <- gridExtra::tableGrob(devs.dt, theme=table.theme(6), rows=NULL)
-  p.obj <- colorise.tableGrob(p.obj, devs.dt, "gold", "gold3", 6)
+  p.obj.options <- list(
+    cols=colnames(devs.dt),
+    rowcs=c("gold", "gold3"),
+    fs=6
+  )
+  p.obj <- pretty.gtable::pretty_gtable(devs.dt, p.obj.options)
   p.obj <- grid::grobTree(
       grid::rectGrob(gp=grid::gpar(fill="gold", lwd=2, col="black", alpha=0.5)),
       p.obj
@@ -379,9 +300,12 @@ plot.strategies <- function(a.dt) {
   stake_wtd <- sapply(strategy, function(x) sum(a.dt[[paste0("strat_", x, "_wtd")]]))
   gain_wtd <- sapply(strategy, function(x) round(sum(a.dt[[paste0("gain_", x, "_wtd")]]), 2))
   strategy <- gsub("_", "\n", strategy)
-  strat.dt <- t(data.frame(strategy=strategy, stake=stake, gain=gain, stake_wtd=stake_wtd, gain_wtd=gain_wtd))
-  strat.p.obj <- gridExtra::tableGrob(strat.dt, theme=table.theme(10), cols=NULL)
-  strat.p.obj <- colorise.tableGrob(strat.p.obj, strat.dt, "grey90", "grey95", 10)
+  strat.dt <- data.frame(t(data.frame(strategy=strategy, stake=stake, gain=gain, stake_wtd=stake_wtd, gain_wtd=gain_wtd)))
+  p.obj.options <- list(
+    rowcs=c("grey90", "grey95"),
+    fs=10
+  )
+  strat.p.obj <- pretty.gtable::pretty_gtable(strat.dt, p.obj.options)
   strat.p.obj <- grid::grobTree(
     grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=2, col="black", alpha=0.5)),
     strat.p.obj
@@ -595,8 +519,13 @@ set_row_border <- function(obj, row, color) {
 detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
   actr <- NULL
   a.thin.dt <- detailed.strat.data.table(a.dt, recent.dt)
-  p.obj <- gridExtra::tableGrob(a.thin.dt, theme=table.theme(16), rows=NULL)
-  p.obj <- colorise.tableGrob(p.obj, a.thin.dt, "grey90", "grey95", 16)
+  p.obj.options <- list(
+    fs=16,
+    rowcs=c("grey90", "grey95"),
+    rows=NULL,
+    cols=colnames(a.thin.dt)
+  )
+  p.obj <- pretty.gtable::pretty_gtable(a.thin.dt, p.obj.options)
   correct_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, ftr] == a.thin.dt[i, actr]) & (!a.thin.dt[i, actr] == "NA"))
   incorrect_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, ftr] != a.thin.dt[i, actr]) & (!a.thin.dt[i, actr] == "NA"))
   unknown_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, actr] == "NA") | is.na(a.thin.dt[i, actr]))
@@ -727,7 +656,12 @@ detailed.test.date.data.table <- function(a.dt) {
 detailed.test.date.gtable <- function(a.dt) {
   actr <- NULL
   a.thin.dt <- detailed.test.date.data.table(a.dt)
-  p.obj <- pretty.gtable::pretty_gtable(a.thin.dt)
+  p.obj.options <- list(
+    fs=16,
+    cols=colnames(a.thin.dt),
+    rowcs=c("grey", "grey95")
+  )
+  p.obj <- pretty.gtable::pretty_gtable(a.thin.dt, p.obj.options)
   p.obj <- grid::grobTree(
     grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=0, col="black", alpha=0.5)),
     grid::textGrob(
