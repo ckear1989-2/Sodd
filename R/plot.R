@@ -148,7 +148,6 @@ find_cell <- function(table, row, col, name="core-fg") {
 #' @importFrom pretty.gtable pretty_gtable
 #' @importFrom gbm3 iteration_error
 #' @importFrom gridExtra tableGrob
-#' @importFrom grid gpar grobTree rectGrob
 plot.model.param <- function(model) {
   params <- c(
     "train.fraction",
@@ -188,24 +187,19 @@ plot.model.param <- function(model) {
   params.dt.0 <- data.frame(t(data.frame(parameter=params[1:5], value=vals[1:5])))
   p.obj.options <- list(
     fs=10,
-    rowcs=c("red1", "red3")
+    rowcs=c("red1", "red3"),
+    bg_fill="red1",
+    bg_color="black",
+    bg_alpha=0.5,
+    bg_linewidth=0
   )
   p.obj.0 <- pretty.gtable::pretty_gtable(params.dt.0, p.obj.options)
   params.dt.1 <- data.frame(t(data.frame(parameter=params[6:10], value=vals[6:10])))
   p.obj.1 <- pretty.gtable::pretty_gtable(params.dt.1, p.obj.options)
-  p.obj.0 <- grid::grobTree(
-    grid::rectGrob(gp=grid::gpar(fill="red1", lwd=0, col="black", alpha=0.5)),
-    p.obj.0
-  )
-  p.obj.1 <- grid::grobTree(
-    grid::rectGrob(gp=grid::gpar(fill="red1", lwd=0, col="black", alpha=0.5)),
-    p.obj.1
-  )
   list(p.obj.0, p.obj.1)
 }
 
 #' @importFrom gridExtra tableGrob
-#' @importFrom grid gpar grobTree rectGrob
 plot.data.perf <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
   date <- match_id <- weight <- null_dev <- model_dev <- offset_dev <- NULL
   dts <- c(
@@ -270,18 +264,18 @@ plot.data.perf <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
   p.obj.options <- list(
     cols=colnames(devs.dt),
     rowcs=c("gold", "gold3"),
-    fs=6
+    fs=6,
+    bg_fill="gold",
+    bg_color="black",
+    bg_alpha=0.5,
+    bg_linewidth=2
+
   )
   p.obj <- pretty.gtable::pretty_gtable(devs.dt, p.obj.options)
-  p.obj <- grid::grobTree(
-      grid::rectGrob(gp=grid::gpar(fill="gold", lwd=2, col="black", alpha=0.5)),
-      p.obj
-  )
   p.obj
 }
 
 #' @importFrom gridExtra tableGrob
-#' @importFrom grid gpar grobTree rectGrob
 plot.strategies <- function(a.dt) {
   strategy <- c(
     "all",
@@ -303,13 +297,13 @@ plot.strategies <- function(a.dt) {
   strat.dt <- data.frame(t(data.frame(strategy=strategy, stake=stake, gain=gain, stake_wtd=stake_wtd, gain_wtd=gain_wtd)))
   p.obj.options <- list(
     rowcs=c("grey90", "grey95"),
-    fs=10
+    fs=10,
+    bg_fill="grey90",
+    bg_color="black",
+    bg_alpha=0.5,
+    bg_linewidth=2
   )
   strat.p.obj <- pretty.gtable::pretty_gtable(strat.dt, p.obj.options)
-  strat.p.obj <- grid::grobTree(
-    grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=2, col="black", alpha=0.5)),
-    strat.p.obj
-  )
   strat.p.obj
 }
 
