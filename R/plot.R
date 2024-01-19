@@ -147,7 +147,6 @@ find_cell <- function(table, row, col, name="core-fg") {
 
 #' @importFrom pretty.gtable pretty_gtable
 #' @importFrom gbm3 iteration_error
-#' @importFrom gridExtra tableGrob
 plot.model.param <- function(model) {
   params <- c(
     "train.fraction",
@@ -199,7 +198,7 @@ plot.model.param <- function(model) {
   list(p.obj.0, p.obj.1)
 }
 
-#' @importFrom gridExtra tableGrob
+#' @export
 plot.data.perf <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
   date <- match_id <- weight <- null_dev <- model_dev <- offset_dev <- NULL
   dts <- c(
@@ -275,7 +274,7 @@ plot.data.perf <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
   p.obj
 }
 
-#' @importFrom gridExtra tableGrob
+#' @export
 plot.strategies <- function(a.dt) {
   strategy <- c(
     "all",
@@ -309,6 +308,7 @@ plot.strategies <- function(a.dt) {
 
 #' @importFrom gbm3 iteration_error
 #' @import ggplot2
+#' @export
 plot.model.perf <- function(model, train.a, train.b) {
   trees <- cv_rs <- cv <- x1 <- y1 <- x2 <- y2 <- NULL
   train.error <- model$train.error
@@ -502,47 +502,31 @@ detailed.strat.data.table <- function(a.dt, recent.dt) {
   a.thin.dt
 }
 
-set_row_border <- function(obj, row, color) {
-  # row + 1 because of header
-    gtable::gtable_add_grob(obj, grobs=grid::rectGrob(gp=grid::gpar(fill=color, lwd=2, col=color, alpha=0.5)), t=(row+1.02), b=(row+1.98), l=1.02, r=(ncol(obj)+1))
-}
-
-#' @importFrom gridExtra tableGrob
 #' @importFrom gtable gtable_add_grob
-#' @importFrom grid gpar grobTree rectGrob textGrob
 detailed.strat.gtable <- function(a.dt, recent.dt, aname) {
   actr <- NULL
   a.thin.dt <- detailed.strat.data.table(a.dt, recent.dt)
-  p.obj.options <- list(
-    fs=16,
-    rowcs=c("grey90", "grey95"),
-    rows=NULL,
-    cols=colnames(a.thin.dt)
-  )
-  p.obj <- pretty.gtable::pretty_gtable(a.thin.dt, p.obj.options)
-  correct_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, ftr] == a.thin.dt[i, actr]) & (!a.thin.dt[i, actr] == "NA"))
-  incorrect_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, ftr] != a.thin.dt[i, actr]) & (!a.thin.dt[i, actr] == "NA"))
-  unknown_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, actr] == "NA") | is.na(a.thin.dt[i, actr]))
-  p.obj <- set_row_border(p.obj, 0, "black")
-  for (i in 1:a.thin.dt[, .N]) {
-    if (isTRUE(correct_preds[[i]])) p.obj <- set_row_border(p.obj, i, "green")
-    if (isTRUE(incorrect_preds[[i]])) p.obj <- set_row_border(p.obj, i, "red")
-    if (isTRUE(unknown_preds[[i]])) p.obj <- set_row_border(p.obj, i, "black")
-  }
   this.label <- paste0(aname, " strategy top per match topn=", (a.thin.dt[, .N] -1))
   if(aname == "upcoming" & isTRUE(get.sodd.force.upcoming()) & (min(a.dt[, date]) < Sys.Date())) {
     this.label <- paste0(this.label, "\nwarning: upcoming fixtures may be forced.")
   }
-  p.obj <- grid::grobTree(
-    grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=0, col="black", alpha=0.5)),
-    grid::textGrob(
-      label=this.label,
-      gp=grid::gpar(fontsize=16, fontface="bold", fill="black", col="black"),
-      x=0.5,
-      y=0.92,
-    ),
-    p.obj
+  correct_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, ftr] == a.thin.dt[i, actr]) & (!a.thin.dt[i, actr] == "NA"))
+  incorrect_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, ftr] != a.thin.dt[i, actr]) & (!a.thin.dt[i, actr] == "NA"))
+  unknown_preds <- sapply(1:a.thin.dt[, .N], function(i) (a.thin.dt[i, actr] == "NA") | is.na(a.thin.dt[i, actr]))
+  rowcs <- c("grey95") # title in light grey
+  for (i in 1:a.thin.dt[, .N]) {
+    if (isTRUE(correct_preds[[i]])) rowcs <- append(rowcs, "green")
+    if (isTRUE(incorrect_preds[[i]])) rowcs <- append(rowcs, "red")
+    if (isTRUE(unknown_preds[[i]])) rowcs <- append(rowcs, "grey95")
+  }
+  p.obj.options <- list(
+    fs=16,
+    rowcs=rowcs,
+    rows=NULL,
+    cols=colnames(a.thin.dt),
+    title=this.label
   )
+  p.obj <- pretty.gtable::pretty_gtable(a.thin.dt, p.obj.options)
   p.obj
 }
 
@@ -653,19 +637,10 @@ detailed.test.date.gtable <- function(a.dt) {
   p.obj.options <- list(
     fs=16,
     cols=colnames(a.thin.dt),
-    rowcs=c("grey", "grey95")
+    rowcs=c("grey", "grey95"),
+    title=paste0("test", " strategy top per match for last ", (a.thin.dt[, .N] -1), " dates")
   )
   p.obj <- pretty.gtable::pretty_gtable(a.thin.dt, p.obj.options)
-  p.obj <- grid::grobTree(
-    grid::rectGrob(gp=grid::gpar(fill="grey90", lwd=0, col="black", alpha=0.5)),
-    grid::textGrob(
-      label=paste0("test", " strategy top per match for last ", (a.thin.dt[, .N] -1), " dates"),
-      gp=grid::gpar(fontsize=16, fontface="bold", fill="black", col="black"),
-      x=0.5,
-      y=0.92,
-    ),
-    p.obj
-  )
   p.obj
 }
 

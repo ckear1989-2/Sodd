@@ -22,7 +22,7 @@ test_that("test by date page", {
   set.sodd.options(
     data.dir="~/sodd.data/test.data/",
     force.upcoming=TRUE,
-    verbosity=1
+    verbosity=0
   )
   adate <- "2023-09-01"
   output.dir <- get.sodd.output.dir()
