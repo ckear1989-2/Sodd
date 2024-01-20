@@ -89,6 +89,8 @@ build.sodd.model <- function(
   model$upcoming.dt <- upcoming.dt
   model$uvar <- uvar
   model$yvar <- yvar
+  model$pvar <- "gbmp"
+  model$wvar <- "weight"
   model$logfile <- logfile
   model$pdffile <- pdffile
   model$modelfile <- modelfile

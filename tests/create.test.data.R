@@ -146,6 +146,11 @@ create.test.model.spread <- quote({
   eval(act.pred.summary)
   eval(positive.model.predictions)
   run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
+  train.a.dt[, y := NULL]
+  train.b.dt[, y := NULL]
+  train.dt[, y := NULL]
+  test.dt[, y := NULL]
+  upcoming.dt[, y := NULL]
   model$adate <- adate
   model$train.a.dt <- train.a.dt
   model$train.b.dt <- train.b.dt
@@ -154,6 +159,8 @@ create.test.model.spread <- quote({
   model$upcoming.dt <- upcoming.dt
   model$uvar <- uvar
   model$yvar <- yvar
+  model$wvar <- "weight"
+  model$pvar <- "gbmp"
   model$logfile <- logfile
   model$pdffile <- pdffile
   model$modelfile <- modelfile
@@ -274,6 +281,11 @@ create.test.model.act <- quote({
   eval(act.pred.summary)
   eval(positive.model.predictions)
   run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
+  train.a.dt[, y := NULL]
+  train.b.dt[, y := NULL]
+  train.dt[, y := NULL]
+  test.dt[, y := NULL]
+  upcoming.dt[, y := NULL]
   model$adate <- adate
   model$train.a.dt <- train.a.dt
   model$train.b.dt <- train.b.dt
@@ -282,6 +294,8 @@ create.test.model.act <- quote({
   model$upcoming.dt <- upcoming.dt
   model$uvar <- uvar
   model$yvar <- yvar
+  model$wvar <- "weight"
+  model$pvar <- "gbmp"
   model$logfile <- logfile
   model$pdffile <- pdffile
   model$modelfile <- modelfile
@@ -336,6 +350,11 @@ create.test.model.no.cv <- quote({
   eval(act.pred.summary)
   eval(positive.model.predictions)
   run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
+  train.a.dt[, y := NULL]
+  train.b.dt[, y := NULL]
+  train.dt[, y := NULL]
+  test.dt[, y := NULL]
+  upcoming.dt[, y := NULL]
   model$adate <- adate
   model$train.a.dt <- train.a.dt
   model$train.b.dt <- train.b.dt
@@ -344,6 +363,8 @@ create.test.model.no.cv <- quote({
   model$upcoming.dt <- upcoming.dt
   model$uvar <- uvar
   model$yvar <- yvar
+  model$wvar <- "weight"
+  model$pvar <- "gbmp"
   model$logfile <- logfile
   model$pdffile <- file.path(get.sodd.data.dir(), paste0("model_", adate, "_act_no_cv", ".pdf"))
   model$modelfile <- modelfile
