@@ -150,7 +150,7 @@ calc.strategies <- function(a.dt) {
   a.dt
 }
 
-run.strategy <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
+run.strategy <- function(train.dt, train.a.dt, train.b.dt, test.dt, upcoming.dt) {
   gain_strat <- NULL
   cat0n(rep("#", 30), "\nStrategies", verbosity=2)
   train.a.dt <- calc.strategies(train.a.dt)
@@ -166,5 +166,10 @@ run.strategy <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
   }
   cat0n("strategy,stake,gain", verbosity=2)
   for(strat in strats) cat_strat(strat)
+  train.a.dt[, y := NULL]
+  train.b.dt[, y := NULL]
+  train.dt[, y := NULL]
+  test.dt[, y := NULL]
+  upcoming.dt[, y := NULL]
 }
 

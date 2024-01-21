@@ -79,7 +79,7 @@ build.sodd.model <- function(
   eval(calc.deviances)
   eval(act.pred.summary)
   eval(positive.model.predictions)
-  run.strategy(train.a.dt, train.b.dt, test.dt, upcoming.dt)
+  run.strategy(train.dt, train.a.dt, train.b.dt, test.dt, upcoming.dt)
   sink()
   model$adate <- adate
   model$train.a.dt <- train.a.dt

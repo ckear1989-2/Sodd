@@ -1,78 +1,6 @@
 
-#' @importFrom gridExtra arrangeGrob
-plot.model.run <- function(model) {
-  model.param.p.obj <- plot.model.param(model)
-  model.perf.p.obj <- plot.data.perf(model$train.a.dt, model$train.b.dt, model$test.dt, model$upcoming.dt)
-  strat.p.obj <- plot.strategies(model$test.dt)
-  gs <- list(model.param.p.obj[[1]], model.param.p.obj[[2]], model.perf.p.obj, strat.p.obj)
-  lay <- rbind(
-    c(1,3),
-    c(2,3),
-    c(4,4),
-    c(4,4)
-  )
-  gridExtra::arrangeGrob(grobs=gs, layout_matrix=lay)
-}
-find_cell <- function(table, row, col, name="core-fg") {
-  l <- table$layout
-  which(l$t==row & l$l==col & l$name==name)
-}
-
-#' @importFrom pretty.gtable pretty_gtable
-#' @importFrom gbm3 iteration_error
-plot.model.param <- function(model) {
-  params <- c(
-    "train.fraction",
-    "cv.folds",
-    "n.trees",
-    "shrinkage",
-    "interaction.depth",
-    "family",
-    "train.error",
-    "valid.error",
-    "cv.error",
-    "oobag.improve"
-  )
-  params <- gsub("\\.", "\n", params)
-  if (model$cv_folds > 1) {
-    best.trees <- gbm.perf(model, plot.it=FALSE, method="cv")
-    cv.error <- gbm3::iteration_error(model, "cv")[[best.trees]]
-    if (is.null(cv.error)) {
-      cv.error <- 0
-    }
-  } else {
-    best.trees <- gbm.perf(model, plot.it=FALSE, method="test")
-    cv.error <- 0
-  }
-  vals <- c(
-    round(model$params$train_fraction, 2),
-    model$cv.folds,
-    model$n.trees,
-    round(model$params$shrinkage, 3),
-    round(model$params$interaction_depth),
-    model$distribution$name,
-    round(model$train.error[[best.trees]], 4),
-    round(model$valid.error[[best.trees]], 4),
-    round(cv.error, 4),
-    round(model$oobag.improve[[best.trees]], 4)
-  )
-  params.dt.0 <- data.frame(t(data.frame(parameter=params[1:5], value=vals[1:5])))
-  p.obj.options <- list(
-    fs=10,
-    rowcs=c("red1", "red3"),
-    bg_fill="red1",
-    bg_color="black",
-    bg_alpha=0.5,
-    bg_linewidth=0
-  )
-  p.obj.0 <- pretty.gtable::pretty_gtable(params.dt.0, p.obj.options)
-  params.dt.1 <- data.frame(t(data.frame(parameter=params[6:10], value=vals[6:10])))
-  p.obj.1 <- pretty.gtable::pretty_gtable(params.dt.1, p.obj.options)
-  list(p.obj.0, p.obj.1)
-}
-
 #' @export
-plot.data.perf <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
+plot.data.perf <- function(model) {
   date <- match_id <- weight <- null_dev <- model_dev <- offset_dev <- NULL
   dts <- c(
     "train.a",
@@ -81,45 +9,45 @@ plot.data.perf <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
     "upcoming"
   )
   min.date <- c(
-    min(train.a.dt[, date]),
-    min(train.b.dt[, date]),
-    min(test.dt[, date]),
-    min(upcoming.dt[, date])
+    min(model$train.a.dt[, date]),
+    min(model$train.b.dt[, date]),
+    min(model$test.dt[, date]),
+    min(model$upcoming.dt[, date])
   )
   max.date <- c(
-    max(train.a.dt[, date]),
-    max(train.b.dt[, date]),
-    max(test.dt[, date]),
-    max(upcoming.dt[, date])
+    max(model$train.a.dt[, date]),
+    max(model$train.b.dt[, date]),
+    max(model$test.dt[, date]),
+    max(model$upcoming.dt[, date])
   )
   records <- c(
-    train.a.dt[, .N],
-    train.b.dt[, .N],
-    test.dt[, .N],
-    upcoming.dt[, .N]
+    model$train.a.dt[, .N],
+    model$train.b.dt[, .N],
+    model$test.dt[, .N],
+    model$upcoming.dt[, .N]
   )
   matches <- c(
-    length(unique(train.a.dt[, match_id])),
-    length(unique(train.b.dt[, match_id])),
-    length(unique(test.dt[, match_id])),
-    length(unique(upcoming.dt[, match_id]))
+    length(unique(model$train.a.dt[, match_id])),
+    length(unique(model$train.b.dt[, match_id])),
+    length(unique(model$test.dt[, match_id])),
+    length(unique(model$upcoming.dt[, match_id]))
   )
   null.dev <- c(
-    round(sum(train.a.dt[, null_dev]) / sum(train.a.dt[, weight]), 4),
-    round(sum(train.b.dt[, null_dev]) / sum(train.b.dt[, weight]), 4),
-    round(sum(test.dt[, null_dev]) / sum(test.dt[, weight]), 4),
+    round(sum(model$train.a.dt[, null_dev]) / sum(model$train.a.dt[, weight]), 4),
+    round(sum(model$train.b.dt[, null_dev]) / sum(model$train.b.dt[, weight]), 4),
+    round(sum(model$test.dt[, null_dev]) / sum(model$test.dt[, weight]), 4),
     NA
   )
   offset.dev <- c(
-    round(sum(train.a.dt[, offset_dev]) / sum(train.a.dt[, weight]), 4),
-    round(sum(train.b.dt[, offset_dev]) / sum(train.b.dt[, weight]), 4),
-    round(sum(test.dt[, offset_dev]) / sum(test.dt[, weight]), 4),
+    round(sum(model$train.a.dt[, offset_dev]) / sum(model$train.a.dt[, weight]), 4),
+    round(sum(model$train.b.dt[, offset_dev]) / sum(model$train.b.dt[, weight]), 4),
+    round(sum(model$test.dt[, offset_dev]) / sum(model$test.dt[, weight]), 4),
     NA
   )
   model.dev <- c(
-    round(sum(train.a.dt[, model_dev]) / sum(train.a.dt[, weight]), 4),
-    round(sum(train.b.dt[, model_dev]) / sum(train.b.dt[, weight]), 4),
-    round(sum(test.dt[, model_dev]) / sum(test.dt[, weight]), 4),
+    round(sum(model$train.a.dt[, model_dev]) / sum(model$train.a.dt[, weight]), 4),
+    round(sum(model$train.b.dt[, model_dev]) / sum(model$train.b.dt[, weight]), 4),
+    round(sum(model$test.dt[, model_dev]) / sum(model$test.dt[, weight]), 4),
     NA
   )
   devs.dt <- data.frame(
@@ -145,6 +73,39 @@ plot.data.perf <- function(train.a.dt, train.b.dt, test.dt, upcoming.dt) {
   )
   p.obj <- pretty.gtable::pretty_gtable(devs.dt, p.obj.options)
   p.obj
+}
+
+var.name.check <- function(model) {
+  # make sure variables needed for plotting are in data.tables
+  stopifnot(all(c(model$yvar, model$wvar, model$pvar, model$uvar) %in% colnames(model$train.a.dt)))
+  stopifnot(all(c(model$yvar, model$wvar, model$pvar, model$uvar) %in% colnames(model$train.b.dt)))
+  stopifnot(all(c(model$yvar, model$wvar, model$pvar, model$uvar) %in% colnames(model$train.dt)))
+  stopifnot(all(c(model$yvar, model$wvar, model$pvar, model$uvar) %in% colnames(model$test.dt)))
+  stopifnot(all(c(model$yvar, model$wvar, model$pvar, model$uvar) %in% colnames(model$upcoming.dt)))
+  # make sure variables temp names needed for plotting are not in data.tables
+  stopifnot(!any(c("x", "y", "w", "p") %in% colnames(model$train.a.dt)))
+  stopifnot(!any(c("x", "y", "w", "p") %in% colnames(model$train.b.dt)))
+  stopifnot(!any(c("x", "y", "w", "p") %in% colnames(model$train.dt)))
+  stopifnot(!any(c("x", "y", "w", "p") %in% colnames(model$test.dt)))
+  stopifnot(!any(c("x", "y", "w", "p") %in% colnames(model$upcoming.dt)))
+  TRUE
+}
+
+#' @import gbm.doc
+#' @export
+plot.model.run <- function(model) {
+  var.name.check(model)
+  model.param.p.obj <- gbm.doc::plot_model_param(model)
+  model.perf.p.obj <- plot.data.perf(model)
+  strat.p.obj <- plot.strategies(model$test.dt)
+  gs <- list(model.param.p.obj, model.perf.p.obj, strat.p.obj)
+  lay <- rbind(
+    c(1, 1, 1, 1, 2, 2),
+    c(1, 1, 1, 1, 2, 2),
+    c(3, 3, 3, 3, 3, 3),
+    c(3, 3, 3, 3, 3, 3)
+  )
+  gridExtra::arrangeGrob(grobs=gs, layout_matrix=lay)
 }
 
 #' @export
