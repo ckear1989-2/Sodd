@@ -100,10 +100,8 @@ plot.model.run <- function(model) {
   strat.p.obj <- plot.strategies(model$test.dt)
   gs <- list(model.param.p.obj, model.perf.p.obj, strat.p.obj)
   lay <- rbind(
-    c(1, 1, 1, 1, 2, 2),
-    c(1, 1, 1, 1, 2, 2),
-    c(3, 3, 3, 3, 3, 3),
-    c(3, 3, 3, 3, 3, 3)
+    c(1, 2),
+    c(3, 3)
   )
   gridExtra::arrangeGrob(grobs=gs, layout_matrix=lay)
 }
@@ -129,6 +127,7 @@ plot.strategies <- function(a.dt) {
   strategy <- gsub("_", "\n", strategy)
   strat.dt <- data.frame(t(data.frame(strategy=strategy, stake=stake, gain=gain, stake_wtd=stake_wtd, gain_wtd=gain_wtd)))
   p.obj.options <- list(
+    rows=rownames(strat.dt),
     rowcs=c("grey90", "grey95"),
     fs=10,
     bg_fill="grey90",
