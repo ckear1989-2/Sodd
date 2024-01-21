@@ -77,6 +77,8 @@ test_that("test document model no cv", {
   mpdff1 <- file.path(output.dir, paste0("model_", adate, "_act", "_no_cv", ".pdf"))
   mpngf1 <- file.path(output.dir, paste0("model_", adate, "_act", "_no_cv", "_strategy", ".png"))
   eval(read.test.model.no.cv)
+  expect_equal(model$params$num_trees, 50)
+  expect_equal(model$cv_folds, 1)
   if (!is.null(model)) {
     test.dt <- model$test.dt
     model$pdffile <- mpdff1
@@ -84,7 +86,7 @@ test_that("test document model no cv", {
     expect_silent(recent.dt <- get.recent.dt(leagues))
     test.table <- detailed.strat.data.table(test.dt, recent.dt)
     expect("div" %in% colnames(test.table), "div not in strategy table")
-    expect_silent(plot.model(model))
+    expect_warning(plot.model(model), "plotting model perf with no cv.")
     expect(file.exists(mpdff1), "model pdf not created")
     expect(file.exists(mpngf1), "strategy png not created")
     expect_equal(dim(png::readPNG(mpngf1)), c(600, 800, 3))

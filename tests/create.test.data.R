@@ -7,6 +7,7 @@ random_by_char <- function(cvar) {
 }
 
 source.files <- quote({
+  library("sodd")
   source("R/constants.R")
   source("R/options.R")
   source("R/utils.R")
@@ -18,6 +19,13 @@ source.files <- quote({
   udate2 <- "2023-09-15" # upcoming date upper
   all.years <- c("2021", "2122", "2223", "2324")
   set.sodd.options(
+    model.params=list(
+      train.fraction=0.7,
+      n.trees=50,
+      shrinkage=0.1,
+      interaction.depth=2,
+      cv.folds=3
+    ),
     data.dir="~/sodd.data/test.data/",
     force.upcoming=TRUE,
     verbosity=1
@@ -128,7 +136,6 @@ create.test.model.spread <- quote({
   n.trees <- 50
   shrinkage <- 0.01
   interaction.depth <- 2
-  cv.folds <- 3
   xvar <- c(
     "ip",
     "div",
@@ -258,7 +265,6 @@ create.test.model.act <- quote({
   n.trees <- 50
   shrinkage <- 0.01
   interaction.depth <- 2
-  cv.folds <- 3
   xvar <- c(
     "ip",
     "div",
@@ -304,6 +310,18 @@ create.test.model.doc.act <- quote({
 })
 
 create.test.model.no.cv <- quote({
+  set.sodd.options(
+    model.params=list(
+      train.fraction=0.7,
+      n.trees=50,
+      shrinkage=0.1,
+      interaction.depth=2,
+      cv.folds=1
+    ),
+    data.dir="~/sodd.data/test.data/",
+    force.upcoming=TRUE,
+    verbosity=1
+  )
   yvar <- "act"
   model.dt.list <- read.model.data(adate, yvar, FALSE, FALSE)
   a.dt <- model.dt.list[[1]]
@@ -318,11 +336,6 @@ create.test.model.no.cv <- quote({
   eval(read.test.model.data.act)
   if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
   # model params
-  train.fraction <- 0.7
-  n.trees <- 50
-  shrinkage <- 0.01
-  interaction.depth <- 2
-  cv.folds <- 1
   xvar <- c(
     "ip",
     "div",
@@ -333,6 +346,7 @@ create.test.model.no.cv <- quote({
   formula <- as.formula(paste("y", paste(xvar, collapse="+"), sep="~offset(offset)+"))
   eval(model.params)
   eval(build.model)
+  stopifnot(model$cv_folds == 1)
   eval(model.summary)
   eval(score.model)
   eval(rebalance.model)
