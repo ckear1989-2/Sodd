@@ -140,37 +140,6 @@ plot.strategies <- function(a.dt) {
 }
 
 #' @import ggplot2
-#' @import data.table
-plot.var.importance <- function(model) {
-  sv <- rel_inf <- x <- var <- NULL
-  best.trees <- gbm.perf(model, plot.it=FALSE, method="test")
-  p.dt <- data.table(summary(model, num_trees=best.trees, plot_it=FALSE))
-  p.dt[, sv := - rel_inf]
-  setkey(p.dt, sv)
-  p.dt[, x := seq(p.dt[, .N])]
-  plot.obj <- ggplot2::ggplot(p.dt)
-  plot.obj <- plot.obj + ggplot2::geom_bar(ggplot2::aes(x=x, y=rel_inf), stat="identity", color="yellow", fill="yellow", alpha=0.3)
-  plot.obj <- plot.obj + ggplot2::theme(
-    axis.text.x=ggplot2::element_text(angle=90, vjust=0.5, hjust=0.5),
-    plot.title=ggplot2::element_text(hjust=0.5),
-    panel.border=ggplot2::element_rect(colour="black", fill=NA, linewidth=2)
-  )
-  plot.obj <- plot.obj + ggplot2::ggtitle("modeled variables relative influence")
-  plot.obj <- plot.obj + ggplot2::ylab("relative influence")
-  plot.obj <- plot.obj + ggplot2::xlab("modeled variable")
-  breaks <- p.dt[, x]
-  labels <- p.dt[, var]
-  if(length(breaks) != length(labels)) {
-    print(p.dt)
-    print(breaks)
-    print(labels)
-    stop("length breaks labels differ")
-  }
-  plot.obj <- plot.obj + ggplot2::scale_x_continuous(breaks=breaks, labels=labels)
-  plot.obj
-}
-
-#' @import ggplot2
 #' @importFrom stats quantile
 plot.decile.perf <- function(train.a.dt, train.b.dt, test.dt) {
   gbmp <- decile <- rn <- gain <- gain_wtd <- gain_all_wtd <- count <-
@@ -450,7 +419,7 @@ plot.model <- function(model) {
   gridExtra::grid.arrange(
     plot.model.run(model),
     gbm.doc::plot_model_perf(model),
-    plot.var.importance(model),
+    gbm.doc::plot_var_importance(model),
     plot.decile.perf(model$train.a.dt, model$train.b.dt, model$test.dt)
   )
   eval(grid.square)
