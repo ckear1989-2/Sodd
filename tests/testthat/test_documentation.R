@@ -1,5 +1,24 @@
 source("../create.test.data.R")
 
+test_that("model response vars page", {
+  set.sodd.options(
+    data.dir = "~/sodd.data/test.data/",
+    force.upcoming = TRUE,
+    verbosity = 0
+  )
+  adate <- "2023-09-01"
+  output.dir <- get.sodd.output.dir()
+  eval(read.test.model.spread)
+  pdff <- file.path(get.sodd.output.dir(), paste0("model_", adate, "_spread_model_response_vars.pdf"))
+  expect_silent(response.p.obj <- plot_response_vars(model))
+  grDevices::pdf(pdff, h = 7, w = 14)
+  expect_silent({
+    grid.arrange(response.p.obj)
+  })
+  grDevices::dev.off()
+  expect(difftime(Sys.time(), file.info(pdff)$mtime, units = "secs") < 10, "model response vars page not created in last 10 seconds.")
+})
+
 test_that("model univariates pages", {
   set.sodd.options(
     data.dir = "~/sodd.data/test.data/",

@@ -309,60 +309,6 @@ plot.detailed.strategy <- function(model, pngf, leagues = all.leagues) {
   grid::grid.draw(p.obj.upcoming)
 }
 
-#' @import gbm.doc
-get_uvar_list <- function(
-    x,
-    model) {
-  list(
-    gbm.doc::univariate(model$train.a.dt, x, model$yvar, model$pvar, model$wvar),
-    gbm.doc::univariate(model$train.b.dt, x, model$yvar, model$pvar, model$wvar),
-    gbm.doc::univariate(model$test.dt, x, model$yvar, model$pvar, model$wvar),
-    gbm.doc::partial.plot(model, x, model$train.dt)
-  )
-}
-
-#' @importFrom gridExtra grid.arrange
-#' @import gbm.doc
-series.uvar <- quote({
-  for (x in model$uvar) {
-    gridExtra::grid.arrange(
-      gbm.doc::univariate(model$train.a.dt, x, model$yvar, model$pvar, model$wvar),
-      gbm.doc::univariate(model$train.b.dt, x, model$yvar, model$pvar, model$wvar),
-      gbm.doc::univariate(model$test.dt, x, model$yvar, model$pvar, model$wvar),
-      gbm.doc::partial.plot(model, x, model$train.dt),
-      ncol = 2
-    )
-    eval(grid.square)
-  }
-})
-
-#' @import ggplot2
-plot.dist <- function(x, xlabel) {
-  w <- (max(x) - min(x)) / 100
-  g <- ggplot2::ggplot(data = NULL)
-  g <- g + geom_histogram(ggplot2::aes(x = x), fill = "yellow", alpha = 0.3, binwidth = w)
-  g <- g + xlab(xlabel) + ggplot2::ggtitle(paste("distribution of", xlabel))
-  g
-}
-
-#' @importFrom gridExtra grid.arrange
-plot.response.vars <- function(train.dt, test.dt, yvar, pvar) {
-  y <- gbmp <- NULL
-  setnames(train.dt, yvar, "y")
-  setnames(test.dt, yvar, "y")
-  setnames(train.dt, pvar, "p")
-  setnames(test.dt, pvar, "p")
-  gridExtra::grid.arrange(
-    plot.dist(c(train.dt[, y], test.dt[, y]), yvar),
-    plot.dist(c(train.dt[, p], test.dt[, p]), "model prediction"),
-    nrow = 2
-  )
-  setnames(train.dt, "y", yvar)
-  setnames(test.dt, "y", yvar)
-  setnames(train.dt, "p", pvar)
-  setnames(test.dt, "p", pvar)
-}
-
 detailed.test.date.data.table <- function(a.dt) {
   strat_top_per_match <- gain_top_per_match <- expected_return <- NULL
   a.thin.dt <- a.dt[strat_top_per_match > 0, list(
@@ -426,7 +372,7 @@ plot.model <- function(model) {
   test.dt.by.date(model$test.dt)
   pngf <- file.path(gsub(".pdf", "_strategy.png", model$pdffile))
   plot.detailed.strategy(model, pngf, unique(model$train.dt[, div]))
-  plot.response.vars(model$train.dt, model$test.dt, model$yvar, model$pvar)
+  plot_response_vars(model)
   univ.p.objs <- plot_model_univariates(model)
   for (p in univ.p.objs) {
     stopifnot(length(p) == 5)
