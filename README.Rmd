@@ -12,11 +12,11 @@ output: md_document
 # see instructions to create gmail credentials
 # https://github.com/r-lib/gmailr
 # https://developers.google.com/gmail/api/quickstart/python
-Sys.setenv(GMAILR_APP="~/.gmail_credentials.json")
-Sys.setenv(GMAILR_SECRET="~/.secret")
+Sys.setenv(GMAILR_APP = "~/.gmail_credentials.json")
+Sys.setenv(GMAILR_SECRET = "~/.secret")
 # if using 2fa with github, add access token at https://github.com/settings/tokens and paste in to a new file
 # Replace the file below with the name of your newly created access token file
-Sys.setenv(GITHUB_PAT=readLines("~/.github_access_token", warn=FALSE))
+Sys.setenv(GITHUB_PAT = readLines("~/.github_access_token", warn = FALSE))
 install.packages("devtools")
 devtools::install_github("ckear1989/sodd")
 ## End(Not run)
@@ -29,25 +29,25 @@ suppressPackageStartupMessages(library("sodd"))
 # Set Options
 ```{r set-options}
 set.sodd.options(
-  data.dir="~/sodd.data/", # where to save csv and rds files
-  output.dir="~/sodd.output/", # where to save logs, pdfs etc.
-  force.upcoming=TRUE, # simulate upcoming fixtures from test data if none available
-  model.params=list(n.trees=10, train.fraction=0.9, cv.folds=1), # hyperparameters for model
-  n.lag=3, # how many previous fixtures to look back for predictor variables
-  verbosity=0 # how much is output to logs 0=no output, 1=minimal, 2=all
+  data.dir = "~/sodd.data/", # where to save csv and rds files
+  output.dir = "~/sodd.output/", # where to save logs, pdfs etc.
+  force.upcoming = TRUE, # simulate upcoming fixtures from test data if none available
+  model.params = list(n.trees = 10, train.fraction = 0.9, cv.folds = 1), # hyperparameters for model
+  n.lag = 3, # how many previous fixtures to look back for predictor variables
+  verbosity = 0 # how much is output to logs 0=no output, 1=minimal, 2=all
 )
 ```
 
 # Create Modeling Data
 ```{r create-data}
 leagues <- c("E0", "E1", "SP1", "SP2")
-dload.sodd.modeling.data(leagues, 3, check=TRUE)
+dload.sodd.modeling.data(leagues, 3, check = TRUE)
 create.sodd.modeling.data(leagues, 3)
 ```
 
 # Run model
 ```{r run-model}
-todays.model <- build.sodd.model(format((Sys.Date()-7), '%Y-%m-%d'), "act")
+todays.model <- build.sodd.model(format((Sys.Date() - 7), "%Y-%m-%d"), "act")
 ```
 
 # Get model output
@@ -61,7 +61,7 @@ grid::grid.draw(strat)
 ```
 
 ```{r email, error=TRUE}
-email.sodd.model.results(format(Sys.Date()-7, "%Y-%m-%d"), "ckear1989@gmail.com")
+email.sodd.model.results(format(Sys.Date() - 7, "%Y-%m-%d"), "ckear1989@gmail.com")
 ```
 
 # Schedule daily model build
@@ -69,8 +69,8 @@ email.sodd.model.results(format(Sys.Date()-7, "%Y-%m-%d"), "ckear1989@gmail.com"
 # remove existing cronjob
 system("crontab -r")
 schedule.model.build(
-  leagues=c("E0", "E1", "E2", "SP1", "D1", "I1", "F1"),
-  years=5,
-  address="ckear1989@gmail.com"
+  leagues = c("E0", "E1", "E2", "SP1", "D1", "I1", "F1"),
+  years = 5,
+  address = "ckear1989@gmail.com"
 )
 ```

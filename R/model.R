@@ -1,4 +1,3 @@
-
 #' Build gbm sodd model
 #'
 #' @param adate a date in string format "%Y-%m-%d".  Splits train.a and train.b data
@@ -11,19 +10,18 @@
 #' @examples
 #' \donttest{
 #' build.sodd.model("2020-01-01", "act")
-#' build.sodd.model("2020-01-01", "spread", weights=TRUE)
+#' build.sodd.model("2020-01-01", "spread", weights = TRUE)
 #' }
 #' @export
 #' @import data.table
 build.sodd.model <- function(
-  adate,
-  yvar,
-  weights=FALSE,
-  plot.it=FALSE,
-  previous.model.as.offset=FALSE
-  ) {
+    adate,
+    yvar,
+    weights = FALSE,
+    plot.it = FALSE,
+    previous.model.as.offset = FALSE) {
   logfile <- ip <- train.a.dt <- train.b.dt <- test.dt <- output.dir <-
-  upcoming.dt <- train.dt <- pdffile <- modelfile <- model <- a.date <- NULL
+    upcoming.dt <- train.dt <- pdffile <- modelfile <- model <- a.date <- NULL
   set.seed(123)
   data.success <- FALSE
   model.dt.list <- read.model.data(adate, yvar, previous.model.as.offset, weights)
@@ -36,12 +34,12 @@ build.sodd.model <- function(
   output.dir <- model.dt.list[[7]]
   modelfile <- model.dt.list[[8]]
   pdffile <- model.dt.list[[9]]
-  if("data.table" %in% class(a.dt)) data.success <- TRUE
-  if(!data.success) {
+  if ("data.table" %in% class(a.dt)) data.success <- TRUE
+  if (!data.success) {
     sink()
     return()
   }
-  if(a.dt[is.na(ip), .N] > 0) stop("missing ip")
+  if (a.dt[is.na(ip), .N] > 0) stop("missing ip")
   # model params
   n.lag <- get.sodd.n.lag()
   xvar <- c(
@@ -65,12 +63,12 @@ build.sodd.model <- function(
     paste0("app_cum", 2:n.lag),
     paste0("happ_cum", 2:n.lag)
   )
-  if(yvar %in% c("fthg", "ftag")) {
+  if (yvar %in% c("fthg", "ftag")) {
     xvar <- xvar[!c("ip", "ftr") %in% xvar]
     xvar <- c(xvar, "h.ip", "d.ip", "a.ip")
   }
   uvar <- unique(c("date", "season", "hometeam", "awayteam", xvar))
-  formula <- stats::as.formula(paste("y", paste(xvar, collapse="+"), sep="~offset(offset)+"))
+  formula <- stats::as.formula(paste("y", paste(xvar, collapse = "+"), sep = "~offset(offset)+"))
   eval(model.params)
   eval(build.model)
   eval(model.summary)
@@ -95,12 +93,12 @@ build.sodd.model <- function(
   model$pdffile <- pdffile
   model$modelfile <- modelfile
   model.output.dir <- paste0(get.sodd.output.dir(), "models/")
-  if(isTRUE(plot.it)) plot.model(model)
+  if (isTRUE(plot.it)) plot.model(model)
   # dunno why attr(model, x) <- x doesn't work
   # attr(model, "adate") <- adate
   class(model) <- c("sodd", class(model))
-  if(!file.exists(output.dir)) dir.create(output.dir)
-  if(!file.exists(model.output.dir)) dir.create(model.output.dir)
+  if (!file.exists(output.dir)) dir.create(output.dir)
+  if (!file.exists(model.output.dir)) dir.create(model.output.dir)
   saveRDS(model, modelfile)
   report.memory(model)
   model
@@ -116,7 +114,7 @@ build.sodd.model <- function(
 #' model <- build.sodd.model("2020-12-22", "act")
 #' document.sodd.model(model)
 #' }
-#' @export 
+#' @export
 document.sodd.model <- function(model) {
   plot.model(model)
 }
@@ -131,10 +129,10 @@ document.sodd.model <- function(model) {
 #' model <- build.sodd.model("2020-12-22", "act")
 #' upcoming.strategy.sodd.model(model)
 #' }
-#' @export 
+#' @export
 upcoming.strategy.sodd.model <- function(model) {
   div <- NULL
-  if(is.null(model)) {
+  if (is.null(model)) {
     warning("attempting strategy table with null model")
     return(NULL)
   }
@@ -151,18 +149,17 @@ upcoming.strategy.sodd.model <- function(model) {
 #' @family model
 #' @examples
 #' \donttest{
-#' set.sodd.options(data.dir="~/sodd.data/")
+#' set.sodd.options(data.dir = "~/sodd.data/")
 #' create.sodd.modeling.data()
 #' build.all.sodd.models.one.date("2020-01-01")
 #' }
-#' @export 
+#' @export
 build.all.sodd.models.one.date <- function(adate, ...) {
-  build.sodd.model(adate, "spread", weights=FALSE, ...)
+  build.sodd.model(adate, "spread", weights = FALSE, ...)
   # build.sodd.model(adate, "spread", weights=TRUE, ...)
-  build.sodd.model(adate, "act", weights=FALSE, ...)
+  build.sodd.model(adate, "act", weights = FALSE, ...)
   # build.sodd.model(adate, "act", weights=TRUE, ...)
   # build.sodd.model(adate, "fthg", weights=FALSE, ...)
   # build.sodd.model(adate, "ftag", weights=FALSE, ...)
   invisible(NULL)
 }
-

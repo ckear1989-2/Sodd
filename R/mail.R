@@ -1,4 +1,3 @@
-
 # #' Email modeling results and logs
 # #'
 # #' @param adate character. Date of model train/test split in format "%Y-%m%-d"
@@ -66,7 +65,7 @@
 #   }
 #   invisible()
 # }
-# 
+#
 # #' Email no data change status
 # #'
 # #' @param address character. email address to send model results to
@@ -99,14 +98,14 @@
 #   }
 #   invisible()
 # }
-# 
+#
 # attach.if.available <- function(m, f) {
 #   if(file.exists(f)) m <- gmailr::gm_attach_file(m, f)
 #   m
 # }
 
 attach.if.available <- function(m, f) {
-    print("debugging attach if available")
+  print("debugging attach if available")
 }
 
 #' Email modeling results and logs
@@ -117,14 +116,13 @@ attach.if.available <- function(m, f) {
 #' @family model
 #' @examples
 #' \donttest{
-#' email.sodd.model.results(format(Sys.Date()-7, "%Y-%m%-d"), "ckear1989@gmail.com")
+#' email.sodd.model.results(format(Sys.Date() - 7, "%Y-%m%-d"), "ckear1989@gmail.com")
 #' }
 #' @export
 email.sodd.model.results <- function(
-  adate,
-  address
-  ) {
-    print(paste("debugging email for", adate, address))
+    adate,
+    address) {
+  print(paste("debugging email for", adate, address))
 }
 
 #' Email no data change status
@@ -138,5 +136,5 @@ email.sodd.model.results <- function(
 #' }
 #' @export
 email.no.data.change <- function(address) {
-    print(paste("debugging email for", address))
+  print(paste("debugging email for", address))
 }

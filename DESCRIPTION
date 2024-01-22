@@ -15,7 +15,17 @@ RoxygenNote: 7.3.0
 Depends:
   data.table, gbm3, ggplot2
 Imports:
-  grid, gridExtra, gtable
+    httr,
+    grid,
+    gridExtra,
+    gtable,
+    gbm.doc,
+    pretty.gtable,
+    yaml,
+    purrr,
+    here,
+    rlang,
+    fs
 Suggests:
     huxtable,
     TeachingDemos,

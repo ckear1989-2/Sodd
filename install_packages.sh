@@ -99,7 +99,7 @@
 
 # install pretty.gtable and gbm.doc packages (dev version from github)
 # Rscript -e "library(\"devtools\"); install_github(\"ckear1989-2/pretty.gtable\")"
-Rscript -e "library(\"devtools\"); install_github(\"ckear1989-2/gbm.doc\")"
+# Rscript -e "library(\"devtools\"); install_github(\"ckear1989-2/gbm.doc\")"
 
 # Rscript -e "devtools::setup(\"./\")"
 # Rscript -e "devtools::load_all()"
@@ -115,4 +115,3 @@ Rscript -e "testthat::test_file(\"tests/testthat/test_file_diff.R\", package=\"s
 Rscript -e "testthat::test_file(\"tests/testthat/test_model_build.R\", package=\"sodd\")"
 Rscript -e "testthat::test_file(\"tests/testthat/test_documentation.R\", package=\"sodd\")"
 Rscript -e "devtools::test()"
-

@@ -1,6 +1,6 @@
 # History files
-.Rhistory
 .Rapp.history
+.Rhistory
 # Session Data files
 .RData
 # User-specific files
@@ -22,18 +22,18 @@ vignettes/*.pdf
 *_cache/
 /cache/
 # Temporary files created by R markdown
-*.utf8.md
 *.knit.md
+*.utf8.md
 # R Environment Variables
 .Renviron
 # plots
 *.pdf
 # logs
-logs/
 *log*
-nohup.out
 TODO
+logs/
+nohup.out
 # doc
-man/
 README.html
 README_files/
+man/

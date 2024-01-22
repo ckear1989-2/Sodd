@@ -1,5 +1,3 @@
-
-
 #' Schedule a daily model build
 #'
 #' @param leagues Leagues to include in modeling data. Defaults to all.leagues
@@ -18,28 +16,34 @@
 #' }
 #' @export
 schedule.model.build <- function(
-  leagues=all.leagues,
-  years=10,
-  address=NULL,
-  email.no.data.change=FALSE
-  ) {
-  if(!is.package.available("cronR")) {
-    message(paste("model build scheduling not available.",
-      "Try install.packages(\"cronR\")"))
+    leagues = all.leagues,
+    years = 10,
+    address = NULL,
+    email.no.data.change = FALSE) {
+  if (!is.package.available("cronR")) {
+    message(paste(
+      "model build scheduling not available.",
+      "Try install.packages(\"cronR\")"
+    ))
   } else {
     output.dir <- get.sodd.output.dir()
     f <- file.path(output.dir, "scheduled.model.R")
     create.scheduled.model.script(leagues, years, f, address)
     cmd <- cronR::cron_rscript(f)
-    tryCatch({
-      cronR::cron_add(command=cmd, frequency="daily", at="7AM",
-        id="sodd.model.build")
-    }, error=function(cond) message(paste0("cron task already exists\n", gsub("Error", "Warning", cond))))
+    tryCatch(
+      {
+        cronR::cron_add(
+          command = cmd, frequency = "daily", at = "7AM",
+          id = "sodd.model.build"
+        )
+      },
+      error = function(cond) message(paste0("cron task already exists\n", gsub("Error", "Warning", cond)))
+    )
   }
   invisible()
 }
 
-create.scheduled.model.script <- function(leagues, years, f, address=NULL, email.no.data.change=FALSE) {
+create.scheduled.model.script <- function(leagues, years, f, address = NULL, email.no.data.change = FALSE) {
   code <- "library(\"sodd\")\n"
   code <- paste0(
     code,
@@ -55,31 +59,35 @@ create.scheduled.model.script <- function(leagues, years, f, address=NULL, email
     "n.lag=", get.sodd.n.lag(), ",\n  ",
     "verbosity=", get.sodd.verbosity(), "\n)\n"
   )
-  code <- paste0(code, "leagues <- c(\"", paste(leagues, collapse="\", \""), "\")\n")
+  code <- paste0(code, "leagues <- c(\"", paste(leagues, collapse = "\", \""), "\")\n")
   code <- paste0(code, "years <- ", years, "\n")
   code <- paste0(code, "address <- \"", address, "\"\n")
   code <- paste0(code, "date <- format((Sys.Date()-7),  \"%Y-%m-%d\")\n")
-  code <- paste0(code, "check.status <- ", "dload.sodd.modeling.data(leagues, years, check=TRUE)\n"
-  )
+  code <- paste0(code, "check.status <- ", "dload.sodd.modeling.data(leagues, years, check=TRUE)\n")
   code <- paste0(code, "if(any(check.status)) {\n  ")
-  code <- paste0(code,
+  code <- paste0(
+    code,
     "create.sodd.modeling.data(leagues, years)\n  "
   )
-  code <- paste0(code,
+  code <- paste0(
+    code,
     "build.all.sodd.models.one.date(date, ",
     "plot.it=TRUE)\n"
   )
-  if(!is.null(address)) {
-    code <- paste0(code, "  ",
+  if (!is.null(address)) {
+    code <- paste0(
+      code, "  ",
       "email.sodd.model.results(date, address)\n"
     )
   }
-  code <- paste0(code,
+  code <- paste0(
+    code,
     "} else {\n  message(\"no changes detected in any files\")\n"
   )
-  if(!is.null(address)) {
-    if(isTRUE(email.no.data.change)) {
-      code <- paste0(code, "  ",
+  if (!is.null(address)) {
+    if (isTRUE(email.no.data.change)) {
+      code <- paste0(
+        code, "  ",
         "email.no.data.change(address)\n"
       )
     }
@@ -89,4 +97,3 @@ create.scheduled.model.script <- function(leagues, years, f, address=NULL, email
   writeLines(code, fc)
   close(fc)
 }
-

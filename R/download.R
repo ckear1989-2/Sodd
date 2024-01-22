@@ -1,4 +1,3 @@
-
 #' Download a csv file for a single league season
 #'
 #' @param l League names in format [country][division] (e.g. English Premier League = "E0")
@@ -12,33 +11,37 @@
 #' \donttest{
 #' dload.league.season("E0", "1920")
 #' }
-#' @export 
-dload.league.season <- function(l, s, quiet=FALSE, force=TRUE, check=FALSE) {
+#' @export
+dload.league.season <- function(l, s, quiet = FALSE, force = TRUE, check = FALSE) {
   data.dir <- get.sodd.data.dir()
-  if(!file.exists(data.dir)) dir.create(data.dir)
-  if(!file.exists(paste0(data.dir, s))) dir.create(paste0(data.dir, s))
+  if (!file.exists(data.dir)) dir.create(data.dir)
+  if (!file.exists(paste0(data.dir, s))) dir.create(paste0(data.dir, s))
   output.path <- file.path(data.dir, s, paste0(l, ".csv"))
   tmp.output.path <- tempfile()
   check.status <- FALSE
-  if((!file.exists(output.path)) | isTRUE(force)) {
+  if ((!file.exists(output.path)) | isTRUE(force)) {
     utils::download.file(
       file.path(base_dload_path, historic_subdir, s, paste0(l, ".csv")),
       tmp.output.path,
-      quiet=quiet
+      quiet = quiet
     )
-    if(isTRUE(check)) {
+    if (isTRUE(check)) {
       check.status <- check.file.diff(tmp.output.path, output.path)
-      if(isTRUE(check.status)) file.copy(tmp.output.path, output.path, overwrite=TRUE)
+      if (isTRUE(check.status)) file.copy(tmp.output.path, output.path, overwrite = TRUE)
     } else {
-      file.copy(tmp.output.path, output.path, overwrite=TRUE)
+      file.copy(tmp.output.path, output.path, overwrite = TRUE)
     }
   }
   invisible(check.status)
 }
 
 check.file.diff <- function(fa, fb) {
-  if((!file.exists(fa)) & file.exists(fb)) return(TRUE)
-  if((!file.exists(fb)) & file.exists(fa)) return(TRUE)
+  if ((!file.exists(fa)) & file.exists(fb)) {
+    return(TRUE)
+  }
+  if ((!file.exists(fb)) & file.exists(fa)) {
+    return(TRUE)
+  }
   r <- tools::md5sum(fa) != tools::md5sum(fb)
   names(r) <- NULL
   r
@@ -54,10 +57,10 @@ check.file.diff <- function(fa, fb) {
 #' @examples
 #' \donttest{
 #' dload.x.years("E0", 10)
-#' dload.x.years(c("E0", "S1"), 10, quiet=TRUE)
+#' dload.x.years(c("E0", "S1"), 10, quiet = TRUE)
 #' }
-#' @export 
-dload.x.years <- function(l, x=10, ...) {
+#' @export
+dload.x.years <- function(l, x = 10, ...) {
   check.status <- c()
   for (li in l) {
     check.status <- c(check.status, sapply(seq(x), function(i) dload.league.season(li, all.years[[i]], ...)))
@@ -76,10 +79,10 @@ dload.x.years <- function(l, x=10, ...) {
 #' @examples
 #' \donttest{
 #' dload.current.year()
-#' dload.current.year(quiet=TRUE)
+#' dload.current.year(quiet = TRUE)
 #' }
-#' @export 
-dload.current.year <- function(l=all.leagues, check=TRUE, ...) {
+#' @export
+dload.current.year <- function(l = all.leagues, check = TRUE, ...) {
   check.status <- sapply(l, function(li) dload.league.season(li, all.years[[1]], ...))
   names(check.status) <- NULL
   invisible(check.status)
@@ -96,8 +99,8 @@ dload.current.year <- function(l=all.leagues, check=TRUE, ...) {
 #' dload.upcoming()
 #' dload.upcoming(TRUE)
 #' }
-#' @export 
-dload.upcoming <- function(quiet=FALSE, check=TRUE) {
+#' @export
+dload.upcoming <- function(quiet = FALSE, check = TRUE) {
   data.dir <- get.sodd.data.dir()
   output.path <- file.path(data.dir, upcoming_fixtures)
   tmp.output.path <- tempfile()
@@ -105,13 +108,13 @@ dload.upcoming <- function(quiet=FALSE, check=TRUE) {
   utils::download.file(
     file.path(base_dload_path, upcoming_fixtures),
     tmp.output.path,
-    quiet=quiet
+    quiet = quiet
   )
-  if(isTRUE(check)) {
+  if (isTRUE(check)) {
     check.status <- check.file.diff(tmp.output.path, output.path)
-    if(isTRUE(check.status)) file.copy(tmp.output.path, output.path, overwrite=TRUE)
+    if (isTRUE(check.status)) file.copy(tmp.output.path, output.path, overwrite = TRUE)
   } else {
-    file.copy(tmp.output.path, output.path, overwrite=TRUE)
+    file.copy(tmp.output.path, output.path, overwrite = TRUE)
   }
   invisible(check.status)
 }
@@ -126,23 +129,22 @@ dload.upcoming <- function(quiet=FALSE, check=TRUE) {
 #' @examples
 #' \donttest{
 #' dload.sodd.modeling.data()
-#' dload.sodd.modeling.data(years=5)
+#' dload.sodd.modeling.data(years = 5)
 #' }
 #' @export
-dload.sodd.modeling.data <- function(leagues=all.leagues, years=10, check=TRUE) {
+dload.sodd.modeling.data <- function(leagues = all.leagues, years = 10, check = TRUE) {
   output.dir <- get.sodd.output.dir()
-  if(!file.exists(output.dir)) dir.create(output.dir)
-  if(get.sodd.verbosity() >= 1) {
-    sink(file.path(output.dir, "download.log"), split=TRUE)
+  if (!file.exists(output.dir)) dir.create(output.dir)
+  if (get.sodd.verbosity() >= 1) {
+    sink(file.path(output.dir, "download.log"), split = TRUE)
   } else {
     sink("/dev/null")
   }
-  check.status <- dload.x.years(leagues, years, force=FALSE, check=check, quiet=TRUE)
-  check.status <- c(check.status, dload.current.year(leagues, check=check, quiet=TRUE))
-  check.status <- c(check.status, dload.upcoming(check=check, quiet=TRUE))
-  cat0n(paste(check.status, collapse=" "), verbosity=2)
-  cat0n(any(check.status), verbosity=2)
+  check.status <- dload.x.years(leagues, years, force = FALSE, check = check, quiet = TRUE)
+  check.status <- c(check.status, dload.current.year(leagues, check = check, quiet = TRUE))
+  check.status <- c(check.status, dload.upcoming(check = check, quiet = TRUE))
+  cat0n(paste(check.status, collapse = " "), verbosity = 2)
+  cat0n(any(check.status), verbosity = 2)
   sink()
   invisible(check.status)
 }
-

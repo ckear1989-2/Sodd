@@ -1,0 +1,96 @@
+# All available hooks: https://pre-commit.com/hooks.html
+# R specific hooks: https://github.com/lorenzwalthert/precommit
+repos:
+-   repo: https://github.com/lorenzwalthert/precommit
+    rev: v0.3.2.9027
+    hooks: 
+    -   id: style-files
+        args: [--style_pkg=styler, --style_fun=tidyverse_style, --cache-root=styler-perm]
+        exclude: > 
+          (?x)^(
+          tests/testthat/in/.*|
+          renv/.*
+          )$
+    # codemeta must be above use-tidy-description when both are used
+    # -   id: codemeta-description-updated
+    -   id: use-tidy-description
+    -   id: readme-rmd-rendered
+    -   id: parsable-R
+        exclude: > 
+          (?x)^(
+          tests/testthat/in/.*|
+          )$
+    -   id: no-browser-statement
+        exclude: > 
+          (?x)^(
+          tests/testthat/in/.*|
+          )$
+    -   id: no-debug-statement
+        exclude: >
+          (?x)^(
+          tests/testthat/in/.*|
+          )$
+    -   id: deps-in-desc
+        exclude: > 
+          (?x)^(
+          inst/hooks/exported/pkgdown.R|
+          tests/testthat/in/.*|
+          inst/update-renv-prepare.R|
+          inst/update-ppm-url.R|
+          inst/update-dependency-graph-existing-packages\.R|
+          inst/update-existing-hook-dependencies\.R|
+          renv/activate.R|
+          vignettes/FAQ\.Rmd|
+          )$
+    -   id: pkgdown
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks: 
+    -   id: check-added-large-files
+    -   id: end-of-file-fixer
+        exclude: '\.Rd' # sometimes roxygen fails to generate EOF blank line.
+    -   id: file-contents-sorter
+        files: '^\.Rbuildignore$'
+-   repo: https://github.com/pre-commit-ci/pre-commit-ci-config
+    rev: v1.6.1
+    hooks:
+    # Only required when https://pre-commit.ci is used for config validation
+    -   id: check-pre-commit-ci-config
+-   repo: https://github.com/lorenzwalthert/gitignore-tidy
+    rev: 475bf5d96927a1887ce2863ff3075b1d7240bc51
+    hooks: 
+    -   id: tidy-gitignore
+-   repo: local
+    hooks:
+    -   id: hooks-config-to-inst
+        name: hooks-config-to-inst
+        entry: Rscript inst/hooks/local/hooks-config-to-inst.R
+        language: r
+        stages: [commit, push]
+        additional_dependencies:
+        -    fs
+        require_serial: True
+    -   id: spell-check-exclude-identical
+        name: spell-check-exclude-identical
+        entry: Rscript inst/hooks/local/spell-check-exclude-identical.R
+        language: r
+        stages: [commit, push]
+        additional_dependencies:
+        -    magrittr
+        -    purrr
+        -    yaml
+        -    here
+        -    rlang
+        require_serial: True
+    -   id: forbid-to-commit
+        name: Don't commit common R artifacts
+        entry: Cannot commit .Rhistory, .Rdata, .csv and similar.
+        language: fail
+        files: '\.(Rhistory|csv|RData|Rds|rds)$'
+        # `exclude: <regex>` to allow committing specific files.
+
+default_stages: ["commit"]
+
+ci:
+    skip: [pkgdown]
+    autoupdate_schedule: monthly
