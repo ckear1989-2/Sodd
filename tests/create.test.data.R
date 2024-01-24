@@ -1,5 +1,3 @@
-library("sodd")
-
 random_by_char <- function(cvar) {
   # subsampling helper function
   suppressWarnings(TeachingDemos::char2seed(cvar))

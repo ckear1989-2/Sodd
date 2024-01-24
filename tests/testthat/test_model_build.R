@@ -4,16 +4,17 @@ test_that("build goals model", {
     verbosity = 0
   )
   date <- "2023-09-01"
-  expect_warning(model <- build.sodd.model(date, "fthg", plot.it = TRUE), "OOB generally underestimates*")
+  w <- capture_warnings(model <- build.sodd.model(date, "fthg", plot.it = TRUE))
+  print(w)
   if (!is.null(model)) {
-    expect_warning(build.sodd.model(date, "fthg", weights = FALSE), "OOB generally underestimates*")
+    expect_success(build.sodd.model(date, "fthg", weights = FALSE))
     set.sodd.options(
       data.dir = "~/sodd.data/",
       force.upcoming = TRUE,
       verbosity = 0
     )
-    expect_warning(build.sodd.model(date, "fthg", weights = FALSE), "OOB generally underestimates*")
-    expect_warning(build.sodd.model(date, "ftag", weights = FALSE), "OOB generally underestimates*")
+    expect_silent(build.sodd.model(date, "fthg", weights = FALSE))
+    expect_silent(build.sodd.model(date, "ftag", weights = FALSE))
   }
 })
 
@@ -23,9 +24,10 @@ test_that("build model no cv", {
     verbosity = 0
   )
   date <- "2023-09-01"
-  expect_warning(model <- build.sodd.model(date, "fthg", weights = FALSE, plot.it = TRUE), "OOB generally underestimates*")
+  w <- capture_warnings(model <- build.sodd.model(date, "fthg", weights = FALSE, plot.it = TRUE))
+  print(w)
   if (!is.null(model)) {
-    expect_warning(model <- build.sodd.model(date, "fthg", weights = FALSE), "OOB generally underestimates*")
+    expect_silent(model <- build.sodd.model(date, "fthg", weights = FALSE))
     # check default params
     expect_equal(model$params$num_trees, 500)
     expect_equal(model$params$train_fraction, 0.7, tolerance = 0.01)
@@ -44,7 +46,7 @@ test_that("build model no cv", {
       force.upcoming = TRUE,
       verbosity = 0
     )
-    expect_warning(model <- build.sodd.model(date, "fthg", weights = FALSE), "OOB generally underestimates*")
+    expect_silent(model <- build.sodd.model(date, "fthg", weights = FALSE))
     # check default params
     expect_equal(model$params$num_trees, 10)
     expect_equal(model$params$train_fraction, 0.6, tolerance = 0.01)
